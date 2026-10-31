@@ -2,11 +2,11 @@
 
 > **Integrate once. Detect continuously. Investigate intelligently. Improve detection safely.**
 
-Ternline is a security intelligence platform designed for applications and distributed infrastructure. It bridges deterministic, real-time threat detection with evidence-grounded AI investigations and declarative rule authoring.
+Ternline is an active security intelligence platform designed for microservices and distributed applications. It bridges sub-millisecond, deterministic threat detection (Fast Track) with evidence-grounded AI investigations (Deep Track) and self-hardening declarative rule authoring.
 
 ---
 
-## 1. Two-Path Architecture
+## 1. Core Architecture
 
 ```
                        [ Incoming Telemetry Stream ]
@@ -14,12 +14,13 @@ Ternline is a security intelligence platform designed for applications and distr
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        FAST TRACK (Real-Time)                          │
-│  • Ingest & Canonicalize Telemetry (/v1/events)                        │
+│  • Ingest & Canonicalize Telemetry (POST /v1/events)                   │
 │  • Dynamic Runtime Rule Registry (Active Declarative Rules)            │
-│  • Cross-Service In-Memory Correlation (Trace & Time Window)           │
-│  • Zero-LLM deterministic alerts (<10ms latency)                       │
-│  • Suppresses duplicate baseline alerts when active rules fire         │
-│  • Native baseline fallback safety net                                 │
+│  • Pluggable Correlation State (InMemory / Atomic Redis Lua)           │
+│  • Zero-LLM deterministic alerts (<1ms latency)                        │
+│  • Multi-stage cross-service correlation (preserves stage candidates)  │
+│  • Bounded cardinality (ZSET group limits, max seen event IDs)         │
+│  • Native baseline fallback safety net with duplicate suppression      │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
                          Persists Security Findings
@@ -48,47 +49,83 @@ Ternline is a security intelligence platform designed for applications and distr
 
 ---
 
-## 2. Deployment Architecture & Supported Constraints
+## 2. Configuration & Startup Options
 
-- **Process Model:** **Single-worker per instance (`uvicorn --workers 1`)** is the supported deployment mode. Fast Track cross-service correlation maintains in-memory sliding trace windows (`_windows` and `_emitted`).
-- **Restart Recovery:** All events, findings, and declarative rules are durably persisted in PostgreSQL. Ingested events and rules survive application restarts.
-- **Cache Invalidation:** The `RuntimeRuleRegistry` uses a 10-second TTL cache with explicit, immediate invalidation triggers (`runtime_rule_registry.invalidate(tenant_id)`) upon rule activation, disabling, or rollback. Changes take effect with zero latency and without server restarts.
+Ternline supports two operational modes:
+
+### Mode A: Zero-Dependency Local Inspection (Development / CI)
+Requires **no external database or Redis**. Uses in-memory SQLite and `InMemoryCorrelationStateStore`:
+```bash
+# 1. Clone & create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .\.venv\Scripts\Activate.ps1
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Create .env with dev defaults
+cp .env.example .env
+
+# 4. Start the server (Single Worker)
+uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+* Interactive API Documentation: `http://localhost:8000/docs`
+* Web Console & Landing Page: `http://localhost:8000/`
 
 ---
 
-## 3. Quickstart & Verification
-
-### Running the Backend
-
+### Mode B: Full Distributed Production Stack (Docker Compose)
+Runs **PostgreSQL 16**, **Redis 7 (AOF + Volatile-LRU)**, and the containerized backend:
 ```bash
-# Activate virtual environment
-.\.venv\Scripts\Activate.ps1
+# Boot complete production stack
+docker compose up -d
 
-# Start Uvicorn Server (Single Worker Mode)
-uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-### Running the Test Suite
-
-```bash
-# Run complete test suite (91 passing tests)
-python -m pytest -v
-
-# Run Milestone 6 Lifecycle & Execution Integrity tests
-python -m pytest -v tests/test_milestone6_lifecycle_and_execution.py
-
-# Run Complete 10-Step End-to-End Acceptance Loop
-python -m pytest -v -s tests/test_milestone6_acceptance.py
+# Check health
+docker compose ps
 ```
 
 ---
 
-## 4. Milestone 6 Verification Summary
+## 3. Environment Variables Reference
 
-All Milestone 6 requirements have been implemented and verified:
-1. **Dynamic Fast Track Rule Execution:** Active declarative rules loaded dynamically per tenant, stamping `rule_id` and `rule_version` into findings and suppressing duplicate alerts.
-2. **Rule Lifecycle & Rollback:** Complete transition lifecycle (`proposed -> validated -> approved -> active -> disabled / rolled back`) with audit trails and sub-millisecond cache invalidation.
-3. **Investigation Integrity & Cost Controls:** Real-time quality audit gate rejecting ungrounded event citations with `HTTP 422`, cached report reuse (`force_refresh=False`), and in-flight concurrency lock (`HTTP 409`).
-4. **Detector State Reliability:** Deduplication of repeated event IDs and dynamic window expansion for out-of-order event streams.
-5. **Full Acceptance Test:** Verified 10-step end-to-end loop in `tests/test_milestone6_acceptance.py`.
+| Variable | Default | Purpose |
+| :--- | :--- | :--- |
+| `ENVIRONMENT` | `development` | `development`, `testing`, `staging`, or `production`. |
+| `SECRET_KEY` | `dev-insecure...` | Internal JWT/API key signature. Must be $\ge 32$ chars in production. |
+| `DATABASE_URL` | `postgresql+psycopg2://...` | PostgreSQL connection string. |
+| `ALLOW_SQLITE_TEST_FALLBACK` | `true` | Allows automated SQLite fallback in local test environments. |
+| `WORKERS` | `1` | Worker process count. If $>1$, `REDIS_URL` is mandatory. |
+| `REDIS_URL` | `redis://localhost:6379/0` | Redis 7+ connection URL for distributed state. |
+| `REDIS_REQUIRED` | `false` | When `true`, startup fails fast if Redis is unreachable. |
+| `REDIS_STATE_TIMEOUT_MS` | `500` | Redis socket timeout in milliseconds. |
+| `INVESTIGATOR_PROVIDER` | `mock` | `mock` (no API key required), `meta`, or `openai_compatible`. |
+| `INVESTIGATOR_MODEL` | `Llama-3.3-70B-Instruct` | Model identifier for Deep Track investigations. |
 
+---
+
+## 4. Test Suite Execution
+
+All 166 backend tests can be verified with `pytest`:
+
+```bash
+# Run full automated regression suite (166 tests)
+python -m pytest tests/ --ignore=tests/test_milestone7_ops.py -k "not test_live_meta_model_inference" -v
+
+# Run Checkpoint 5 Distributed Correlation & Multi-Worker tests
+python -m pytest tests/test_checkpoint5_completion.py tests/test_distributed_correlation.py -v
+
+# Run Checkpoint 4 Runtime Migration & Clock-Skew tests
+python -m pytest tests/test_checkpoint4_runtime.py -v
+
+# Run Checkpoint 3 Differential Parity tests
+python -m pytest tests/test_checkpoint3_parity.py -v
+```
+
+---
+
+## 5. Security & Isolation Invariants
+
+1. **Deterministic Fast Track:** Fast Track evaluation executes in pure Python and atomic Redis Lua scripts in $<1\text{ms}$. Zero LLM calls are made on the ingestion path.
+2. **Tenant Boundary Enforcement:** All Redis state keys, PostgreSQL queries, and API authorizations are strictly tenant-scoped (`ternline:{tenant_id}:...`). Cross-tenant leakage is architecturally prohibited.
+3. **No Silent Fallback:** In production or staging, if Redis is unavailable, the engine fails fast at startup and reports `correlation_status="degraded"` at runtime while preserving PostgreSQL event durability.
+4. **Grounded Deep Track:** Every event cited in AI investigation reports is programmatically audited against stored database records by `InvestigationQualityAuditor`. Hallucinated citations are rejected with `HTTP 422`.
