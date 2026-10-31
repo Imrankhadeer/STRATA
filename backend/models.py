@@ -8,6 +8,7 @@ from sqlalchemy import (
     JSON,
     Index,
     Text,
+    Integer,
 )
 from sqlalchemy.orm import relationship
 from backend.db.session import Base
@@ -102,3 +103,55 @@ class SecurityFinding(Base):
     evidence = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
     status = Column(String(32), default="open", nullable=False)  # open, resolved, false_positive
+
+    investigations = relationship("InvestigationReport", back_populates="finding", cascade="all, delete-orphan")
+
+
+class InvestigationReport(Base):
+    """
+    Stores structured outputs from the Deep-Investigation Path.
+    Contains grounded hypotheses, precise evidence citations, and candidate detector proposals.
+    Candidate detectors are PROPOSALS only — never automatically promoted without deterministic validation.
+    """
+    __tablename__ = "investigation_reports"
+
+    investigation_id = Column(String(64), primary_key=True)
+    finding_id = Column(String(64), ForeignKey("security_findings.finding_id", ondelete="CASCADE"), nullable=False, index=True)
+    tenant_id = Column(String(64), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    verdict = Column(String(32), nullable=False)  # confirmed_threat, likely_benign, inconclusive
+    summary = Column(Text, nullable=False)
+    
+    hypotheses = Column(JSON, nullable=False, default=list)
+    candidate_rules = Column(JSON, nullable=False, default=list)
+    recommended_mitigations = Column(JSON, nullable=False, default=list)
+
+    investigator_provider = Column(String(64), nullable=False)
+    investigator_model = Column(String(128), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+
+    finding = relationship("SecurityFinding", back_populates="investigations")
+
+
+class DeclarativeRuleModel(Base):
+    """
+    Versioned rule registry for candidate, validated, and approved declarative detection rules.
+    Acts as the approval-gated configuration store for the Fast Track detectors.
+    """
+    __tablename__ = "declarative_rules"
+
+    rule_id = Column(String(64), primary_key=True)
+    tenant_id = Column(String(64), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    version = Column(Integer, default=1, nullable=False)
+    target_detector = Column(String(64), nullable=False)
+    title = Column(String(256), nullable=False)
+    description = Column(Text, nullable=False)
+    parameters = Column(JSON, nullable=False, default=dict)
+    status = Column(String(32), default="proposed", nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    validation_metrics = Column(JSON, nullable=True)
+    approval_metadata = Column(JSON, nullable=True)
+
+    __table_args__ = (
+        Index("ix_rules_tenant_status", "tenant_id", "status"),
+    )
+

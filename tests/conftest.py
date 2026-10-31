@@ -14,7 +14,7 @@ sys.path.insert(0, sdk_dir)
 
 from backend.db.session import Base, get_db
 from backend.main import app
-from backend.models import Tenant, ApiKey, EventModel, SecurityFinding
+from backend.models import Tenant, ApiKey, EventModel, SecurityFinding, InvestigationReport, DeclarativeRuleModel
 from backend.core.auth import hash_api_key
 
 TEST_TENANT_ID = "tenant-alpha"
@@ -88,10 +88,13 @@ def auth_headers():
 @pytest.fixture(autouse=True)
 def reset_detectors():
     from backend.api.ingest import fast_detectors
+    from backend.detection.registry import runtime_rule_registry
+    runtime_rule_registry.invalidate()
     for d in fast_detectors:
         if hasattr(d, "reset"):
             d.reset()
     yield
+    runtime_rule_registry.invalidate()
     for d in fast_detectors:
         if hasattr(d, "reset"):
             d.reset()

@@ -1,8 +1,10 @@
-@"
 # Byte-compiled / optimized files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Node modules
+node_modules/
 
 # Distribution & Packaging
 .Python
@@ -17,7 +19,7 @@ venv/
 env/
 ENV/
 
-# Secrets and local environments (never commit secrets)
+# Secrets and local environments
 .env
 .env.local
 .env.*.local
@@ -25,8 +27,16 @@ ENV/
 
 # Local databases and Docker volumes
 postgres_data/
+redis_data/
 *.sqlite3
 *.db
+backup_*.json
+
+# Scratch and backup files
+apps/
+ce_map*.py
+*.backup*
+cyber_engine_frontend*.html
 
 # Testing and Coverage
 .pytest_cache/
@@ -42,4 +52,3 @@ htmlcov/
 # OS files
 .DS_Store
 Thumbs.db
-"@ | Set-Content -Encoding UTF8 .gitignore

@@ -132,3 +132,5 @@ class IngestResponse(BaseModel):
     duplicates: int
     event_ids: List[str]
     errors: List[Dict[str, Any]] = Field(default_factory=list)
+    correlation_status: str = Field(default="ok", description="Status of threat correlation execution: 'ok' or 'degraded'")
+    correlation_degraded_reason: Optional[str] = Field(default=None, description="Explanation if correlation state engine degraded")

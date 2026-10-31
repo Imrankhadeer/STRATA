@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1118">
+  <meta name="description" content="Ternline — evidence-led security intelligence for distributed systems. Follow the signal. Find the threat.">
+  <title>Ternline — Security intelligence for distributed systems</title>
+  <style>
+    :root {
+      --ink: #e9eef3;
+      --muted: #9ba9b8;
+      --dim: #68798a;
+      --bg: #0b1118;
+      --panel: #111a24;
+      --panel-2: #151f2a;
+      --line: rgba(205, 222, 238, .12);
+      --accent: #b7f36b;
+      --accent-ink: #10170b;
+      --blue: #78b7ff;
+      --max: 1160px;
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55; letter-spacing: -.01em;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; }
+    .wrap { width: min(var(--max), calc(100% - 48px)); margin-inline: auto; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 10px;
+      color: var(--accent); font: 650 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .14em; text-transform: uppercase;
+    }
+    .eyebrow:before { content: ""; width: 20px; height: 1px; background: currentColor; }
+    .site-header {
+      position: sticky; top: 0; z-index: 10; backdrop-filter: blur(18px);
+      background: rgba(11, 17, 24, .82); border-bottom: 1px solid var(--line);
+    }
+    .nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .brand { display: inline-flex; align-items: center; gap: 12px; font-weight: 760; letter-spacing: .11em; font-size: 12px; }
+    .brand-mark {
+      width: 31px; height: 31px; display: grid; place-items: center; border: 1px solid rgba(183,243,107,.55);
+      border-radius: 9px; color: var(--accent); background: rgba(183,243,107,.06);
+    }
+    .brand-mark svg { width: 19px; height: 19px; }
+    .nav-links { display: flex; align-items: center; gap: 30px; color: #aab7c4; font-size: 13px; }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-cta { border: 1px solid rgba(183,243,107,.55); color: var(--accent); padding: 10px 15px; border-radius: 8px; font-size: 12px; font-weight: 650; }
+    .nav-cta:hover { background: rgba(183,243,107,.1); }
+    .menu-toggle { display: none; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+    .hero { padding: 88px 0 72px; overflow: hidden; }
+    .hero-grid { display: grid; grid-template-columns: 1.04fr .96fr; gap: 62px; align-items: center; }
+    h1 { font-size: clamp(42px, 5.2vw, 69px); line-height: 1.02; letter-spacing: -.065em; margin: 23px 0 24px; max-width: 720px; font-weight: 650; }
+    h1 .quiet { color: #8c9aa8; font-weight: 480; }
+    .hero-copy { color: #aab7c4; max-width: 565px; font-size: 16px; line-height: 1.8; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 31px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; padding: 0 18px; border-radius: 9px; font-size: 13px; font-weight: 700; transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent); }
+    .btn-primary:hover { background: #c8ff83; }
+    .btn-secondary { color: var(--ink); border: 1px solid var(--line); background: rgba(255,255,255,.015); }
+    .btn-secondary:hover { border-color: rgba(205,222,238,.3); }
+    .arrow { font-size: 17px; line-height: 1; }
+    .hero-note { display: flex; align-items: center; gap: 9px; margin-top: 24px; color: #788a9b; font-size: 11px; letter-spacing: .02em; }
+    .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(183,243,107,.09); }
+    .visual {
+      position: relative; min-height: 430px; border: 1px solid var(--line); border-radius: 22px;
+      background: linear-gradient(145deg, rgba(21,31,42,.94), rgba(10,16,23,.92));
+      overflow: hidden; box-shadow: 0 30px 90px rgba(0,0,0,.22);
+    }
+    .visual:before {
+      content: ""; position: absolute; inset: 0; opacity: .24;
+      background-image: linear-gradient(rgba(145,171,194,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(145,171,194,.13) 1px, transparent 1px);
+      background-size: 34px 34px; mask-image: linear-gradient(to bottom right, black, transparent 82%);
+    }
+    .visual-top { position: relative; display: flex; justify-content: space-between; align-items: center; padding: 19px 20px; border-bottom: 1px solid var(--line); }
+    .visual-label { color: #aab7c4; font: 600 10px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; }
+    .live { display: flex; align-items: center; gap: 7px; font: 10px ui-monospace, monospace; color: var(--accent); }
+    .live:before { content:""; width:5px;height:5px;border-radius:50%;background:var(--accent); }
+    .flow-canvas { position: relative; height: 265px; margin: 10px 16px 0; }
+    .flow-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .node {
+      position: absolute; width: 118px; padding: 13px 10px 12px; border: 1px solid rgba(173,197,218,.2);
+      background: rgba(17,26,36,.95); border-radius: 10px; text-align: center;
+      box-shadow: 0 8px 28px rgba(0,0,0,.18);
+    }
+    .node .node-icon { display: block; color: #a8bacb; margin-bottom: 7px; font-size: 17px; }
+    .node strong { display: block; font-size: 11px; font-weight: 650; }
+    .node small { display: block; margin-top: 3px; color: #788b9d; font-size: 9px; }
+    .node.api { top: 25px; left: 4%; }
+    .node.worker { top: 143px; left: 37%; border-color: rgba(120,183,255,.4); }
+    .node.db { top: 25px; right: 4%; }
+    .node.engine { bottom: -1px; left: 37%; width: 132px; border-color: rgba(183,243,107,.52); background: rgba(28,43,29,.95); }
+    .node.engine .node-icon, .node.engine strong { color: var(--accent); }
+    .visual-footer { position: relative; display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 18px 20px 20px; border-top: 1px solid var(--line); }
+    .mini-stat { min-width: 0; }
+    .mini-stat b { display: block; color: #e1e9ef; font: 600 11px ui-monospace, monospace; }
+    .mini-stat span { display: block; color: #748597; font-size: 10px; margin-top: 4px; }
+    .section { padding: 90px 0; border-top: 1px solid var(--line); }
+    .section-head { display: flex; justify-content: space-between; align-items: end; gap: 36px; margin-bottom: 38px; }
+    h2 { font-size: clamp(30px, 3.5vw, 44px); line-height: 1.1; letter-spacing: -.05em; font-weight: 610; margin: 16px 0 0; max-width: 660px; }
+    .section-intro { color: var(--muted); font-size: 14px; max-width: 380px; line-height: 1.8; margin: 0; }
+    .cap-grid { display: grid; grid-template-columns: repeat(3,1fr); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .cap { padding: 28px; min-height: 225px; background: rgba(255,255,255,.012); }
+    .cap + .cap { border-left: 1px solid var(--line); }
+    .cap-number { font: 11px ui-monospace, monospace; color: var(--accent); }
+    .cap h3 { margin: 29px 0 10px; font-size: 17px; letter-spacing: -.025em; font-weight: 630; }
+    .cap p { color: #91a0af; font-size: 13px; line-height: 1.8; margin: 0; }
+    .workflow { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+    .step { border: 1px solid var(--line); background: var(--panel); border-radius: 13px; padding: 22px; min-height: 205px; position: relative; }
+    .step-num { display: inline-grid; place-items: center; width: 29px; height: 29px; border: 1px solid rgba(183,243,107,.35); border-radius: 8px; color: var(--accent); font: 11px ui-monospace, monospace; }
+    .step h3 { margin: 24px 0 8px; font-size: 15px; font-weight: 650; }
+    .step p { margin: 0; color: #91a0af; font-size: 12px; line-height: 1.8; }
+    .architecture { display: grid; grid-template-columns: .8fr 1.2fr; gap: 48px; align-items: start; }
+    .architecture-copy p { color: var(--muted); font-size: 14px; line-height: 1.9; max-width: 430px; }
+    .architecture-list { border-top: 1px solid var(--line); }
+    .arch-row { display: grid; grid-template-columns: 42px 1fr; gap: 17px; padding: 19px 0; border-bottom: 1px solid var(--line); }
+    .arch-index { color: var(--accent); font: 11px ui-monospace, monospace; padding-top: 3px; }
+    .arch-row h3 { margin: 0 0 5px; font-size: 14px; font-weight: 650; }
+    .arch-row p { margin: 0; color: #8798a8; font-size: 12px; line-height: 1.7; }
+    .principles { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .principle { padding: 23px 24px; border: 1px solid var(--line); border-radius: 12px; display: flex; gap: 15px; }
+    .check { color: var(--accent); font-size: 17px; line-height: 1.3; }
+    .principle h3 { margin: 0 0 5px; font-size: 14px; font-weight: 650; }
+    .principle p { margin: 0; color: #8f9eac; font-size: 12px; line-height: 1.75; }
+    .cta-section { padding: 78px 0 90px; }
+    .cta-panel { border: 1px solid rgba(183,243,107,.28); border-radius: 20px; padding: clamp(28px,5vw,56px); background: radial-gradient(ellipse at 90% 0%, rgba(183,243,107,.08), transparent 38%), #101820; display: flex; justify-content: space-between; align-items: end; gap: 40px; }
+    .cta-panel h2 { margin-bottom: 14px; }
+    .cta-panel p { margin: 0; color: #9ba9b8; max-width: 530px; font-size: 13px; line-height: 1.8; }
+    footer { border-top: 1px solid var(--line); padding: 24px 0; color: #728292; font-size: 11px; }
+    .footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+    .footer-brand { color: #b9c4ce; letter-spacing: .1em; font-size: 10px; font-weight: 700; }
+    .disclaimer { color: #718293; }
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 42px; }
+      .hero { padding-top: 65px; }
+      .visual { max-width: 650px; width: 100%; }
+      .section-head { align-items: start; flex-direction: column; gap: 18px; }
+      .workflow { grid-template-columns: repeat(2,1fr); }
+      .architecture { grid-template-columns: 1fr; gap: 30px; }
+    }
+    @media (max-width: 640px) {
+      .wrap { width: min(var(--max), calc(100% - 32px)); }
+      .nav { min-height: 66px; }
+      .menu-toggle { display: inline-flex; }
+      .nav-links { display: none; position: absolute; left: 0; right: 0; top: 66px; padding: 20px 24px 24px; background: #0d141c; border-bottom: 1px solid var(--line); flex-direction: column; align-items: stretch; gap: 18px; }
+      .nav-links.open { display: flex; }
+      .nav-cta { text-align: center; }
+      .hero { padding: 52px 0 55px; }
+      h1 { font-size: clamp(41px, 12vw, 58px); }
+      .hero-copy { font-size: 14px; }
+      .visual { min-height: 395px; }
+      .flow-canvas { margin-inline: 4px; height: 244px; }
+      .node { width: 100px; padding: 11px 6px; }
+      .node.api { left: 0; }
+      .node.db { right: 0; }
+      .node.worker { left: calc(50% - 50px); top: 130px; }
+      .node.engine { left: calc(50% - 58px); width: 116px; }
+      .visual-footer { padding-inline: 13px; }
+      .mini-stat span { font-size: 9px; }
+      .cap-grid { grid-template-columns: 1fr; }
+      .cap { min-height: auto; padding: 24px; }
+      .cap + .cap { border-left: 0; border-top: 1px solid var(--line); }
+      .cap h3 { margin-top: 18px; }
+      .workflow { grid-template-columns: 1fr; }
+      .step { min-height: auto; }
+      .step h3 { margin-top: 17px; }
+      .principles { grid-template-columns: 1fr; }
+      .cta-panel { align-items: start; flex-direction: column; gap: 24px; }
+      .footer-inner { align-items: start; flex-direction: column; }
+      .section { padding: 66px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="#top" aria-label="Ternline home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 15.5 11.8 5l2.1 6.1L21 8l-6.4 8.2-2.1-5.1L3 15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 19h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>
+        <span>TERNLINE</span>
+      </a>
+      <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="navLinks" aria-label="Toggle navigation">Menu</button>
+      <nav class="nav-links" id="navLinks" aria-label="Main navigation">
+        <a href="#capabilities">Capabilities</a>
+        <a href="#workflow">How it works</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#principles">Principles</a>
+        <a class="nav-cta" href="/console">Live Console <span class="arrow">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="eyebrow">Security intelligence for distributed systems</span>
+          <h1>Follow the signal.<br><span class="quiet">Find the threat.</span></h1>
+          <p class="hero-copy">Ternline is being built to help security teams connect activity across services, investigate suspicious behavior with evidence, and turn validated discoveries into reusable detections.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="/console">Launch Security Console <span class="arrow">↗</span></a>
+            <a class="btn btn-secondary" href="#workflow">See how it works <span class="arrow">↘</span></a>
+          </div>
+          <div class="hero-note"><span class="pulse"></span> In development · Built around evidence, validation, and controlled response</div>
+        </div>
+
+        <div class="visual" aria-label="Illustration of connected services feeding a security intelligence engine">
+          <div class="visual-top">
+            <span class="visual-label">System overview / conceptual</span>
+            <span class="live">OBSERVE → ANALYZE</span>
+          </div>
+          <div class="flow-canvas">
+            <svg class="flow-lines" viewBox="0 0 500 265" preserveAspectRatio="none" aria-hidden="true">
+              <defs><marker id="arrow" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6Z" fill="#70899e"/></marker></defs>
+              <path d="M90 62 C110 105 170 112 230 153" stroke="#70899e" stroke-width="1.2" fill="none" stroke-dasharray="4 5" marker-end="url(#arrow)"/>
+              <path d="M410 62 C390 105 330 112 270 153" stroke="#70899e" stroke-width="1.2" fill="none" stroke-dasharray="4 5" marker-end="url(#arrow)"/>
+              <path d="M250 190 L250 222" stroke="#b7f36b" stroke-width="1.4" fill="none" stroke-dasharray="3 4" marker-end="url(#arrow)"/>
+              <circle cx="148" cy="112" r="3" fill="#78b7ff"/><circle cx="352" cy="112" r="3" fill="#78b7ff"/><circle cx="250" cy="207" r="3" fill="#b7f36b"/>
+            </svg>
+            <div class="node api"><span class="node-icon">⌘</span><strong>API service</strong><small>Request telemetry</small></div>
+            <div class="node db"><span class="node-icon">▤</span><strong>Data service</strong><small>Access events</small></div>
+            <div class="node worker"><span class="node-icon">⇄</span><strong>Worker service</strong><small>Runtime activity</small></div>
+            <div class="node engine"><span class="node-icon">◈</span><strong>TERNLINE</strong><small>Correlate · Investigate</small></div>
+          </div>
+          <div class="visual-footer">
+            <div class="mini-stat"><b>01 / OBSERVE</b><span>Collect useful signals</span></div>
+            <div class="mini-stat"><b>02 / VALIDATE</b><span>Test before promotion</span></div>
+            <div class="mini-stat"><b>03 / VERIFY</b><span>Confirm the outcome</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="capabilities">
+      <div class="wrap">
+        <div class="section-head">
+          <div><span class="eyebrow">What we're building</span><h2>Security that connects events, not just alerts.</h2></div>
+          <p class="section-intro">A suspicious event rarely tells the whole story. The useful signal often appears across service boundaries, over time, and in context.</p>
+        </div>
+        <div class="cap-grid">
+          <article class="cap">
+            <span class="cap-number">CAPABILITY / 01</span>
+            <h3>Cross-service correlation</h3>
+            <p>Bring related runtime and application events into a shared timeline to make multi-step behavior easier to investigate.</p>
+          </article>
+          <article class="cap">
+            <span class="cap-number">CAPABILITY / 02</span>
+            <h3>Evidence-led investigation</h3>
+            <p>Use AI to examine suspicious sequences, compare plausible explanations, and reference the evidence behind each finding.</p>
+          </article>
+          <article class="cap">
+            <span class="cap-number">CAPABILITY / 03</span>
+            <h3>Validated detections</h3>
+            <p>Turn useful discoveries into constrained, versioned detectors—after testing against both suspicious and benign scenarios.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="workflow">
+      <div class="wrap">
+        <div class="section-head">
+          <div><span class="eyebrow">Operating model</span><h2>Discover once. Detect reliably.</h2></div>
+          <p class="section-intro">Routine detection stays fast and deterministic. AI is reserved for investigation and discovery—not every event that enters the system.</p>
+        </div>
+        <div class="workflow">
+          <article class="step"><span class="step-num">01</span><h3>Observe</h3><p>Normalize telemetry from applications, services, and runtime tools into a consistent event stream.</p></article>
+          <article class="step"><span class="step-num">02</span><h3>Investigate</h3><p>Correlate unusual behavior and use the model to evaluate hypotheses against available evidence.</p></article>
+          <article class="step"><span class="step-num">03</span><h3>Validate</h3><p>Replay candidate detections against held-out suspicious and benign scenarios before approval.</p></article>
+          <article class="step"><span class="step-num">04</span><h3>Verify</h3><p>Deploy approved detectors with audit history. Gate response actions and verify their actual outcome.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="architecture">
+      <div class="wrap architecture">
+        <div class="architecture-copy">
+          <span class="eyebrow">Architecture direction</span>
+          <h2>Built to fit into the security stack.</h2>
+          <p>Ternline is intended as an intelligence and orchestration layer—not a replacement for telemetry collectors, runtime sensors, network policy, or existing security controls.</p>
+          <p>The initial prototype uses simulated service telemetry. Integrations with established tools can follow once the core detection and evaluation loop is working.</p>
+        </div>
+        <div class="architecture-list">
+          <div class="arch-row"><span class="arch-index">A</span><div><h3>Telemetry inputs</h3><p>Application events, service activity, and compatible observability or runtime-security signals.</p></div></div>
+          <div class="arch-row"><span class="arch-index">B</span><div><h3>Detection core</h3><p>Event normalization, baseline checks, temporal correlation, and deterministic detector execution.</p></div></div>
+          <div class="arch-row"><span class="arch-index">C</span><div><h3>Investigation and knowledge</h3><p>Model-assisted analysis backed by evidence references, incident history, and persistent detector versions.</p></div></div>
+          <div class="arch-row"><span class="arch-index">D</span><div><h3>Policy and verification</h3><p>Explicit authorization, auditable actions, outcome checks, and rollback paths for supported responses.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="principles">
+      <div class="wrap">
+        <div class="section-head">
+          <div><span class="eyebrow">Engineering principles</span><h2>Trust has to be earned by the system.</h2></div>
+          <p class="section-intro">Security automation needs more than a convincing explanation. Findings must be testable, actions controlled, and outcomes observable.</p>
+        </div>
+        <div class="principles">
+          <article class="principle"><span class="check">↗</span><div><h3>Evidence over assertion</h3><p>Investigations should point to source events and distinguish observed facts from hypotheses.</p></div></article>
+          <article class="principle"><span class="check">↗</span><div><h3>Evaluation before promotion</h3><p>New detectors must pass repeatable tests, including benign lookalikes, before becoming active.</p></div></article>
+          <article class="principle"><span class="check">↗</span><div><h3>Least privilege by default</h3><p>Model-generated suggestions cannot directly execute arbitrary code or bypass policy controls.</p></div></article>
+          <article class="principle"><span class="check">↗</span><div><h3>Measured performance</h3><p>Detection quality, false positives, latency, model usage, and response outcomes should be measured—not assumed.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section" id="contact">
+      <div class="wrap">
+        <div class="cta-panel">
+          <div>
+            <span class="eyebrow">An active build</span>
+            <h2>Make security discoveries reusable.</h2>
+            <p>Ternline connects cross-service signals, performs deep Meta AI investigation, and promotes validated detection rules into continuous deterministic defense.</p>
+          </div>
+          <a class="btn btn-primary" href="/console">Launch Security Console <span class="arrow">↗</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-inner">
+      <div class="footer-brand">TERNLINE <span style="color:#718293;font-weight:400;letter-spacing:0">/ Security intelligence</span></div>
+      <div class="disclaimer">Concept and prototype in development · No production security claims</div>
+      <div>© <span id="year">2026</span> TERNLINE</div>
+    </div>
+  </footer>
+  <script>
+    const toggle = document.getElementById('menuToggle');
+    const links = document.getElementById('navLinks');
+    toggle.addEventListener('click', () => {
+      const isOpen = links.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(isOpen));
+      toggle.textContent = isOpen ? 'Close' : 'Menu';
+    });
+    links.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+      links.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.textContent = 'Menu';
+    }));
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

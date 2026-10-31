@@ -5,6 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from backend.db.session import get_db
 from backend.models import ApiKey, Tenant
+from backend.ops.bus import ops_bus
 
 
 security_bearer = HTTPBearer(auto_error=False)
@@ -58,6 +59,12 @@ def get_current_auth(
     )
 
     if not api_key_record:
+        ops_bus.publish(
+            component="auth",
+            event_type="auth.rejected",
+            level="warn",
+            message="API request rejected: invalid or inactive API key",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or revoked API key",

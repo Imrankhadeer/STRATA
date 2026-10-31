@@ -58,6 +58,9 @@ class _TraceWindow:
         self.finding_emitted: bool = False
 
     def add(self, event: CanonicalEvent) -> None:
+        if event.event_id in self.all_event_ids:
+            return
+
         ts = event.timestamp
         if ts < self.first_seen:
             self.first_seen = ts
@@ -301,8 +304,20 @@ class CrossServiceExfiltrationDetector(BaseDetector):
             del self._windows[k]
 
     def _evict_oldest(self) -> None:
-        """Removes the oldest window to enforce the memory cap."""
+        """
+        Removes a window to enforce the memory cap.
+        Stage-Priority Retention Invariant:
+        An attacker cannot flush an active multi-stage sequence out of memory by flooding
+        cheap single-event traces. Windows with fewer matched stages are evicted first.
+        """
         if not self._windows:
             return
-        oldest_key = min(self._windows, key=lambda k: self._windows[k].first_seen)
-        del self._windows[oldest_key]
+
+        # Prioritize evicting windows with 0 or 1 stage over windows with multiple stages
+        def eviction_priority(k):
+            w = self._windows[k]
+            stages_count = (1 if w.api_events else 0) + (1 if w.worker_events else 0) + (1 if w.db_events else 0)
+            return (stages_count, w.first_seen)
+
+        victim_key = min(self._windows, key=eviction_priority)
+        del self._windows[victim_key]

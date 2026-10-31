@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: instatern-instagram-app
+    runtime: python
+    rootDir: apps/instagram_app
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    region: oregon
+    envVars:
+      - key: CYBER_ENGINE_URL
+        sync: false
+        value: https://cyber-engine.onrender.com
+      - key: CYBER_ENGINE_API_KEY
+        sync: false
+      - key: TENANT_ID
+        value: tenant-alpha
+      - key: APP_ID
+        value: instagram-app
+      - key: SERVICE_ID
+        value: instagram-api
+      - key: TELEMETRY_ENABLED
+        value: "true"
+      - key: TELEMETRY_BUFFERED
+        value: "false"
+

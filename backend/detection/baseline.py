@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Set
 from pydantic import BaseModel, Field
 import uuid
 import datetime
@@ -53,13 +53,20 @@ class BruteForceLoginDetector(BaseDetector):
         self.failure_threshold = failure_threshold
         # In-memory fast path tracking for demonstration/baseline
         self._failure_counts: Dict[str, int] = {}
+        self._seen_event_ids: Set[str] = set()
 
     def reset(self) -> None:
         self._failure_counts.clear()
+        self._seen_event_ids.clear()
 
     def evaluate(self, event: CanonicalEvent) -> Optional[Finding]:
         if event.event_type != "auth.login_failed":
             return None
+
+        # Ignore duplicate event IDs
+        if event.event_id in self._seen_event_ids:
+            return None
+        self._seen_event_ids.add(event.event_id)
 
         actor = event.source_resource or event.attributes.get("client_ip") or "unknown_actor"
         key = f"{event.tenant_id}:{actor}"

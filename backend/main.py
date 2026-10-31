@@ -1,6 +1,17 @@
+import os
+import sys
+
+# Ensure project root and SDK directory are discoverable when running via uvicorn/gunicorn
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SDK_DIR = os.path.join(BASE_DIR, "sdk")
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+if SDK_DIR not in sys.path:
+    sys.path.insert(0, SDK_DIR)
+
 import logging
 from fastapi import FastAPI, Depends, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -8,6 +19,11 @@ from sqlalchemy import text
 from backend.config import settings
 from backend.db.session import get_db, Base, engine
 from backend.api.ingest import router as ingest_router
+from backend.api.investigations import router as investigations_router
+from backend.api.rules import router as rules_router
+from backend.api.findings import router as findings_router
+from backend.api.simulation import router as simulation_router
+from backend.api.ops import router as ops_router
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -15,23 +31,114 @@ logging.basicConfig(
 )
 logger = logging.getLogger("cyber_engine")
 
+_is_prod = settings.ENVIRONMENT.lower() in ("production", "staging")
 app = FastAPI(
     title="CYBER ENGINE Security Platform",
     description="Developer-friendly security layer and continuous telemetry protection",
     version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=None if _is_prod else "/docs",
+    redoc_url=None if _is_prod else "/redoc",
+    openapi_url=None if _is_prod else "/openapi.json",
 )
+
+# Secure CORS: Disallow wildcard origins when allow_credentials=True
+raw_cors = os.getenv("ALLOWED_CORS_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000")
+allowed_origins = [o.strip() for o in raw_cors.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
+
+@app.middleware("http")
+async def _security_headers(request, call_next):
+    resp = await call_next(request)
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("Referrer-Policy", "no-referrer")
+    resp.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    # Console ships its own meta CSP; API also sends a conservative default.
+    resp.headers.setdefault("Content-Security-Policy", "default-src 'self'; frame-ancestors 'self'")
+    if settings.ENVIRONMENT.lower() in ("production", "staging"):
+        resp.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+    return resp
+
 app.include_router(ingest_router)
+app.include_router(investigations_router)
+app.include_router(rules_router)
+app.include_router(findings_router)
+app.include_router(simulation_router)
+app.include_router(ops_router)
+
+
+@app.on_event("startup")
+def startup_db_init():
+    from backend.config import validate_production_settings as _validate_prod
+    _validate_prod()
+    """Ensure tables exist, and only seed default dev tenant/key in development mode."""
+    try:
+        from backend.models import Tenant, ApiKey
+        from backend.core.auth import hash_api_key
+        Base.metadata.create_all(bind=engine)
+        
+        # Security Boundary: Never auto-seed predictable demo keys in production or staging
+        if settings.ENVIRONMENT == "development":
+            with Session(engine) as session:
+                t = session.query(Tenant).filter(Tenant.id == "tenant-alpha").first()
+                if not t:
+                    session.add(Tenant(id="tenant-alpha", name="Alpha Corp", is_active=True))
+                    session.commit()
+
+                raw_key = "ce_live_test_api_key_secret_12345"
+                h = hash_api_key(raw_key)
+                k = session.query(ApiKey).filter(ApiKey.key_hash == h).first()
+                if not k:
+                    session.add(ApiKey(
+                        id="key-001",
+                        tenant_id="tenant-alpha",
+                        app_id="payments-api",
+                        key_hash=h,
+                        key_prefix="ce_live_",
+                        is_active=True,
+                    ))
+                    session.commit()
+            logger.info("Development database initialized with sandbox baseline credentials.")
+        else:
+            logger.info("Production mode: Auto-seeding of development baseline credentials is prohibited.")
+    except Exception as e:
+        logger.warning(f"Database auto-init on startup skipped or deferred: {e}")
+
+
+
+@app.get("/", include_in_schema=False)
+async def root():
+    """
+    Serves the Ternline web console and landing page, or returns API navigation metadata.
+    """
+    index_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return JSONResponse({
+        "name": "Ternline (CYBER ENGINE) API",
+        "version": "0.1.0",
+        "documentation": "/docs",
+        "health": "/health",
+    })
+
+
+@app.get("/console", include_in_schema=False)
+async def console():
+    """
+    Serves the interactive Ternline security console.
+    """
+    console_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "console.html")
+    if os.path.exists(console_path):
+        return FileResponse(console_path)
+    return JSONResponse({"error": "Console interface not found"}, status_code=404)
 
 
 @app.get("/health", tags=["health"])
