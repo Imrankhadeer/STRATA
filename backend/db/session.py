@@ -12,7 +12,22 @@ def get_engine(db_url: str | None = None):
     connect_args = {}
     if url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
-    return create_engine(url, echo=False, pool_pre_ping=True, connect_args=connect_args)
+        return create_engine(url, echo=False, pool_pre_ping=True, connect_args=connect_args)
+
+    eng = create_engine(url, echo=False, pool_pre_ping=True, connect_args=connect_args)
+    if settings.ALLOW_SQLITE_TEST_FALLBACK and settings.ENVIRONMENT.lower() in ("development", "testing"):
+        try:
+            with eng.connect() as conn:
+                pass
+        except Exception as e:
+            logger.warning(
+                "Primary database (%s) unreachable (%s). Auto-fallback to local SQLite (ALLOW_SQLITE_TEST_FALLBACK=True).",
+                url.split("@")[-1] if "@" in url else url,
+                e,
+            )
+            fallback_url = "sqlite:///./cyber_engine_dev.db"
+            return create_engine(fallback_url, echo=False, pool_pre_ping=True, connect_args={"check_same_thread": False})
+    return eng
 
 engine = get_engine()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
