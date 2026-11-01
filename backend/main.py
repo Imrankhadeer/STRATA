@@ -26,6 +26,7 @@ from backend.api.simulation import router as simulation_router
 from backend.api.ops import router as ops_router
 from backend.api.keys import router as keys_router
 from backend.api.events import router as events_router
+from backend.api.defense import router as defense_router
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -93,6 +94,7 @@ app.include_router(simulation_router)
 app.include_router(ops_router)
 app.include_router(keys_router)
 app.include_router(events_router)
+app.include_router(defense_router)
 
 
 @app.on_event("startup")
@@ -124,6 +126,18 @@ def startup_db_init():
                         key_hash=h,
                         key_prefix="ce_live_",
                         is_active=True,
+                    ))
+                    session.commit()
+
+                from backend.models import TenantDefensePolicyModel
+                pol = session.query(TenantDefensePolicyModel).filter(TenantDefensePolicyModel.tenant_id == "tenant-alpha").first()
+                if not pol:
+                    session.add(TenantDefensePolicyModel(
+                        id="pol-alpha-001",
+                        tenant_id="tenant-alpha",
+                        default_mode="observe",
+                        is_active=True,
+                        configuration={"default_mode": "observe"},
                     ))
                     session.commit()
             logger.info("Development database initialized with sandbox baseline credentials.")

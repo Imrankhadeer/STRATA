@@ -155,3 +155,98 @@ class DeclarativeRuleModel(Base):
         Index("ix_rules_tenant_status", "tenant_id", "status"),
     )
 
+
+class TenantDefensePolicyModel(Base):
+    """
+    Per-tenant Active Defense configuration, protection modes, and rate-limits.
+    Mandatory default mode is 'observe' for every newly provisioned tenant.
+    """
+    __tablename__ = "tenant_defense_policies"
+
+    id = Column(String(64), primary_key=True)
+    tenant_id = Column(String(64), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    default_mode = Column(String(32), default="observe", nullable=False)  # observe, assisted, enforced
+    is_active = Column(Boolean, default=True, nullable=False)
+    configuration = Column(JSON, nullable=False, default=dict)
+    
+    updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index("ix_tenant_defense_policies_tenant", "tenant_id"),
+    )
+
+
+class DefenseActionModel(Base):
+    """
+    Authoritative state record for planned, approved, and executed defense actions.
+    Enforces tenant isolation, idempotency fingerprints, and TTL tracking.
+    """
+    __tablename__ = "defense_actions"
+
+    action_id = Column(String(64), primary_key=True)
+    tenant_id = Column(String(64), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    finding_id = Column(String(64), ForeignKey("security_findings.finding_id", ondelete="SET NULL"), nullable=True, index=True)
+    
+    action_type = Column(String(64), nullable=False, index=True)  # api_key_revocation, temporary_ip_block, etc.
+    scope = Column(String(32), nullable=False, default="ternline_ingest")  # ternline_ingest, customer_application
+    credential_authority = Column(String(32), nullable=True)  # ternline_managed, external_customer
+    target_entity_type = Column(String(64), nullable=False)  # ip_address, api_key, user_id, app_id
+    target_entity_id = Column(String(256), nullable=False, index=True)
+    
+    status = Column(String(32), default="proposed", nullable=False, index=True)
+    protection_mode = Column(String(32), default="observe", nullable=False)  # observe, assisted, enforced
+    
+    deduplication_fingerprint = Column(String(64), nullable=False, index=True)
+    parameters = Column(JSON, nullable=False, default=dict)
+    
+    ttl_seconds = Column(Integer, nullable=True)
+    expires_at = Column(DateTime, nullable=True, index=True)
+    
+    requested_by = Column(String(128), nullable=False)
+    approved_by = Column(String(128), nullable=True)
+    approval_rationale = Column(Text, nullable=True)
+    
+    provider_adapter = Column(String(64), nullable=True)
+    external_reference_id = Column(String(256), nullable=True)
+    
+    execution_result = Column(JSON, nullable=True)
+    verification_result = Column(JSON, nullable=True)
+    rollback_result = Column(JSON, nullable=True)
+    
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False, index=True)
+    executed_at = Column(DateTime, nullable=True)
+    verified_at = Column(DateTime, nullable=True)
+    rolled_back_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        Index("ix_defense_actions_tenant_status", "tenant_id", "status"),
+        Index("ix_defense_actions_dedup", "tenant_id", "deduplication_fingerprint", "status"),
+        Index("ix_defense_actions_expirations", "status", "expires_at"),
+    )
+
+
+class DefenseAuditLogModel(Base):
+    """
+    Append-only immutable audit trail of all state transitions and policy decisions.
+    Uses ON DELETE SET NULL on action_id to ensure audit logs survive parent action pruning.
+    """
+    __tablename__ = "defense_audit_log"
+
+    log_id = Column(String(64), primary_key=True)
+    action_id = Column(String(64), ForeignKey("defense_actions.action_id", ondelete="SET NULL"), nullable=True, index=True)
+    tenant_id = Column(String(64), nullable=False, index=True)
+    
+    from_status = Column(String(32), nullable=True)
+    to_status = Column(String(32), nullable=False)
+    transition_trigger = Column(String(64), nullable=False)
+    
+    actor = Column(String(128), nullable=False)
+    details = Column(JSON, nullable=False, default=dict)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False, index=True)
+
+    __table_args__ = (
+        Index("ix_defense_audit_log_tenant_time", "tenant_id", "timestamp"),
+    )
+
+

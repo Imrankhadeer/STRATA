@@ -210,6 +210,29 @@ async def ingest_event(
             detail=f"API key is scoped to application '{auth.app_id}', not '{event.app_id}'"
         )
 
+    # Active Defense containment check (IP block -> 403, entity rate limit -> 429)
+    from backend.defense.filter import ingest_containment_filter
+    client_ip = None
+    if event.attributes and isinstance(event.attributes, dict):
+        raw_ip = event.attributes.get("client_ip") or event.attributes.get("source_ip") or event.attributes.get("ip")
+        if raw_ip:
+            client_ip = str(raw_ip).strip()
+    if not client_ip and event.source_resource:
+        import ipaddress
+        raw_res = event.source_resource.strip()
+        try:
+            ipaddress.ip_address(raw_res)
+            client_ip = raw_res
+        except ValueError:
+            client_ip = None
+
+    entity_id = event.source_resource or event.app_id
+    ingest_containment_filter.check_containment(
+        tenant_id=auth.tenant_id,
+        client_ip=client_ip,
+        entity_id=entity_id,
+    )
+
     # Check for existing event (idempotency / duplicate check)
     existing = db.query(EventModel.event_id).filter(EventModel.event_id == event.event_id).first()
     if existing:
