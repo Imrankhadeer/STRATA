@@ -9,6 +9,7 @@ from sqlalchemy import (
     Index,
     Text,
     Integer,
+    text,
 )
 from sqlalchemy.orm import relationship
 from backend.db.session import Base
@@ -223,6 +224,14 @@ class DefenseActionModel(Base):
         Index("ix_defense_actions_tenant_status", "tenant_id", "status"),
         Index("ix_defense_actions_dedup", "tenant_id", "deduplication_fingerprint", "status"),
         Index("ix_defense_actions_expirations", "status", "expires_at"),
+        Index(
+            "uq_active_defense_actions_dedup",
+            "tenant_id",
+            "deduplication_fingerprint",
+            unique=True,
+            postgresql_where=text("status IN ('proposed', 'awaiting_approval', 'approved', 'executing', 'verifying', 'verified_active')"),
+            sqlite_where=text("status IN ('proposed', 'awaiting_approval', 'approved', 'executing', 'verifying', 'verified_active')"),
+        ),
     )
 
 

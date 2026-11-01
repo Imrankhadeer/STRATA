@@ -78,6 +78,7 @@ class OpsEvent(BaseModel):
         "system",
         "simulation",
         "correlation",
+        "defense",
         "test"
     ]
     event_type: str
@@ -156,7 +157,7 @@ class OpsEventBus:
 
     def publish(
         self,
-        component: Union[Literal["ingest", "fast-track", "deep-track", "rules", "auth", "system", "simulation", "correlation", "test"], OpsEvent],
+        component: Union[Literal["ingest", "fast-track", "deep-track", "rules", "auth", "system", "simulation", "correlation", "defense", "test"], OpsEvent],
         event_type: Optional[str] = None,
         message: Optional[str] = None,
         level: Literal["info", "warn", "error", "success"] = "info",

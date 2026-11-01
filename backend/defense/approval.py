@@ -28,6 +28,8 @@ from backend.schemas.defense import (
     PlannedResponseAction,
     ProtectionMode,
     TargetEntityType,
+    canonicalize_principal_id,
+    is_verified_human_principal,
 )
 from backend.ops.bus import ops_bus
 
@@ -40,6 +42,11 @@ class DefenseApprovalError(Exception):
 
 
 class ActionNotFoundError(DefenseApprovalError):
+    pass
+
+
+class ActionExpiredError(DefenseApprovalError):
+    """Raised when attempting to approve an expired defense action."""
     pass
 
 
@@ -106,23 +113,63 @@ class ApprovalManager:
                     f"Action '{action_id}' cannot be approved: current status is '{action.status}'"
                 )
 
-            # 3. Dual-Custody: Approver must be an authenticated human user
+            # 2a. Enforce expiration check (reject expired actions and transition to EXPIRED atomically)
+            now = datetime.datetime.now(datetime.timezone.utc)
             approver_clean = (approver_identity or "").strip()
-            approver_lower = approver_clean.lower()
-            if not approver_clean or approver_lower.startswith(("service:", "key:", "system:")):
+            if action.expires_at is not None:
+                exp = action.expires_at
+                if exp.tzinfo is None:
+                    exp = exp.replace(tzinfo=datetime.timezone.utc)
+                if now > exp:
+                    old_status = action.status
+                    action.status = ActionStatus.EXPIRED.value
+                    audit_log = DefenseAuditLogModel(
+                        log_id=f"log-{uuid.uuid4().hex[:12]}",
+                        action_id=action.action_id,
+                        tenant_id=action.tenant_id,
+                        from_status=old_status,
+                        to_status=ActionStatus.EXPIRED.value,
+                        transition_trigger="approval_manager.reject_expired",
+                        actor="system:approval_manager",
+                        details={
+                            "reason": f"Action expired at {exp.isoformat()}; approval rejected",
+                            "attempted_approver": approver_clean,
+                        },
+                        timestamp=now,
+                    )
+                    self.db.add(audit_log)
+                    self.db.commit()
+                    self.db.refresh(action)
+                    ops_bus.publish(
+                        component="defense",
+                        event_type="defense.action_expired",
+                        level="warn",
+                        message=f"Defense action '{action.action_id}' marked expired during approval attempt",
+                        tenant_id=action.tenant_id,
+                        metadata={"action_id": action.action_id, "expired_at": exp.isoformat()},
+                    )
+                    raise ActionExpiredError(
+                        f"Action '{action_id}' expired at {exp.isoformat()} and cannot be approved"
+                    )
+
+            # 3. Dual-Custody: Approver must be an authenticated human user
+            is_human, invalid_reason = is_verified_human_principal(approver_clean)
+            if not is_human:
                 raise ServiceAccountApprovalForbiddenError(
-                    "Dual-custody violation: Service accounts, API keys, and system actors cannot act as human approvers"
+                    f"Dual-custody violation: {invalid_reason}"
                 )
 
-            # 4. Dual-Custody: Requester cannot self-approve
+            # 4. Dual-Custody: Requester cannot self-approve (canonicalized)
             requester_clean = (action.requested_by or "").strip()
-            if approver_clean.lower() == requester_clean.lower():
+            canon_approver = canonicalize_principal_id(approver_clean)
+            canon_requester = canonicalize_principal_id(requester_clean)
+            if canon_approver and canon_requester and canon_approver == canon_requester:
                 raise SelfApprovalForbiddenError(
-                    f"Dual-custody violation: Requester '{requester_clean}' cannot approve their own defense action"
+                    f"Dual-custody violation: Requester '{action.requested_by}' cannot approve their own defense action "
+                    f"(canonical: '{canon_requester}')"
                 )
 
             # 5. Apply state transition
-            now = datetime.datetime.now(datetime.timezone.utc)
             old_status = action.status
             action.status = ActionStatus.APPROVED.value
             action.approved_by = approver_clean

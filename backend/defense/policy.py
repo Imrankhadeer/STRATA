@@ -57,6 +57,7 @@ class PolicyEvaluator:
         policy = policy_override or self._load_tenant_policy(tenant_id)
 
         # 1. Mandatory Safeguard: Sensitive irreversible actions ALWAYS require approval
+        # (This invariant is evaluated first to ensure action overrides can NEVER weaken mandatory safeguards)
         if action.action_type in SENSITIVE_ACTIONS:
             return PolicyEvaluationResult(
                 decision=PolicyEvaluationDecision.REQUIRE_APPROVAL,
@@ -66,7 +67,83 @@ class PolicyEvaluator:
                 action_id=action.action_id,
             )
 
-        # 2. Inactive Policy or OBSERVE Mode -> Dry-Run Audit Only
+        # 2. Action-Level & Rule-Level Overrides (Ordered by specificity over tenant default mode)
+        action_override = None
+        if policy.action_overrides and isinstance(policy.action_overrides, dict):
+            action_override = (
+                policy.action_overrides.get(action.action_type.value)
+                or policy.action_overrides.get(action.deduplication_fingerprint)
+            )
+
+        if action_override:
+            override_mode = None
+            if isinstance(action_override, str):
+                override_mode = action_override.strip().lower()
+            elif isinstance(action_override, dict):
+                override_mode = (action_override.get("mode") or action_override.get("decision") or "").strip().lower()
+                if action_override.get("deny"):
+                    override_mode = "deny"
+
+            if override_mode == "deny":
+                return PolicyEvaluationResult(
+                    decision=PolicyEvaluationDecision.DENY_POLICY,
+                    applied_mode=policy.default_mode,
+                    requires_dual_custody=False,
+                    rationale=f"Action '{action.action_type.value}' denied by explicit action override policy",
+                    action_id=action.action_id,
+                )
+            elif override_mode == "observe":
+                return PolicyEvaluationResult(
+                    decision=PolicyEvaluationDecision.DRY_RUN_LOGGED,
+                    applied_mode=ProtectionMode.OBSERVE,
+                    requires_dual_custody=False,
+                    rationale=f"Action '{action.action_type.value}' evaluated as dry-run by explicit action override",
+                    action_id=action.action_id,
+                )
+            elif override_mode == "assisted":
+                return PolicyEvaluationResult(
+                    decision=PolicyEvaluationDecision.REQUIRE_APPROVAL,
+                    applied_mode=ProtectionMode.ASSISTED,
+                    requires_dual_custody=False,
+                    rationale=f"Action '{action.action_type.value}' requires approval by explicit action override",
+                    action_id=action.action_id,
+                )
+            elif override_mode == "enforced":
+                # Evaluate bounded autonomous execution constraints for enforced override
+                if action.action_type not in policy.allowed_autonomous_actions:
+                    return PolicyEvaluationResult(
+                        decision=PolicyEvaluationDecision.REQUIRE_APPROVAL,
+                        applied_mode=ProtectionMode.ENFORCED,
+                        requires_dual_custody=False,
+                        rationale=f"Action '{action.action_type.value}' override requires approval: type not whitelisted for autonomous execution",
+                        action_id=action.action_id,
+                    )
+                if action.ttl_seconds and action.ttl_seconds > policy.max_autonomous_ttl_seconds:
+                    return PolicyEvaluationResult(
+                        decision=PolicyEvaluationDecision.REQUIRE_APPROVAL,
+                        applied_mode=ProtectionMode.ENFORCED,
+                        requires_dual_custody=False,
+                        rationale=f"Action '{action.action_type.value}' override requires approval: TTL ({action.ttl_seconds}s) exceeds max autonomous limit",
+                        action_id=action.action_id,
+                    )
+                hourly_count = self._get_recent_autonomous_action_count(tenant_id)
+                if hourly_count >= policy.max_autonomous_actions_per_hour:
+                    return PolicyEvaluationResult(
+                        decision=PolicyEvaluationDecision.REQUIRE_APPROVAL,
+                        applied_mode=ProtectionMode.ENFORCED,
+                        requires_dual_custody=False,
+                        rationale=f"Action '{action.action_type.value}' override requires approval: hourly quota exhausted",
+                        action_id=action.action_id,
+                    )
+                return PolicyEvaluationResult(
+                    decision=PolicyEvaluationDecision.ALLOW_AUTONOMOUS,
+                    applied_mode=ProtectionMode.ENFORCED,
+                    requires_dual_custody=False,
+                    rationale=f"Action '{action.action_type.value}' authorized for autonomous execution by explicit action override",
+                    action_id=action.action_id,
+                )
+
+        # 3. Inactive Policy or OBSERVE Mode -> Dry-Run Audit Only
         if not policy.is_active or policy.default_mode == ProtectionMode.OBSERVE:
             return PolicyEvaluationResult(
                 decision=PolicyEvaluationDecision.DRY_RUN_LOGGED,
@@ -76,7 +153,7 @@ class PolicyEvaluator:
                 action_id=action.action_id,
             )
 
-        # 3. ASSISTED Mode -> Requires Human Approval
+        # 4. ASSISTED Mode -> Requires Human Approval
         if policy.default_mode == ProtectionMode.ASSISTED:
             return PolicyEvaluationResult(
                 decision=PolicyEvaluationDecision.REQUIRE_APPROVAL,
@@ -86,7 +163,7 @@ class PolicyEvaluator:
                 action_id=action.action_id,
             )
 
-        # 4. ENFORCED Mode -> Autonomous Execution for Authorized Bounded Actions
+        # 5. ENFORCED Mode -> Autonomous Execution for Authorized Bounded Actions
         if policy.default_mode == ProtectionMode.ENFORCED:
             # Check if action type is explicitly authorized for autonomous containment
             if action.action_type not in policy.allowed_autonomous_actions:

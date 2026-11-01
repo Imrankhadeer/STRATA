@@ -89,6 +89,74 @@ def canonicalize_parameters(params: Optional[Dict[str, Any]]) -> str:
     return json.dumps(sorted_obj, separators=(",", ":"), ensure_ascii=True)
 
 
+def canonicalize_principal_id(identity: str) -> str:
+    """
+    Produces a canonical, stable principal ID for identity comparison.
+    Normalizes casing, strips common identity namespace qualifiers
+    ('user:', 'analyst:', 'human:', 'operator:', 'admin:', 'account:', 'mailto:'),
+    and trims whitespace.
+    """
+    if not identity or not isinstance(identity, str):
+        return ""
+    s = identity.strip()
+    lower = s.lower()
+    for prefix in ("user:", "analyst:", "secops:", "security:", "engineer:", "lead:", "security-lead:", "lead-analyst:", "human:", "operator:", "admin:", "account:", "mailto:"):
+        if lower.startswith(prefix):
+            s = s[len(prefix):].strip()
+            lower = s.lower()
+    return lower
+
+
+def is_verified_human_principal(identity: str) -> tuple[bool, Optional[str]]:
+    """
+    Validates whether an identity represents an authenticated human operator.
+    Returns (is_human, reason_if_invalid).
+
+    Rules:
+    - Rejects all automated/non-human prefixes: service:, key:, api_key:, apikey:, system:, bot:, agent:,
+      cron:, worker:, job:, app:, ci:, pipeline:, automated:, daemon:, svc_, svc-
+    - Rejects automated keywords inside handle: 'bot', 'agent', 'service', 'daemon', 'cron'
+    - Positively requires valid human email (user@domain.tld) OR explicit human namespace
+      ('user:', 'analyst:', 'lead:', 'human:', 'operator:', 'admin:') with valid alphanumeric handle.
+    """
+    import re
+    if not identity or not isinstance(identity, str):
+        return False, "Identity must be a non-empty string"
+    s = identity.strip()
+    lower = s.lower()
+
+    # 1. Reject automated actor namespaces
+    forbidden_prefixes = (
+        "service:", "key:", "api_key:", "apikey:", "system:", "bot:", "agent:", "cron:",
+        "worker:", "job:", "app:", "ci:", "pipeline:", "automated:",
+        "daemon:", "svc_", "svc-",
+    )
+    if lower.startswith(forbidden_prefixes):
+        return False, f"Identity carries non-human / automated namespace prefix: '{identity}'"
+
+    canon = canonicalize_principal_id(s)
+    if not canon or len(canon) < 3:
+        return False, "Canonical principal identifier is too short"
+
+    # 2. Reject automated keywords inside the identifier
+    automated_keywords = ("bot", "daemon", "service-account", "cron-job", "ci-runner")
+    if any(kw in canon for kw in automated_keywords):
+        return False, f"Identity contains automated actor keyword: '{canon}'"
+
+    # 3. Positive verification: either valid email format OR explicitly human-qualified prefix
+    has_human_prefix = lower.startswith(("user:", "analyst:", "secops:", "security:", "engineer:", "lead:", "security-lead:", "lead-analyst:", "human:", "operator:", "admin:"))
+    is_valid_email = bool(re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", canon))
+
+    if is_valid_email or has_human_prefix:
+        return True, None
+
+    # Handle alphanumeric human username (e.g. 'alice', 'bob_smith') without automated markers
+    if re.match(r"^[a-zA-Z0-9_.-]{3,64}$", canon):
+        return True, None
+
+    return False, f"Identity '{identity}' could not be verified as a human principal"
+
+
 def compute_action_fingerprint(
     tenant_id: str,
     action_type: str,
@@ -216,9 +284,9 @@ class ActionApprovalRequest(BaseModel):
     @classmethod
     def validate_human_approver(cls, v: str) -> str:
         s = v.strip()
-        lower = s.lower()
-        if lower.startswith(("service:", "key:", "system:")):
-            raise ValueError("Dual-custody violation: Service accounts, system actors, and API keys cannot act as human approvers")
+        is_human, reason = is_verified_human_principal(s)
+        if not is_human:
+            raise ValueError(f"Dual-custody violation: {reason}")
         return s
 
 

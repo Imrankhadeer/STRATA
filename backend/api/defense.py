@@ -33,6 +33,7 @@ from backend.schemas.defense import (
 from backend.defense.approval import (
     ApprovalManager,
     ActionNotFoundError,
+    ActionExpiredError,
     ForbiddenTenantApprovalError,
     InvalidActionStatusError,
     SelfApprovalForbiddenError,
@@ -119,16 +120,19 @@ async def approve_defense_action(
     - Approvers must be authenticated human identities (API keys/service accounts rejected).
     """
     manager = ApprovalManager(db)
+    approver = auth.operator_principal or payload.approver_identity
     try:
         updated = manager.approve_action(
             action_id=action_id,
             tenant_id=auth.tenant_id,
-            approver_identity=payload.approver_identity,
+            approver_identity=approver,
             rationale=payload.rationale,
         )
         return updated
     except ActionNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Action '{action_id}' not found")
+    except ActionExpiredError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ForbiddenTenantApprovalError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except InvalidActionStatusError as e:
@@ -160,6 +164,8 @@ async def reject_defense_action(
         return updated
     except ActionNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Action '{action_id}' not found")
+    except ActionExpiredError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ForbiddenTenantApprovalError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except InvalidActionStatusError as e:

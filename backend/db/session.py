@@ -13,6 +13,8 @@ def get_engine(db_url: str | None = None):
     if url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
         return create_engine(url, echo=False, pool_pre_ping=True, connect_args=connect_args)
+    elif "postgresql" in url or "postgres" in url:
+        connect_args["options"] = "-c timezone=utc"
 
     eng = create_engine(url, echo=False, pool_pre_ping=True, connect_args=connect_args)
     if settings.ALLOW_SQLITE_TEST_FALLBACK and settings.ENVIRONMENT.lower() in ("development", "testing"):

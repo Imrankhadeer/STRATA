@@ -1,6 +1,7 @@
 import hashlib
 import secrets
-from fastapi import Security, HTTPException, status, Depends
+from typing import Optional
+from fastapi import Security, HTTPException, status, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from backend.db.session import get_db
@@ -28,14 +29,24 @@ def generate_api_key(tenant_id: str, app_id: str, prefix: str = "ce_live_") -> t
 
 
 class AuthContext:
-    def __init__(self, tenant_id: str, app_id: str, key_id: str):
+    def __init__(
+        self,
+        tenant_id: str,
+        app_id: str,
+        key_id: str,
+        operator_principal: Optional[str] = None,
+        is_human: bool = False,
+    ):
         self.tenant_id = tenant_id
         self.app_id = app_id
         self.key_id = key_id
+        self.operator_principal = operator_principal
+        self.is_human = is_human
 
 
 def get_current_auth(
     credentials: HTTPAuthorizationCredentials = Security(security_bearer),
+    request: Request = None,
     db: Session = Depends(get_db)
 ) -> AuthContext:
     """
@@ -99,8 +110,21 @@ def get_current_auth(
             detail="Tenant is inactive or does not exist"
         )
 
+    operator_principal = None
+    is_human = False
+    if request is not None:
+        op_hdr = request.headers.get("X-Operator-Principal") or request.headers.get("X-User-Identity")
+        if op_hdr:
+            from backend.schemas.defense import is_verified_human_principal
+            is_h, _ = is_verified_human_principal(op_hdr.strip())
+            if is_h:
+                operator_principal = op_hdr.strip()
+                is_human = True
+
     return AuthContext(
         tenant_id=api_key_record.tenant_id,
         app_id=api_key_record.app_id,
         key_id=api_key_record.id,
+        operator_principal=operator_principal,
+        is_human=is_human,
     )

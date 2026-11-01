@@ -19,18 +19,21 @@ from collections import defaultdict
 from typing import Any, Optional, Set, Dict, Tuple
 from fastapi import HTTPException, status
 from backend.config import settings
+from backend.ops.bus import ops_bus
+from backend.ops.metrics import metrics_registry
 
 logger = logging.getLogger("cyber_engine.defense.filter")
 
 _redis_pool = None
 _redis_available: bool = True
 _last_redis_check: float = 0.0
+_redis_degraded_alert_published: bool = False
 _REDIS_CHECK_COOLDOWN: float = 5.0
 _redis_check_lock = threading.Lock()
 
 
 def get_defense_redis_client() -> Optional[Any]:
-    global _redis_pool, _redis_available, _last_redis_check
+    global _redis_pool, _redis_available, _last_redis_check, _redis_degraded_alert_published
     redis_url = getattr(settings, "REDIS_URL", None)
     if not redis_url:
         return None
@@ -53,23 +56,77 @@ def get_defense_redis_client() -> Optional[Any]:
         # Probe connectivity if it was previously marked unavailable or check interval passed
         if not _redis_available or (now - _last_redis_check) >= _REDIS_CHECK_COOLDOWN:
             client.ping()
+            should_publish_recovery = False
             with _redis_check_lock:
                 _redis_available = True
                 _last_redis_check = now
+                if _redis_degraded_alert_published:
+                    _redis_degraded_alert_published = False
+                    should_publish_recovery = True
+            if should_publish_recovery:
+                try:
+                    ops_bus.publish(
+                        component="defense",
+                        event_type="defense.redis_recovered",
+                        level="info",
+                        message="Containment Redis connectivity restored; active defense containment is operating normally",
+                    )
+                    metrics_registry.record_event(tenant_id="system", service_id="defense", status="redis_recovered")
+                except Exception as ex:
+                    logger.debug("Failed publishing ops alert for redis recovery: %s", ex)
         return client
     except Exception as e:
-        with _redis_check_lock:
-            _redis_available = False
-            _last_redis_check = time.time()
+        mark_redis_failure(e)
         logger.debug("Redis unreachable for defense filter, backing off: %s", e)
         return None
 
 
-def mark_redis_failure():
-    global _redis_available, _last_redis_check
+def mark_redis_failure(error: Optional[Any] = None):
+    global _redis_available, _last_redis_check, _redis_degraded_alert_published
+    now = time.time()
+    should_publish = False
     with _redis_check_lock:
         _redis_available = False
-        _last_redis_check = time.time()
+        _last_redis_check = now
+        if not _redis_degraded_alert_published:
+            _redis_degraded_alert_published = True
+            should_publish = True
+    if should_publish:
+        err_str = str(error) if error else "Connection timeout or refused"
+        try:
+            ops_bus.publish(
+                component="defense",
+                event_type="defense.redis_degraded",
+                level="error",
+                message=f"Containment Redis infrastructure is unreachable ({err_str}); active defense is running in fail-open degraded mode",
+                metadata={"error": err_str, "fail_open": True},
+            )
+            metrics_registry.record_event(tenant_id="system", service_id="defense", status="redis_degraded")
+        except Exception as ex:
+            logger.debug("Failed publishing ops alert for redis degradation: %s", ex)
+
+
+def mark_redis_recovered():
+    global _redis_available, _last_redis_check, _redis_degraded_alert_published
+    now = time.time()
+    should_publish_recovery = False
+    with _redis_check_lock:
+        _redis_available = True
+        _last_redis_check = now
+        if _redis_degraded_alert_published:
+            _redis_degraded_alert_published = False
+            should_publish_recovery = True
+    if should_publish_recovery:
+        try:
+            ops_bus.publish(
+                component="defense",
+                event_type="defense.redis_recovered",
+                level="info",
+                message="Containment Redis connectivity restored; active defense containment is operating normally",
+            )
+            metrics_registry.record_event(tenant_id="system", service_id="defense", status="redis_recovered")
+        except Exception as ex:
+            logger.debug("Failed publishing ops alert for redis recovery: %s", ex)
 
 
 class IngestContainmentFilter:
@@ -92,6 +149,14 @@ class IngestContainmentFilter:
             return self._redis
         return get_defense_redis_client()
 
+    @property
+    def is_degraded(self) -> bool:
+        """Returns True if the Redis containment state store is unavailable/degraded."""
+        global _redis_available
+        if self._redis is not None:
+            return False
+        return not _redis_available
+
     def block_ip(self, tenant_id: str, ip: str) -> None:
         """Helper for test / in-memory blocking."""
         with self._lock:
@@ -110,6 +175,7 @@ class IngestContainmentFilter:
 
     def clear(self, tenant_id: Optional[str] = None) -> None:
         """Clears in-memory containment state."""
+        global _redis_degraded_alert_published
         with self._lock:
             if tenant_id:
                 self._in_memory_blocked_ips.pop(tenant_id, None)
@@ -119,6 +185,8 @@ class IngestContainmentFilter:
             else:
                 self._in_memory_blocked_ips.clear()
                 self._in_memory_rate_limits.clear()
+                with _redis_check_lock:
+                    _redis_degraded_alert_published = False
 
     def check_containment(
         self,
@@ -153,7 +221,7 @@ class IngestContainmentFilter:
                     raise
                 except Exception as e:
                     # Enforce Decision 2: Redis failures must NOT deny legitimate traffic
-                    mark_redis_failure()
+                    mark_redis_failure(e)
                     logger.warning(
                         "Redis infrastructure failure during IP block check (failing open safely): %s", e
                     )
@@ -187,7 +255,7 @@ class IngestContainmentFilter:
                 except HTTPException:
                     raise
                 except Exception as e:
-                    mark_redis_failure()
+                    mark_redis_failure(e)
                     logger.warning(
                         "Redis infrastructure failure during rate limit check (failing open safely): %s", e
                     )

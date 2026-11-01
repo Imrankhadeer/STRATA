@@ -485,7 +485,12 @@ def test_alembic_migration_revision_chain():
     script = ScriptDirectory.from_config(alembic_cfg)
     heads = script.get_heads()
 
-    assert "5f8e12a49b01" in heads
+    # The chain now heads at 6a7b8c9d0e1f which extends 5f8e12a49b01
+    assert "6a7b8c9d0e1f" in heads
+    rev_remed = script.get_revision("6a7b8c9d0e1f")
+    assert rev_remed is not None
+    assert rev_remed.down_revision == "5f8e12a49b01"
+
     rev = script.get_revision("5f8e12a49b01")
     assert rev is not None
     assert rev.down_revision == "38a2b18135c4"

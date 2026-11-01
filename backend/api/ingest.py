@@ -46,6 +46,37 @@ def _check_rate_limit(tenant_id: str, count: int = 1) -> bool:
     _rate_limit_state[tenant_id] = (tokens - count, now)
     return True
 
+def evaluate_event_containment(event: CanonicalEvent, tenant_id: str) -> None:
+    """
+    Evaluates incoming event against Active Defense perimeter containment policy.
+    Shared across single event and batch ingestion endpoints.
+    Raises HTTP 403 Forbidden if source IP is actively blocklisted.
+    Raises HTTP 429 Too Many Requests if entity rate limit quota is exhausted.
+    Fails open safely if Redis or infrastructure is degraded.
+    """
+    from backend.defense.filter import ingest_containment_filter
+    client_ip = None
+    if event.attributes and isinstance(event.attributes, dict):
+        raw_ip = event.attributes.get("client_ip") or event.attributes.get("source_ip") or event.attributes.get("ip")
+        if raw_ip:
+            client_ip = str(raw_ip).strip()
+    if not client_ip and event.source_resource:
+        import ipaddress
+        raw_res = event.source_resource.strip()
+        try:
+            ipaddress.ip_address(raw_res)
+            client_ip = raw_res
+        except ValueError:
+            client_ip = None
+
+    entity_id = event.source_resource or event.app_id
+    ingest_containment_filter.check_containment(
+        tenant_id=tenant_id,
+        client_ip=client_ip,
+        entity_id=entity_id,
+    )
+
+
 # Baseline native detector instances as safety net
 fast_detectors: List[BaseDetector] = [
     BruteForceLoginDetector(failure_threshold=3),
@@ -211,27 +242,7 @@ async def ingest_event(
         )
 
     # Active Defense containment check (IP block -> 403, entity rate limit -> 429)
-    from backend.defense.filter import ingest_containment_filter
-    client_ip = None
-    if event.attributes and isinstance(event.attributes, dict):
-        raw_ip = event.attributes.get("client_ip") or event.attributes.get("source_ip") or event.attributes.get("ip")
-        if raw_ip:
-            client_ip = str(raw_ip).strip()
-    if not client_ip and event.source_resource:
-        import ipaddress
-        raw_res = event.source_resource.strip()
-        try:
-            ipaddress.ip_address(raw_res)
-            client_ip = raw_res
-        except ValueError:
-            client_ip = None
-
-    entity_id = event.source_resource or event.app_id
-    ingest_containment_filter.check_containment(
-        tenant_id=auth.tenant_id,
-        client_ip=client_ip,
-        entity_id=entity_id,
-    )
+    evaluate_event_containment(event, auth.tenant_id)
 
     # Check for existing event (idempotency / duplicate check)
     existing = db.query(EventModel.event_id).filter(EventModel.event_id == event.event_id).first()
@@ -369,6 +380,11 @@ async def ingest_events_batch(
             detail=f"Rate limit exceeded for batch: maximum {settings.INGESTION_RATE_LIMIT_PER_MINUTE} events per minute.",
             headers={"Retry-After": "10"}
         )
+
+    # Active Defense containment evaluation across batch events
+    # An active containment block (403) or exhausted rate limit (429) fails the batch atomically
+    for event in payload.events:
+        evaluate_event_containment(event, auth.tenant_id)
 
     accepted = 0
     duplicates = 0

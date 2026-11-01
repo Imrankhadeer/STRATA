@@ -18,6 +18,7 @@ import threading
 import uuid
 from typing import Any, Dict, List, Optional, Tuple, Union
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from backend.models import (
     DefenseActionModel,
@@ -433,7 +434,6 @@ class ResponsePlanner:
             approval_rationale=cand.rationale,
             created_at=now,
         )
-        self.db.add(new_action)
 
         # Create initial audit log entry
         audit_log = DefenseAuditLogModel(
@@ -453,18 +453,63 @@ class ResponsePlanner:
             },
             timestamp=now,
         )
-        self.db.add(audit_log)
 
-        # Durable commit before returning
-        self.db.commit()
-        self.db.refresh(new_action)
+        try:
+            self.db.add(new_action)
+            self.db.add(audit_log)
+            self.db.commit()
+            self.db.refresh(new_action)
 
-        logger.info(
-            "Created planned defense action: action_id=%s tenant=%s type=%s mode=%s target=%s",
-            action_id, finding.tenant_id, cand.action_type.value, policy_mode.value, cand.target_entity_id
-        )
+            logger.info(
+                "Created planned defense action: action_id=%s tenant=%s type=%s mode=%s target=%s",
+                action_id, finding.tenant_id, cand.action_type.value, policy_mode.value, cand.target_entity_id
+            )
 
-        return self._model_to_planned(new_action)
+            return self._model_to_planned(new_action)
+        except IntegrityError:
+            self.db.rollback()
+            # Concurrent race resolved by DB partial unique index: coalesce into existing active action
+            existing_active = (
+                self.db.query(DefenseActionModel)
+                .filter(
+                    DefenseActionModel.tenant_id == finding.tenant_id,
+                    DefenseActionModel.deduplication_fingerprint == fingerprint,
+                    DefenseActionModel.status.in_([
+                        ActionStatus.PROPOSED.value,
+                        ActionStatus.AWAITING_APPROVAL.value,
+                        ActionStatus.APPROVED.value,
+                        ActionStatus.EXECUTING.value,
+                        ActionStatus.VERIFYING.value,
+                        ActionStatus.VERIFIED_ACTIVE.value,
+                    ]),
+                )
+                .first()
+            )
+            if existing_active:
+                logger.info(
+                    "Coalesced concurrent duplicate defense action: tenant=%s fingerprint=%s existing_action_id=%s",
+                    finding.tenant_id, fingerprint, existing_active.action_id
+                )
+                coalesce_log = DefenseAuditLogModel(
+                    log_id=f"log-{uuid.uuid4().hex[:12]}",
+                    action_id=existing_active.action_id,
+                    tenant_id=finding.tenant_id,
+                    from_status=existing_active.status,
+                    to_status=existing_active.status,
+                    transition_trigger="response_planner.coalesce_concurrent_duplicate",
+                    actor="system:response_planner",
+                    details={
+                        "coalesced_finding_id": finding.finding_id,
+                        "target_entity": cand.target_entity_id,
+                        "action_type": cand.action_type.value,
+                        "race_handled": True,
+                    },
+                    timestamp=now,
+                )
+                self.db.add(coalesce_log)
+                self.db.commit()
+                return self._model_to_planned(existing_active)
+            raise
 
     def _model_to_planned(self, model: DefenseActionModel) -> PlannedResponseAction:
         return PlannedResponseAction(
