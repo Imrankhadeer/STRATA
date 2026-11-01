@@ -47,6 +47,8 @@ class Settings(BaseSettings):
 
     ALLOW_SIMULATION_API: bool = Field(default=False, description="Allow simulation API outside development when explicitly enabled")
     ALLOWED_CORS_ORIGINS: str = Field(default="http://localhost:8000,http://127.0.0.1:8000", description="Comma-separated CORS allowlist")
+    ASYNC_INGESTION_ENABLED: bool = Field(default=False, description="Decouple ingestion from detection via async queue")
+    ASYNC_QUEUE_KEY: str = Field(default="cyber_engine:telemetry_queue", description="Redis queue key for async telemetry")
 
     model_config = SettingsConfigDict(
         env_file=".env",

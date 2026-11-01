@@ -15,6 +15,7 @@ from backend.detection.baseline import BaseDetector, BruteForceLoginDetector, Fi
 from backend.detection.correlation import CrossServiceExfiltrationDetector
 from backend.detection.registry import runtime_rule_registry
 from backend.ops.bus import ops_bus
+from backend.ops.metrics import metrics_registry
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,11 @@ def evaluate_and_persist_findings(
                 service_id=event.service_id,
                 metadata={"severity": finding.severity, "confidence": finding.confidence},
             )
+            metrics_registry.record_finding(
+                tenant_id=auth_tenant_id,
+                detector_id=finding.detector_id,
+                severity=finding.severity,
+            )
         except IntegrityError:
             db.rollback()
         except Exception as e:
@@ -154,6 +160,11 @@ def evaluate_and_persist_findings(
                     service_id=event.service_id,
                     metadata={"severity": finding.severity, "confidence": finding.confidence},
                 )
+                metrics_registry.record_finding(
+                    tenant_id=auth_tenant_id,
+                    detector_id=finding.detector_id,
+                    severity=finding.severity,
+                )
             except IntegrityError:
                 db.rollback()
             except Exception as e:
@@ -174,6 +185,7 @@ async def ingest_event(
     Enforces tenant isolation, application scoping, and token-bucket rate limits.
     """
     # Rate limit check per tenant
+    t_start = time.time()
     if not _check_rate_limit(auth.tenant_id, count=1):
         ops_bus.publish(
             component="ingest",
@@ -201,6 +213,7 @@ async def ingest_event(
     # Check for existing event (idempotency / duplicate check)
     existing = db.query(EventModel.event_id).filter(EventModel.event_id == event.event_id).first()
     if existing:
+        metrics_registry.record_event(tenant_id=auth.tenant_id, service_id=event.service_id, status="duplicate")
         ops_bus.publish(
             component="ingest",
             event_type="ingest.duplicate_filtered",
@@ -251,6 +264,7 @@ async def ingest_event(
     except IntegrityError:
         db.rollback()
         # Duplicate occurred concurrently
+        metrics_registry.record_event(tenant_id=auth.tenant_id, service_id=event.service_id, status="duplicate")
         return IngestResponse(
             accepted=0,
             rejected=0,
@@ -266,8 +280,35 @@ async def ingest_event(
             detail="Internal database persistence failure"
         )
 
+    # Optional Asynchronous Queue Decoupling
+    if getattr(settings, "ASYNC_INGESTION_ENABLED", False):
+        from backend.detection.worker import TelemetryWorker
+        import redis
+        enqueued = False
+        if getattr(settings, "REDIS_URL", None):
+            try:
+                r_client = redis.Redis.from_url(settings.REDIS_URL, socket_timeout=0.2)
+                worker = TelemetryWorker(redis_client=r_client, queue_key=settings.ASYNC_QUEUE_KEY)
+                enqueued = worker.enqueue(event.model_dump(mode="json"), auth.tenant_id)
+            except Exception as e:
+                logger.warning("Could not enqueue event asynchronously, falling back to sync: %s", e)
+        if enqueued:
+            metrics_registry.record_event(tenant_id=auth.tenant_id, service_id=event.service_id, status="accepted")
+            metrics_registry.record_latency(time.time() - t_start)
+            return IngestResponse(
+                accepted=1,
+                rejected=0,
+                duplicates=0,
+                event_ids=[event.event_id],
+                errors=[],
+                correlation_status="queued",
+                correlation_degraded_reason=None,
+            )
+
     # Continuous evaluation across active declarative rules and native safety net
     corr_status, corr_reason = evaluate_and_persist_findings(event, auth.tenant_id, db)
+    metrics_registry.record_event(tenant_id=auth.tenant_id, service_id=event.service_id, status="accepted")
+    metrics_registry.record_latency(time.time() - t_start)
 
     return IngestResponse(
         accepted=1,
@@ -291,6 +332,7 @@ async def ingest_events_batch(
     Atomic or best-effort safe persistence with duplicate detection and rate limiting.
     """
     batch_count = len(payload.events)
+    t_batch_start = time.time()
     if not _check_rate_limit(auth.tenant_id, count=batch_count):
         ops_bus.publish(
             component="ingest",
@@ -363,6 +405,11 @@ async def ingest_events_batch(
         except Exception as e:
             db.rollback()
             errors.append({"event_id": event.event_id, "error": "Database error"})
+
+    metrics_registry.record_event(tenant_id=auth.tenant_id, service_id="batch", status="accepted", count=accepted)
+    if duplicates > 0:
+        metrics_registry.record_event(tenant_id=auth.tenant_id, service_id="batch", status="duplicate", count=duplicates)
+    metrics_registry.record_latency(time.time() - t_batch_start)
 
     return IngestResponse(
         accepted=accepted,

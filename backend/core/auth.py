@@ -71,6 +71,26 @@ def get_current_auth(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Enforce key expiration if configured
+    if api_key_record.expires_at:
+        import datetime
+        now = datetime.datetime.now(datetime.timezone.utc)
+        exp = api_key_record.expires_at
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=datetime.timezone.utc)
+        if exp < now:
+            ops_bus.publish(
+                component="auth",
+                event_type="auth.rejected",
+                level="warn",
+                message="API request rejected: expired API key",
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="API key has expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
     # Verify active tenant
     tenant = db.query(Tenant).filter(Tenant.id == api_key_record.tenant_id, Tenant.is_active == True).first()
     if not tenant:

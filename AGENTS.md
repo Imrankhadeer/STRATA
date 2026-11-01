@@ -42,7 +42,7 @@ The application automatically seeds a baseline development tenant on startup:
 * **API Key:** `ce_live_test_api_key_secret_12345`
 * **HTTP Authorization Header:** `Authorization: Bearer ce_live_test_api_key_secret_12345`
 
-Use these credentials for all API requests to `/v1/events`, `/api/v1/findings`, `/api/v1/investigations`, and `/api/v1/rules`.
+Use these credentials for all API requests to `/v1/events`, `/api/v1/findings`, `/api/v1/investigations`, `/api/v1/rules`, and `/api/v1/keys`.
 
 ---
 
@@ -51,7 +51,7 @@ Use these credentials for all API requests to `/v1/events`, `/api/v1/findings`, 
 All tests are designed to execute deterministically without external services:
 
 ```bash
-# Run the complete test suite (178 tests, zero exclusions)
+# Run the complete test suite (188 tests, zero exclusions)
 python -m pytest tests/ -k "not test_live_meta_model_inference" -q
 
 # Run Distributed Correlation & Redis State Store tests (includes multi-process tests)
@@ -59,6 +59,9 @@ python -m pytest tests/test_checkpoint5_completion.py tests/test_distributed_cor
 
 # Run Declarative Rule Lifecycle & Parity tests
 python -m pytest tests/test_checkpoint4_runtime.py tests/test_checkpoint3_parity.py -v
+
+# Run API Key Lifecycle, Prometheus Metrics & Async Telemetry Worker tests
+python -m pytest tests/test_api_keys.py tests/test_metrics.py tests/test_async_worker.py -v
 ```
 
 ---
@@ -89,6 +92,21 @@ curl -X POST "http://localhost:8000/api/v1/investigations/{finding_id}" \
   -H "Authorization: Bearer ce_live_test_api_key_secret_12345"
 ```
 *Gathers trace evidence, runs the investigation adapter (mock provider configured in `.env`), audits citations against database records, and outputs candidate rules.*
+
+### Step 4: Scrape Prometheus Observability Metrics
+```bash
+curl -X GET http://localhost:8000/metrics
+```
+*Returns standard Prometheus 0.0.4 text format exposing ingestion counters, detection latencies, active rule counts, and database health.*
+
+### Step 5: Provision or Rotate API Keys
+```bash
+curl -X POST http://localhost:8000/api/v1/keys \
+  -H "Authorization: Bearer ce_live_test_api_key_secret_12345" \
+  -H "Content-Type: application/json" \
+  -d '{"app_id": "audit-worker", "name": "Worker Ingest Key"}'
+```
+*Provisions a new cryptographically hashed API key scoped strictly to the caller tenant.*
 
 ---
 

@@ -11,7 +11,7 @@ if SDK_DIR not in sys.path:
 
 import logging
 from fastapi import FastAPI, Depends, status
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -24,6 +24,7 @@ from backend.api.rules import router as rules_router
 from backend.api.findings import router as findings_router
 from backend.api.simulation import router as simulation_router
 from backend.api.ops import router as ops_router
+from backend.api.keys import router as keys_router
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -73,6 +74,7 @@ app.include_router(rules_router)
 app.include_router(findings_router)
 app.include_router(simulation_router)
 app.include_router(ops_router)
+app.include_router(keys_router)
 
 
 @app.on_event("startup")
@@ -165,3 +167,14 @@ async def health_check(db: Session = Depends(get_db)):
             "database": db_status
         }
     )
+
+
+@app.get("/metrics", tags=["observability"])
+def get_root_metrics(db: Session = Depends(get_db)):
+    """
+    Standard Prometheus exposition format metrics scrape target.
+    Exposes ingestion rate, detection latency, finding counters, and rule counts.
+    """
+    from backend.ops.metrics import metrics_registry
+    content = metrics_registry.export_prometheus(db)
+    return Response(content=content, media_type="text/plain; version=0.0.4; charset=utf-8")

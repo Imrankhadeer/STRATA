@@ -419,3 +419,12 @@ async def stream_operations_events(
         },
     )
 
+
+@router.get("/metrics")
+def get_ops_metrics(db: Session = Depends(get_db)):
+    """Standard Prometheus metrics export endpoint for operations."""
+    from backend.ops.metrics import metrics_registry
+    from fastapi.responses import Response
+    content = metrics_registry.export_prometheus(db)
+    return Response(content=content, media_type="text/plain; version=0.0.4; charset=utf-8")
+
