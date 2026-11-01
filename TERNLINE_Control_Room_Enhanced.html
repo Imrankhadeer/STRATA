@@ -1285,7 +1285,7 @@ function integrations() {
     + `<div class="grid g3">
         <div class="panel pad"><b>PostgreSQL / SQLite</b><p class="tiny muted">Telemetry & finding storage</p><span class="pill good">CONNECTED</span></div>
         <div class="panel pad"><b>Redis Distributed State</b><p class="tiny muted">Atomic cross-service correlation</p><span class="pill info">CONVERGED</span></div>
-        <div class="panel pad"><b>Deep Track Investigator</b><p class="tiny muted">Evidence-audited LLM adapter</p><span class="pill purple">MOCK / LLAMA</span></div>
+        <div class="panel pad"><b>Deep Track Investigator</b><p class="tiny muted">Evidence-audited LLM adapter</p><span class="pill purple">${esc((obj(cache.overview?.investigations).provider || 'AI').toUpperCase())} / ${esc(obj(cache.overview?.investigations).model || 'Llama-3.3-70B')}</span></div>
       </div>`;
 }
 
@@ -1480,13 +1480,13 @@ async function bootstrapSession() {
 }
 
 async function loadDevToken() {
-  bearerToken = 'ce_live_test_api_key_secret_12345';
-  currentTenant = 'tenant-alpha';
+  const ok = await bootstrapSession(); if (ok) toast('Loaded sandbox API key.'); else toast('Endpoint unavailable.');
+
   const td = $('#tenantDisplay');
   if (td) td.textContent = currentTenant + ' (Dev Sandbox)';
   const bi = $('#bearerInput');
   if (bi) bi.value = bearerToken;
-  toast('Loaded baseline development sandbox API key.');
+  // synced with session endpoint
   await refresh();
 }
 
