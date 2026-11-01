@@ -25,6 +25,7 @@ from backend.api.findings import router as findings_router
 from backend.api.simulation import router as simulation_router
 from backend.api.ops import router as ops_router
 from backend.api.keys import router as keys_router
+from backend.api.events import router as events_router
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -45,13 +46,16 @@ app = FastAPI(
 # Secure CORS: Disallow wildcard origins when allow_credentials=True
 raw_cors = os.getenv("ALLOWED_CORS_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000")
 allowed_origins = [o.strip() for o in raw_cors.split(",") if o.strip()]
+if settings.ENVIRONMENT.lower() == "development":
+    if "null" not in allowed_origins:
+        allowed_origins.append("null")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Tenant-ID"],
 )
 
 
@@ -62,8 +66,21 @@ async def _security_headers(request, call_next):
     resp.headers.setdefault("X-Frame-Options", "DENY")
     resp.headers.setdefault("Referrer-Policy", "no-referrer")
     resp.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-    # Console ships its own meta CSP; API also sends a conservative default.
-    resp.headers.setdefault("Content-Security-Policy", "default-src 'self'; frame-ancestors 'self'")
+    
+    # HTML console pages require inline script & style execution per console meta CSP
+    content_type = resp.headers.get("content-type", "")
+    if "text/html" in content_type:
+        resp.headers["Content-Security-Policy"] = (
+            "default-src 'self' data: blob:; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "connect-src 'self' http: https: ws: wss:; "
+            "frame-ancestors 'self'"
+        )
+    else:
+        resp.headers.setdefault("Content-Security-Policy", "default-src 'self'; frame-ancestors 'self'")
+
     if settings.ENVIRONMENT.lower() in ("production", "staging"):
         resp.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
     return resp
@@ -75,6 +92,7 @@ app.include_router(findings_router)
 app.include_router(simulation_router)
 app.include_router(ops_router)
 app.include_router(keys_router)
+app.include_router(events_router)
 
 
 @app.on_event("startup")
@@ -135,12 +153,26 @@ async def root():
 @app.get("/console", include_in_schema=False)
 async def console():
     """
-    Serves the interactive Ternline security console.
+    Serves the interactive security console.
     """
     console_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "console.html")
     if os.path.exists(console_path):
         return FileResponse(console_path)
+    cr_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "TERNLINE_Control_Room_Enhanced.html")
+    if os.path.exists(cr_path):
+        return FileResponse(cr_path)
     return JSONResponse({"error": "Console interface not found"}, status_code=404)
+
+
+@app.get("/control-room", include_in_schema=False)
+async def control_room():
+    """
+    Serves the enhanced Ternline Control Room.
+    """
+    cr_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "TERNLINE_Control_Room_Enhanced.html")
+    if os.path.exists(cr_path):
+        return FileResponse(cr_path)
+    return JSONResponse({"error": "Control Room interface not found"}, status_code=404)
 
 
 @app.get("/health", tags=["health"])

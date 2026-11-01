@@ -1,0 +1,1751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090e0c">
+<meta name="description" content="Ternline security intelligence console for distributed systems, designed for live backend integration.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https: http:; base-uri 'self'; form-action 'self'">
+<title>CYBER ENGINE — Security Intelligence for Distributed Systems</title>
+<style>
+:root{--bg:#090e0c;--side:#0d1411;--panel:#111a16;--panel2:#16211b;--panel3:#1b2921;--line:#293a30;--text:#e7f0e9;--muted:#9aaba0;--dim:#6e8074;--lime:#c5f36b;--green:#75d6a3;--red:#ff7777;--amber:#f3c16e;--blue:#8ebcff;--purple:#c1a2ff;--radius:13px;--shadow:0 16px 48px #0007}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:13px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--lime);outline-offset:2px}a{color:var(--lime)}.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}.sidebar{background:var(--side);border-right:1px solid var(--line);padding:18px 13px;position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column;gap:18px;z-index:5}.brand{display:flex;align-items:center;gap:11px;padding:5px 8px}.brandmark{width:34px;height:34px;border:1px solid #638344;background:linear-gradient(145deg,#263a20,#111a15);border-radius:10px;display:grid;place-items:center;color:var(--lime);font-weight:900;font-size:19px}.brand b{letter-spacing:.13em;font-size:13px}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:.08em}.tenantbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px}.tenantbox label,.field label{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px}.tenantbox select{width:100%;background:transparent;border:0;color:var(--text);font-weight:650}.navgroup{margin:5px 8px 6px;color:var(--dim);font-size:10px;letter-spacing:.13em;text-transform:uppercase}.nav{display:flex;width:100%;text-align:left;font:inherit;align-items:center;gap:10px;padding:9px 10px;margin:2px 0;border:1px solid transparent;border-radius:8px;color:#b6c4ba;text-decoration:none;cursor:pointer;background:transparent}.nav:hover{background:var(--panel2);color:var(--text)}.nav.active{background:#1c2a20;border-color:#3e5833;color:var(--lime)}.nav .ico{width:17px;text-align:center;color:var(--muted)}.nav.active .ico{color:var(--lime)}.nav .count{margin-left:auto;font-size:10px;color:var(--muted)}.sidefoot{margin-top:auto;border-top:1px solid var(--line);padding:12px 8px;color:var(--muted);font-size:11px}.main{min-width:0}.topbar{height:62px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 24px;position:sticky;top:0;background:#0a100eeF;backdrop-filter:blur(12px);z-index:4}.crumb{font-weight:700;font-size:13px}.spacer{flex:1}.status{display:flex;align-items:center;gap:7px;color:var(--green);font-size:11px}.dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 12px #75d6a366}.topsearch{width:min(260px,28vw);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--text)}.content{padding:23px 26px 60px;max-width:1600px;margin:auto}.pagehead{display:flex;align-items:flex-start;gap:18px;margin-bottom:20px}.pagehead h1{font-size:23px;line-height:1.2;margin:0 0 6px;letter-spacing:-.035em}.pagehead p{color:var(--muted);margin:0;max-width:780px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}.btn{border:1px solid var(--line);border-radius:8px;padding:8px 11px;background:var(--panel2);color:var(--text);font-weight:650;font-size:11px}.btn:hover{border-color:#607d51;background:#203025}.btn.primary{background:var(--lime);color:#15200e;border-color:var(--lime)}.btn.primary:hover{background:#d7ff89}.btn.danger{border-color:#713b3b;color:#ff9a9a;background:#2a1717}.btn.ghost{background:transparent}.btn.small{padding:5px 8px;font-size:10px}.btn:disabled{opacity:.4;cursor:not-allowed}.grid{display:grid;gap:13px}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);min-width:0}.pad{padding:15px}.panelhead{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line)}.panelhead h3{font-size:12px;margin:0}.panelhead small{margin-left:auto;color:var(--muted)}.metric{padding:14px 15px;min-height:106px}.metric .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.metric strong{display:block;font-size:27px;letter-spacing:-.04em;margin:7px 0 2px}.metric small{color:var(--muted);font-size:10px}.metric .up{color:var(--green)}.metric .warn{color:var(--amber)}.metric .bad{color:var(--red)}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}.muted{color:var(--muted)}.dim{color:var(--dim)}.tiny{font-size:10px}.mono,code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.pill{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:20px;padding:3px 7px;font-size:9px;color:var(--muted);white-space:nowrap}.pill.good{border-color:#315b43;background:#14271c;color:var(--green)}.pill.warn{border-color:#66512c;background:#2a2418;color:var(--amber)}.pill.bad{border-color:#683939;background:#2c1919;color:#ff9696}.pill.info{border-color:#355170;background:#172535;color:var(--blue)}.pill.purple{border-color:#51406e;background:#241c32;color:var(--purple)}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:660px}th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);font-weight:650;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}td{padding:10px 12px;border-bottom:1px solid #223027;color:#d6e1d9;font-size:11px;vertical-align:middle}tr:last-child td{border-bottom:0}tbody tr:hover{background:#18241d}tr.clickable{cursor:pointer}.toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line)}.control{background:#0d1511;border:1px solid var(--line);border-radius:7px;padding:8px 9px;color:var(--text);min-width:0}.control::placeholder{color:#68786e}.control:focus{border-color:#789b52}.toolbar .control{font-size:11px}.field{margin-bottom:12px}.field input,.field select,.field textarea{width:100%;background:#0d1511;border:1px solid var(--line);border-radius:7px;padding:9px;color:var(--text)}.field textarea{min-height:90px;resize:vertical}.field small{display:block;color:var(--dim);font-size:10px;margin-top:4px}.split{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(270px,.8fr);gap:13px}.stack{display:flex;flex-direction:column;gap:12px}.row{display:flex;align-items:center;gap:9px;min-width:0}.between{display:flex;justify-content:space-between;align-items:center;gap:12px}.bar{height:7px;background:#26342b;border-radius:9px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--lime);border-radius:9px}.bar.red>i{background:var(--red)}.bar.amber>i{background:var(--amber)}.bar.blue>i{background:var(--blue)}.list{display:flex;flex-direction:column}.listitem{padding:12px 14px;border-bottom:1px solid var(--line)}.listitem:last-child{border-bottom:0}.listitem h4{margin:0 0 4px;font-size:12px}.listitem p{margin:0;color:var(--muted);font-size:10px}.timeline{padding:4px 0 4px 17px;border-left:1px solid #435344;margin-left:6px}.tlitem{position:relative;padding:0 0 17px 13px}.tlitem:before{content:"";position:absolute;left:-22px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--lime);border:2px solid var(--panel)}.tlitem:last-child{padding-bottom:2px}.codebox{background:#08100c;border:1px solid #26372c;border-radius:9px;padding:12px;color:#c9e7bd;overflow:auto;font-size:10px;line-height:1.6;white-space:pre-wrap}.callout{padding:11px 13px;border:1px solid #3b5138;background:#152219;border-radius:9px;color:#c9d9cb;font-size:11px}.callout.warn{border-color:#66512c;background:#282216}.callout.danger{border-color:#683939;background:#281818}.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);padding:0 12px}.tab{padding:10px 9px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:11px}.tab.active{color:var(--lime);border-color:var(--lime)}.drawerback{position:fixed;inset:0;background:#0009;z-index:20;display:flex;justify-content:flex-end}.drawer{width:min(580px,95vw);height:100%;overflow:auto;background:#101914;border-left:1px solid var(--line);box-shadow:var(--shadow);padding:20px}.drawer h2{margin:0 0 4px;font-size:19px}.drawerclose{float:right}.modalback{position:fixed;inset:0;background:#000b;z-index:30;display:grid;place-items:center;padding:18px}.modal{width:min(700px,96vw);max-height:90vh;overflow:auto;background:#111a15;border:1px solid #405443;border-radius:14px;box-shadow:var(--shadow);padding:19px}.modal h2{margin:0 0 14px;font-size:17px}.toast{position:fixed;bottom:20px;right:20px;background:#1a2b20;border:1px solid #537344;color:#e5f3df;border-radius:9px;padding:11px 14px;z-index:50;box-shadow:var(--shadow);max-width:360px;font-size:11px}.empty{padding:28px;text-align:center;color:var(--muted)}.kpirow{display:flex;gap:15px;flex-wrap:wrap}.kpirow span{font-size:10px;color:var(--muted)}.kpirow b{display:block;color:var(--text);font-size:16px}.graph{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:15px}.node{border:1px solid #435b46;background:#17251b;border-radius:9px;padding:10px;text-align:center;min-width:0}.node b{display:block;font-size:10px;overflow-wrap:anywhere}.node small{color:var(--muted);font-size:9px}.node .nodeicon{font-size:17px;margin-bottom:5px}.grapharrow{text-align:center;color:var(--lime);padding:5px}.hide{display:none!important}.footerhint{padding:10px 14px;color:var(--dim);font-size:10px;border-top:1px solid var(--line)}.checkbox{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:11px;margin:8px 0}.checkbox input{accent-color:var(--lime)}.mobilemenu{display:none}
+@media(max-width:1050px){.app{grid-template-columns:210px minmax(0,1fr)}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.content{padding:20px}.split{grid-template-columns:1fr}}
+.skel{border-radius:10px;background:linear-gradient(90deg,#141d17 25%,#1b2921 50%,#141d17 75%);background-size:200% 100%;animation:shimmer 1.1s linear infinite;min-height:14px}.skelrow{display:grid;gap:10px}.errorpanel{padding:26px;text-align:center;color:var(--muted)}.errorpanel .codebox{text-align:left}@keyframes shimmer{to{background-position:-200% 0}}@media(max-width:1050px){.app{grid-template-columns:minmax(0,1fr)}.sidebar{position:fixed;left:0;top:0;bottom:0;width:266px;transform:translateX(-106%);transition:transform .18s ease}.sidebar.open{transform:none;box-shadow:var(--shadow)}.mobilemenu{display:inline-flex}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}.content{padding:18px 15px 60px}.graph{grid-template-columns:1fr;gap:6px}.grapharrow{transform:rotate(90deg);justify-self:center}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}@media(max-width:720px){.app{display:block}.sidebar{position:fixed;left:-270px;width:250px;transition:left .2s;box-shadow:var(--shadow)}.sidebar.open{left:0}.mobilemenu{display:inline-flex}.topbar{padding:0 12px}.topsearch{width:36vw}.content{padding:16px 12px 45px}.pagehead{display:block}.actions{margin:12px 0 0}.g3,.g2{grid-template-columns:1fr}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.graph{grid-template-columns:1fr}.grapharrow{transform:rotate(90deg)}.status span:last-child{display:none}}
+
+/* ===== Ternline application shell ===== */
+.hidden{display:none!important}
+.landing{min-height:100vh;background:radial-gradient(900px 420px at 80% -80px,#1c2a20 0%,transparent 60%),radial-gradient(700px 380px at 10% 10%,#14271c 0%,transparent 55%),var(--bg)}
+.lnav{max-width:1180px;margin:auto;display:flex;align-items:center;gap:14px;padding:20px 24px}
+.lnav .links{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hero{max-width:1180px;margin:auto;padding:56px 24px 20px;display:grid;grid-template-columns:1.15fr .85fr;gap:26px;align-items:start}
+.hero h1{font-size:clamp(30px,4.4vw,52px);line-height:1.04;margin:12px 0;letter-spacing:-.045em}
+.hero h1 em{font-style:normal;color:var(--lime)}
+.hero p.lead{color:var(--muted);font-size:14px;max-width:620px}
+.ctaRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.trustRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.featGrid{max-width:1180px;margin:auto;padding:22px 24px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.featGrid .panel{padding:15px}
+.featGrid h3{margin:0 0 6px;font-size:13px}
+.featGrid p{margin:0;color:var(--muted);font-size:11px}
+.flowSec,.ctaSec{max-width:1180px;margin:auto;padding:10px 24px 26px}
+.flowSteps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.flowSteps .panel{padding:15px}
+.flowSteps b.num{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:8px;background:var(--lime);color:#15200e;margin-bottom:8px}
+.lfoot{border-top:1px solid var(--line);margin-top:18px;padding:18px 24px;color:var(--muted);font-size:11px}
+.lfoot .in{max-width:1180px;margin:auto;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.authWrap{min-height:100vh;display:grid;place-items:center;padding:28px 16px;background:radial-gradient(800px 400px at 50% -100px,#1c2a20,transparent),var(--bg)}
+.authCard{width:min(460px,94vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.authTabs{display:flex;border-bottom:1px solid var(--line)}
+.authTabs button{flex:1;background:transparent;border:0;color:var(--muted);padding:12px;font-weight:700}
+.authTabs button.active{color:var(--lime);box-shadow:inset 0 -2px 0 var(--lime)}
+.userchip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:4px 10px 4px 4px;font-size:11px}
+.avatar{width:24px;height:24px;border-radius:50%;background:var(--lime);color:#15200e;display:grid;place-items:center;font-weight:800;font-size:11px}
+.toast{position:fixed;right:16px;bottom:16px;background:#101a14;border:1px solid var(--line);padding:10px 13px;border-radius:10px;z-index:60;box-shadow:var(--shadow)}
+.toast.hide{display:none}
+.drawer{position:fixed;top:0;right:0;width:min(560px,94vw);height:100vh;background:var(--side);border-left:1px solid var(--line);z-index:50;overflow:auto;padding:18px}
+.modalBack{position:fixed;inset:0;background:#000a;z-index:50;display:grid;place-items:center;padding:16px}
+.modal{width:min(640px,94vw);background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.mobilemenu{display:none}
+.empty{padding:22px;color:var(--muted);text-align:center}
+.graph{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:8px;align-items:center}
+.node{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.node small{display:block;color:var(--muted)}
+.grapharrow{color:var(--dim)}
+@media(max-width:980px){.hero{grid-template-columns:1fr}.featGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.flowSteps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.featGrid,.flowSteps{grid-template-columns:1fr}.lnav .links .hideM{display:none}}
+
+/* ===== Ternline control-room visual components ===== */
+.ce-note{font-size:10px;color:var(--dim)}
+.ce-chain{display:flex;flex-direction:column;gap:0;margin-top:10px}
+.ce-node{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.ce-node .ce-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.ce-link{color:var(--dim);text-align:center;font-size:11px;line-height:1;margin:2px 0 8px}
+.ce-tl{border-left:2px solid #435344;margin:10px 0 0 6px;padding-left:16px}
+.ce-tl-item{position:relative;padding:0 0 14px 4px}
+.ce-tl-item:before{content:"";position:absolute;left:-22px;top:4px;width:9px;height:9px;border-radius:50%;background:var(--lime);border:2px solid var(--panel)}
+.ce-tl-item.fast:before{background:var(--lime)}
+.ce-tl-item.deep:before{background:var(--purple)}
+.ce-tl-item.human:before{background:var(--amber)}
+.ce-map{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.ce-svc{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px;text-align:center}
+.ce-svc b{display:block;font-size:11px}
+
+.ce-step{flex:1;min-width:110px;color:var(--muted)}
+.ce-step.done{border-color:#315b43;color:var(--green)}
+.ce-step.now{border-color:var(--lime);color:var(--lime)}
+.ce-bar{height:7px;background:#26342b;border-radius:9px;overflow:hidden;margin-top:6px}
+.ce-bar>i{display:block;height:100%;background:var(--lime)}
+.ce-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ce-kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:10px}
+.ce-kv .cell{border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--panel2)}
+.ce-kv .cell b{display:block;font-size:16px}
+.ce-ctx{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.fasttag{border-color:#315b43!important;color:var(--green)!important}
+.deeptag{border-color:#51406e!important;color:var(--purple)!important}
+
+
+/* Ternline capability additions */
+.feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.feature-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}.feature-card h3{margin:0 0 6px;font-size:13px}.feature-card p{color:var(--muted);margin:0 0 12px;font-size:11px}.feature-kicker{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}.entity-node{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:10px;min-width:0}.entity-node b{display:block;font-size:11px}.entity-node small{color:var(--muted);display:block;overflow-wrap:anywhere}.entity-link{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}.entity-link:last-child{border:0}.entity-link .arrow{color:var(--lime)}.statusline{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px}.statusline:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--amber)}.statusline.ready:before{background:var(--green)}.plan-step{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.plan-step:last-child{border:0}.stepnum{width:22px;height:22px;border-radius:7px;background:var(--panel3);display:grid;place-items:center;color:var(--lime);font-weight:800;font-size:10px;flex:none}.range-run{border:1px solid #435b37;background:#172318;border-radius:10px;padding:12px}.tag-preview{font-size:9px;letter-spacing:.08em;border:1px solid #705a32;color:var(--amber);border-radius:5px;padding:3px 6px;text-transform:uppercase}.integration-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}.integration-row:last-child{border:0}
+.timebar{display:flex;gap:8px;flex-wrap:wrap;align-items:end}.timebar .field{flex:1;min-width:145px;margin:0}.timebar .field input,.timebar .field select{width:100%}.time-presets{display:flex;gap:6px;flex-wrap:wrap}.time-presets .btn.active{border-color:var(--lime);color:var(--lime);background:#1b2a1d}.result-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}.intel-card{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:12px}.intel-card h4{margin:0 0 5px;font-size:12px}.intel-card p{margin:0;color:var(--muted);font-size:10px}
+@media(max-width:900px){.feature-grid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.feature-grid{grid-template-columns:1fr}}
+
+</style><body>
+<div class="app" id="app">
+ <aside class="sidebar" id="sidebar">
+  <div class="brand"><div class="brandmark">T</div><div><b>TERNLINE</b><small>SECURITY INTELLIGENCE</small></div></div>
+  <div class="tenantbox"><label>Authenticated Tenant</label><div id="tenantDisplay" style="font-weight:700;color:var(--lime);font-size:12px;margin:2px 0 3px">Unauthenticated</div><div class="tiny muted" id="tenantSub">Bound server-side to API key</div></div>
+  <div><div class="navgroup">Operate</div>
+   <button class="nav active" data-page="overview"><span class="ico">◫</span>Overview</button>
+   <button class="nav" data-page="incidents"><span class="ico">◈</span>Incidents</button>
+   <button class="nav" data-page="findings"><span class="ico">⚑</span>Findings</button>
+   <button class="nav" data-page="events"><span class="ico">≋</span>Event Explorer</button>
+   <button class="nav" data-page="hunting"><span class="ico">⌕</span>Threat Hunting</button>
+   <button class="nav" data-page="historical"><span class="ico">◷</span>Historical Analysis</button>
+   <button class="nav" data-page="threatIntel"><span class="ico">✳</span>Threat Intelligence</button>
+   <button class="nav" data-page="investigations"><span class="ico">⌘</span>Deep Investigations</button>
+   <button class="nav" data-page="entities"><span class="ico">◎</span>Entity Explorer</button>
+   <button class="nav" data-page="correlation"><span class="ico">⌁</span>Correlation Engine</button>
+  </div>
+  <div><div class="navgroup">Engineer</div>
+   <button class="nav" data-page="rules"><span class="ico">⎇</span>Rule Registry</button>
+   <button class="nav" data-page="coverage"><span class="ico">▦</span>Detection Coverage</button>
+   <button class="nav" data-page="assets"><span class="ico">⬡</span>Assets & Identity</button>
+   <button class="nav" data-page="health"><span class="ico">⌁</span>Ingestion & Health</button>
+   <button class="nav" data-page="audit"><span class="ico">◷</span>Audit & Evidence</button>
+  </div>
+  <div><div class="navgroup">Govern & connect</div>
+   <button class="nav" data-page="defense"><span class="ico">⛨</span>Active Defense</button>
+   <button class="nav" data-page="integrations"><span class="ico">⇄</span>Integrations</button>
+   <button class="nav" data-page="governance"><span class="ico">⚖</span>AI Governance</button>
+   <button class="nav" data-page="settings"><span class="ico">⚙</span>Backend & Settings</button>
+  </div>
+  <div class="sidefoot">
+    <div class="row"><span class="dot" id="sideDot" style="background:var(--amber)"></span><b id="sideStatus" style="color:var(--amber)">Not connected</b></div>
+    <div class="tiny muted" style="margin-top:6px">Connected to live backend engine. Zero synthetic data.</div>
+  </div>
+ </aside>
+ <main class="main">
+  <header class="topbar">
+    <button class="btn mobilemenu" id="menuBtn">☰</button>
+    <div class="crumb" id="crumb">Operations / Overview</div>
+    <div class="spacer"></div>
+    <input class="topsearch" id="globalSearch" placeholder="Search loaded records…">
+    <span class="pill" id="connectionPill">BACKEND NOT CONNECTED</span>
+    <button class="btn small" id="streamToggleBtn" data-action="toggle-stream" style="font-size:10px">⌁ Connect SSE</button>
+    <button class="btn small" id="refreshBtn">↻ Refresh</button>
+    <button class="btn small ghost" data-page="settings">Settings</button>
+  </header>
+  <div id="liveStreamBanner" class="callout hide" style="margin:16px 26px 0;border-color:var(--lime);background:#122116">
+    <div class="between">
+      <b>Live Engine Operational Stream (SSE)</b>
+      <span class="pill good" id="streamStatusPill">LIVE CONNECTED</span>
+    </div>
+    <div id="liveStreamFeed" style="margin-top:6px;max-height:85px;overflow:auto;font-family:ui-monospace,monospace;font-size:11px"></div>
+  </div>
+  <section class="content" id="view" aria-live="polite"></section>
+ </main>
+</div>
+<div id="toast" class="toast hide" role="status"></div>
+<div id="drawerBack" class="drawerback hide"><div class="drawer" id="drawerContent"></div></div>
+<div id="modalBack" class="modalback hide"><div class="modal" id="modalContent"></div></div>
+<script>
+(() => {
+'use strict';
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// Centralized Connection Configuration
+const storeKey = 'ternline-connection-config-v2';
+const defaultBaseUrl = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http'))
+  ? window.location.origin
+  : 'http://localhost:8000';
+
+const defaults = {
+  baseUrl: defaultBaseUrl,
+  health: '/health',
+  overview: '/api/v1/ops/overview',
+  events: '/api/v1/events',
+  findings: '/api/v1/findings',
+  investigations: '/api/v1/investigations',
+  rules: '/api/v1/rules',
+  historical: '/api/v1/events/search',
+  streamTicket: '/api/v1/ops/stream-ticket',
+  eventsStream: '/api/v1/ops/events/stream',
+  recentAudit: '/api/v1/ops/events/recent',
+  threatIntel: '/api/v1/threat-intelligence',
+  assets: '',
+  coverage: '',
+  hunting: '',
+  activeDefense: '',
+  integrations: ''
+};
+
+let config = { ...defaults };
+try {
+  const saved = JSON.parse(localStorage.getItem(storeKey) || '{}');
+  config = { ...config, ...saved };
+} catch (_) {}
+
+// Security Rule: Bearer token is stored strictly in JavaScript session memory (never in localStorage/sessionStorage)
+let bearerToken = '';
+let currentTenant = 'Unauthenticated';
+let page = 'overview';
+let toastTimer = null;
+let cache = {};
+let loading = false;
+let lastError = '';
+let eventSource = null;
+let sseConnected = false;
+
+const titles = {
+  overview: 'Operations / Overview',
+  incidents: 'Operations / Incidents',
+  findings: 'Operations / Findings',
+  events: 'Operations / Event Explorer',
+  hunting: 'Operations / Threat Hunting',
+  historical: 'Threat Intelligence / Historical Analysis',
+  threatIntel: 'Threat Intelligence / Intelligence Feed',
+  investigations: 'Operations / Deep Investigations',
+  entities: 'Explore / Entity Explorer',
+  correlation: 'Detection / Correlation Engine',
+  rules: 'Engineering / Rule Registry',
+  coverage: 'Engineering / Detection Coverage',
+  assets: 'Engineering / Assets & Identity',
+  health: 'Operations / Ingestion & Health',
+  audit: 'Trust / Audit & Evidence',
+  defense: 'Response / Active Defense',
+  integrations: 'Platform / Integrations',
+  governance: 'Trust / AI Governance',
+  settings: 'Platform / Backend & Settings'
+};
+
+const readPages = {
+  overview: 'overview',
+  findings: 'findings',
+  events: 'events',
+  investigations: 'investigations',
+  rules: 'rules',
+  health: 'health',
+  audit: 'recentAudit'
+};
+
+function toast(s) {
+  const el = $('#toast');
+  if (!el) return;
+  el.textContent = s;
+  el.classList.remove('hide');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hide'), 3400);
+}
+
+function persist() {
+  try {
+    const safe = { ...config };
+    localStorage.setItem(storeKey, JSON.stringify(safe));
+  } catch (_) {}
+}
+
+function endpoint(k) {
+  return String(config[k] || '').trim();
+}
+
+function apiUrl(path) {
+  const base = String(config.baseUrl || defaultBaseUrl).trim().replace(/\/$/, '');
+  if (!base) throw new Error('Backend base URL is not configured. Open Backend & Settings.');
+  if (!path) throw new Error('This API route is not configured.');
+  if (/^https?:\/\//i.test(path)) return path;
+  return base + '/' + path.replace(/^\//, '');
+}
+
+// Format ISO UTC timestamp to user local timezone safely
+function formatLocalTime(isoUtc) {
+  if (!isoUtc) return '—';
+  try {
+    const d = new Date(isoUtc);
+    if (isNaN(d.getTime())) return String(isoUtc);
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  } catch (_) {
+    return String(isoUtc);
+  }
+}
+
+// Centralized Reusable API Request Client with AbortController Timeout
+async function request(path, { method = 'GET', body = null, timeoutMs = 12000 } = {}) {
+  const url = apiUrl(path);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  const headers = { 'Accept': 'application/json' };
+  if (bearerToken) {
+    headers['Authorization'] = 'Bearer ' + bearerToken;
+  }
+  if (body !== null) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  let res;
+  try {
+    res = await fetch(url, {
+      method,
+      headers,
+      body: body !== null ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+      mode: 'cors',
+      cache: 'no-store'
+    });
+  } catch (err) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs / 1000}s. Check server latency at ${url}`);
+    }
+    throw new Error(`Network/CORS error: ${err.message}. Check backend availability at ${config.baseUrl}`);
+  }
+  clearTimeout(timer);
+
+  const text = await res.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (_) {
+    data = { raw: text };
+  }
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      setConnection(false, 'Unauthenticated');
+      throw new Error('HTTP 401 Unauthorized: Valid Bearer token required. Configure your API key in Backend & Settings.');
+    }
+    const detail = data?.detail || data?.message || res.statusText || `HTTP ${res.status}`;
+    throw new Error(`HTTP ${res.status}: ${detail}`);
+  }
+
+  return data;
+}
+
+function unwrap(data, keys = []) {
+  if (Array.isArray(data)) return data;
+  for (const k of keys) {
+    if (Array.isArray(data?.[k])) return data[k];
+  }
+  if (data && typeof data === 'object') {
+    for (const v of Object.values(data)) {
+      if (Array.isArray(v)) return v;
+    }
+  }
+  return [];
+}
+
+function records(k) { return cache[k] || []; }
+function obj(v) { return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {}; }
+function field(o, ...keys) {
+  for (const k of keys) {
+    if (o?.[k] !== undefined && o[k] !== null && o[k] !== '') return o[k];
+  }
+  return '—';
+}
+
+function pill(v) {
+  const s = String(v ?? 'unknown').toLowerCase();
+  const cls = ['critical', 'high', 'open', 'active', 'failed', 'error', 'blocked', 'confirmed_threat'].includes(s)
+    ? 'bad'
+    : ['medium', 'pending', 'proposed', 'investigating', 'degraded', 'warning', 'inconclusive'].includes(s)
+    ? 'warn'
+    : ['low', 'resolved', 'closed', 'healthy', 'verified', 'success', 'approved', 'likely_benign'].includes(s)
+    ? 'good'
+    : 'info';
+  return `<span class="pill ${cls}">${esc(v ?? 'unknown')}</span>`;
+}
+
+function head(title, desc, actions = '') {
+  return `<div class="pagehead"><div><div class="eyebrow">TERNLINE CONTROL ROOM</div><h1>${esc(title)}</h1><p>${esc(desc)}</p></div><div class="actions">${actions}</div></div>`;
+}
+
+function empty(title, desc, setting = false) {
+  return `<div class="panel empty"><div style="font-size:22px;margin-bottom:8px">⌁</div><b style="color:var(--text)">${esc(title)}</b><p style="max-width:560px;margin:7px auto 12px">${esc(desc)}</p>${setting ? '<button class="btn small primary" data-page="settings">Configure backend route</button>' : ''}</div>`;
+}
+
+function metric(label, value, sub = 'Awaiting backend data') {
+  return `<div class="panel metric"><div class="label">${esc(label)}</div><strong>${value === null || value === undefined ? '—' : esc(value)}</strong><small>${esc(sub)}</small></div>`;
+}
+
+function table(items, cols, emptyTitle = 'No records returned', emptyDesc = 'The backend has not returned records for this view.') {
+  if (!items?.length) return empty(emptyTitle, emptyDesc);
+  return `<div class="panel tablewrap"><table><thead><tr>${cols.map(c => `<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${items.map(r => `<tr>${cols.map(c => `<td>${c.render ? c.render(r) : esc(field(r, ...c.keys))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
+function errPanel() {
+  return lastError ? `<div class="callout danger" style="margin-bottom:13px"><b>Backend request failed</b><div class="tiny" style="margin-top:4px">${esc(lastError)}</div></div>` : '';
+}
+
+// Drawer & Modal Helpers
+function openDrawer(title, innerHtml) {
+  const back = $('#drawerBack');
+  const content = $('#drawerContent');
+  if (!back || !content) return;
+  content.innerHTML = `<button class="btn small drawerclose" data-action="close-drawer">✕ Close</button><h2>${esc(title)}</h2><div style="margin-top:14px">${innerHtml}</div>`;
+  back.classList.remove('hide');
+}
+
+function closeDrawer() {
+  const back = $('#drawerBack');
+  if (back) back.classList.add('hide');
+}
+
+function openModal(title, innerHtml) {
+  const back = $('#modalBack');
+  const content = $('#modalContent');
+  if (!back || !content) return;
+  content.innerHTML = `<div class="panelhead"><h3>${esc(title)}</h3><button class="btn small ghost drawerclose" data-action="close-modal" style="margin-left:auto">✕</button></div><div class="pad">${innerHtml}</div>`;
+  back.classList.remove('hide');
+}
+
+function closeModal() {
+  const back = $('#modalBack');
+  if (back) back.classList.add('hide');
+}
+
+// A. Overview / Dashboard
+function overview() {
+  const d = obj(cache.overview);
+  const sec = obj(d.security_posture);
+  const pipe = obj(d.pipeline_health);
+  const inv = obj(d.investigations);
+  const rls = obj(d.rules);
+  const recent = Array.isArray(d.recent_findings) ? d.recent_findings : [];
+
+  const sev = obj(sec.by_severity);
+  const hasData = !!d.tenant_id;
+
+  return head('Overview', 'Live operational posture from the connected Ternline engine. No local fixtures or synthetic telemetry are displayed.', `<button class="btn small primary" data-action="run-simulation" style="background:#8ebcff;color:#0d1511;border-color:#8ebcff">⚡ Run Attack Simulation</button><button class="btn small" data-action="refresh">↻ Refresh data</button>`)
+    + errPanel()
+    + (!bearerToken ? `<div class="callout warn" style="margin-bottom:14px"><b>Session Unauthenticated:</b> No API Bearer token is currently active. Open <a href="#" data-page="settings" style="text-decoration:underline">Backend & Settings</a> to set your development API key.</div>` : '')
+    + `<div class="grid g4" style="margin-bottom:13px">
+        ${metric('Events Ingested', hasData ? (pipe.total_events_ingested ?? 0) : '—', hasData ? `${pipe.recent_events_1h ?? 0} in past hour` : 'Awaiting telemetry')}
+        ${metric('Open Findings', hasData ? (sec.open_findings ?? 0) : '—', hasData ? `${sec.total_findings ?? 0} total findings` : 'Fast Track')}
+        ${metric('Active Rules', hasData ? (rls.active_count ?? 0) : '—', hasData ? `${rls.total_rules ?? 0} rules registered` : 'Deterministic')}
+        ${metric('Deep Investigations', hasData ? (inv.total_investigations ?? 0) : '—', hasData ? `${inv.provider || 'AI'} (${inv.model || 'grounded'})` : 'Evidence Audited')}
+      </div>`
+    + `<div class="grid g2" style="margin-bottom:13px">
+        <div class="panel pad">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">Pipeline & Engine Health</h3>
+            ${hasData ? `<span class="pill good">${esc(pipe.fast_track_engine_status || 'healthy')}</span>` : '<span class="pill warn">offline</span>'}
+          </div>
+          <div class="ce-kv">
+            <div class="cell"><small class="muted">Database Status</small><b>${esc(pipe.database_status || '—')}</b><small class="dim">${pipe.database_latency_ms !== undefined ? pipe.database_latency_ms + 'ms' : ''}</small></div>
+            <div class="cell"><small class="muted">Detection Latency</small><b>${esc(pipe.fast_track_detection_latency || '<1ms')}</b><small class="dim">sub-millisecond</small></div>
+            <div class="cell"><small class="muted">Active Rules</small><b>${esc(rls.active_count ?? '—')}</b><small class="dim">Fast Track</small></div>
+            <div class="cell"><small class="muted">SSE Subscribers</small><b>${esc(pipe.live_subscribers_connected ?? 0)}</b><small class="dim">Real-time bus</small></div>
+          </div>
+        </div>
+        <div class="panel pad">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">Finding Severity Distribution</h3>
+            <span class="pill info">${sec.total_findings ?? 0} findings</span>
+          </div>
+          <div class="stack" style="gap:8px">
+            <div><div class="between tiny muted"><span>Critical</span><span>${sev.critical ?? 0}</span></div><div class="bar red"><i style="width:${Math.min(100, (sev.critical || 0) * 20)}%"></i></div></div>
+            <div><div class="between tiny muted"><span>High</span><span>${sev.high ?? 0}</span></div><div class="bar amber"><i style="width:${Math.min(100, (sev.high || 0) * 15)}%"></i></div></div>
+            <div><div class="between tiny muted"><span>Medium</span><span>${sev.medium ?? 0}</span></div><div class="bar blue"><i style="width:${Math.min(100, (sev.medium || 0) * 10)}%"></i></div></div>
+            <div><div class="between tiny muted"><span>Low</span><span>${sev.low ?? 0}</span></div><div class="bar"><i style="width:${Math.min(100, (sev.low || 0) * 10)}%"></i></div></div>
+          </div>
+        </div>
+      </div>`
+    + `<div class="panel">
+        <div class="panelhead"><h3>Recent Security Findings</h3><small>${recent.length} returned</small></div>
+        ${recent.length
+          ? table(recent, [
+              { label: 'Finding Title', render: r => `<b>${esc(r.title)}</b><div class="tiny dim">${esc(r.finding_id)}</div>` },
+              { label: 'Severity', render: r => pill(r.severity) },
+              { label: 'Status', render: r => pill(r.status) },
+              { label: 'Detector ID', keys: ['detector_id'] },
+              { label: 'Services', render: r => (r.services && r.services.length) ? r.services.map(s => `<span class="pill info">${esc(s)}</span>`).join(' ') : '—' },
+              { label: 'Detected', render: r => formatLocalTime(r.created_at) },
+              { label: 'Action', render: r => `<button class="btn small" data-action="inspect-finding" data-id="${esc(r.finding_id)}">Inspect</button>` }
+            ])
+          : `<div class="pad">${empty('No recent findings', 'Zero security findings detected for this tenant.')}</div>`
+        }
+      </div>`;
+}
+
+// B. Findings Page
+function findings() {
+  const rows = records('findings');
+  return head('Security Findings', 'Real-time threat detections produced deterministically by the Fast Track engine with full provenance.', `<button class="btn small primary" data-action="run-simulation" style="background:#8ebcff;color:#0d1511;border-color:#8ebcff">⚡ Run Attack Simulation</button><button class="btn small" data-action="refresh">↻ Refresh</button>`)
+    + errPanel()
+    + (rows.length
+      ? table(rows, [
+          { label: 'Title / Finding ID', render: r => `<b>${esc(r.title)}</b><div class="tiny dim">${esc(r.finding_id)}</div>` },
+          { label: 'Severity', render: r => pill(r.severity) },
+          { label: 'Confidence', render: r => pill(r.confidence) },
+          { label: 'Status', render: r => pill(r.status) },
+          { label: 'Detector', render: r => `<code>${esc(r.detector_id)}</code> <span class="tiny dim">v${esc(r.detector_version)}</span>` },
+          { label: 'Detected', render: r => formatLocalTime(r.created_at) },
+          { label: 'Actions', render: r => `<button class="btn small primary" data-action="inspect-finding" data-id="${esc(r.finding_id)}">Inspect</button>` }
+        ])
+      : empty('No findings returned', 'The backend has returned zero findings for this tenant.', !bearerToken)
+    );
+}
+
+// Inspect Finding Drawer
+async function inspectFinding(findingId) {
+  if (!findingId) return;
+  try {
+    const f = await request(`/api/v1/findings/${encodeURIComponent(findingId)}`);
+    const invCount = (f.investigation_ids || []).length;
+    const inner = `
+      <div class="stack">
+        <div class="between">
+          <div><div class="eyebrow">${esc(f.detector_id)} v${esc(f.detector_version)}</div><h3 style="margin:3px 0">${esc(f.title)}</h3></div>
+          <div>${pill(f.severity)} ${pill(f.status)}</div>
+        </div>
+        <p class="muted" style="margin:4px 0 10px">${esc(f.description)}</p>
+        <div class="ce-kv">
+          <div class="cell"><small class="muted">Finding ID</small><b class="mono" style="font-size:11px">${esc(f.finding_id)}</b></div>
+          <div class="cell"><small class="muted">Event ID</small><b class="mono" style="font-size:11px">${esc(f.event_id || '—')}</b></div>
+          <div class="cell"><small class="muted">Detected At</small><b>${formatLocalTime(f.created_at)}</b></div>
+          <div class="cell"><small class="muted">Investigations</small><b>${invCount} completed</b></div>
+        </div>
+        <div class="panel pad" style="margin-top:10px">
+          <b>Detector Evidence Context</b>
+          <pre class="codebox" style="margin-top:7px;max-height:220px">${esc(JSON.stringify(f.evidence, null, 2))}</pre>
+        </div>
+        <div class="divider" style="height:1px;background:var(--line);margin:6px 0"></div>
+        <h4>Analyst Triage & Deep Track</h4>
+        <div class="row" style="flex-wrap:wrap;gap:8px">
+          <button class="btn primary" data-action="run-investigation" data-id="${esc(f.finding_id)}">⌘ Trigger Deep Investigation</button>
+          <button class="btn" data-action="feedback-finding" data-id="${esc(f.finding_id)}" data-status="resolved">✓ Mark Resolved</button>
+          <button class="btn danger" data-action="feedback-finding" data-id="${esc(f.finding_id)}" data-status="false_positive">✕ Mark False Positive</button>
+          <button class="btn ghost" data-action="feedback-finding" data-id="${esc(f.finding_id)}" data-status="open">↺ Reopen</button>
+        </div>
+      </div>
+    `;
+    openDrawer('Finding Details: ' + f.finding_id, inner);
+  } catch (err) {
+    toast('Error loading finding: ' + err.message);
+  }
+}
+
+// Finding Feedback
+async function sendFindingFeedback(findingId, newStatus) {
+  try {
+    await request(`/api/v1/findings/${encodeURIComponent(findingId)}/feedback`, {
+      method: 'POST',
+      body: { status: newStatus, reason: `Status updated to ${newStatus} via Control Room console.` }
+    });
+    toast(`Finding marked as ${newStatus}.`);
+    closeDrawer();
+    refresh();
+  } catch (err) {
+    toast(`Feedback failed: ${err.message}`);
+  }
+}
+
+// Trigger Deep Track Investigation
+async function triggerDeepInvestigation(findingId) {
+  try {
+    toast('Triggering Deep Track investigation… assembling evidence context.');
+    const report = await request(`/api/v1/investigations/${encodeURIComponent(findingId)}`, {
+      method: 'POST'
+    });
+    toast(`Investigation completed: Verdict is ${report.verdict}.`);
+    closeDrawer();
+    viewInvestigationReport(report.investigation_id);
+  } catch (err) {
+    toast(`Investigation failed: ${err.message}`);
+  }
+}
+
+// C. Deep Investigations Page
+function investigations() {
+  const rows = records('investigations');
+  return head('Deep Investigations', 'Evidence-grounded AI investigations with mathematically audited citations, benign counter-theories, and candidate detector proposals.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
+    + errPanel()
+    + (rows.length
+      ? table(rows, [
+          { label: 'Investigation ID', render: r => `<b>${esc(r.investigation_id)}</b>` },
+          { label: 'Target Finding', keys: ['finding_id'] },
+          { label: 'Verdict', render: r => pill(r.verdict) },
+          { label: 'Model Provider', render: r => `${esc(r.investigator_provider)} / <span class="tiny dim">${esc(r.investigator_model)}</span>` },
+          { label: 'Hypotheses', render: r => `${(r.hypotheses || []).length} cited` },
+          { label: 'Proposed Rules', render: r => `${(r.candidate_rules || []).length} proposals` },
+          { label: 'Completed', render: r => formatLocalTime(r.completed_at) },
+          { label: 'Report', render: r => `<button class="btn small" data-action="view-investigation" data-id="${esc(r.investigation_id)}">View Report</button>` }
+        ])
+      : empty('No investigation reports', 'No investigations have been triggered for this tenant. Select any Finding to trigger a Deep Investigation.')
+    );
+}
+
+// View Investigation Report Modal/Drawer
+async function viewInvestigationReport(investigationId) {
+  try {
+    const rep = await request(`/api/v1/investigations/${encodeURIComponent(investigationId)}`);
+    const hypotheses = Array.isArray(rep.hypotheses) ? rep.hypotheses : [];
+    const candidateRules = Array.isArray(rep.candidate_rules) ? rep.candidate_rules : [];
+    const mitigations = Array.isArray(rep.recommended_mitigations) ? rep.recommended_mitigations : [];
+
+    const inner = `
+      <div class="stack">
+        <div class="between">
+          <div><div class="eyebrow">DEEP TRACK INVESTIGATION REPORT</div><h3 style="margin:2px 0">${esc(rep.investigation_id)}</h3></div>
+          <div>${pill(rep.verdict)}</div>
+        </div>
+        <div class="ce-kv">
+          <div class="cell"><small class="muted">Target Finding</small><b class="mono" style="font-size:11px">${esc(rep.finding_id)}</b></div>
+          <div class="cell"><small class="muted">Model</small><b>${esc(rep.investigator_model)}</b></div>
+          <div class="cell"><small class="muted">Completed At</small><b>${formatLocalTime(rep.completed_at)}</b></div>
+        </div>
+        <div class="panel pad">
+          <b>Executive Summary</b>
+          <p class="muted" style="margin:6px 0 0;font-size:11px;line-height:1.6">${esc(rep.summary)}</p>
+        </div>
+
+        <h4>Grounded Hypotheses & Audited Evidence Citations</h4>
+        ${hypotheses.map(h => `
+          <div class="panel pad" style="margin-bottom:8px">
+            <div class="between">
+              <b>${esc(h.title)}</b>
+              <span>${pill(h.likelihood)} ${pill(h.nature)}</span>
+            </div>
+            <p class="muted tiny" style="margin:6px 0">${esc(h.description)}</p>
+            <div class="tiny" style="margin-top:6px"><b>Supporting Evidence Citations (Audited):</b></div>
+            ${(h.supporting_evidence || []).map(cit => `
+              <div class="row tiny" style="margin:3px 0;padding:4px 6px;background:var(--panel2);border-radius:6px">
+                <code>${esc(cit.event_id)}</code>
+                <span class="dim">(${esc(cit.service_id)})</span>
+                <span class="muted">${esc(cit.relevance)}</span>
+              </div>
+            `).join('') || '<div class="dim tiny">No external citations</div>'}
+          </div>
+        `).join('') || '<div class="dim tiny">No hypotheses returned</div>'}
+
+        <h4>Candidate Detector Rules (Proposals Only)</h4>
+        ${candidateRules.map(cr => `
+          <div class="panel pad" style="margin-bottom:8px;border-color:#3e5833">
+            <div class="between">
+              <b>${esc(cr.title)}</b>
+              <span class="pill info">${esc(cr.logic_type)}</span>
+            </div>
+            <p class="muted tiny" style="margin:4px 0">${esc(cr.description)}</p>
+            <div class="tiny dim">Rationale: ${esc(cr.rationale)}</div>
+            <pre class="codebox" style="margin-top:6px">${esc(JSON.stringify(cr.proposed_thresholds, null, 2))}</pre>
+          </div>
+        `).join('') || '<div class="dim tiny">Zero candidate rules proposed</div>'}
+
+        ${mitigations.length ? `
+          <h4>Recommended Mitigations</h4>
+          <ul class="muted tiny" style="margin:0;padding-left:18px">
+            ${mitigations.map(m => `<li>${esc(m)}</li>`).join('')}
+          </ul>
+        ` : ''}
+
+        <div class="callout" style="margin-top:10px">
+          <b>Deterministic Grounding:</b> Citations were deterministically audited against stored database records. Candidate detectors are non-authoritative proposals until promoted via Replay Validation.
+        </div>
+      </div>
+    `;
+    openDrawer('Investigation: ' + rep.investigation_id, inner);
+  } catch (err) {
+    toast('Error fetching report: ' + err.message);
+  }
+}
+
+// D. Event Explorer Page
+function events() {
+  const rows = records('events');
+  return head('Event Explorer', 'Search and inspect raw canonical telemetry stored in the database. Timestamps are formatted in your local timezone.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
+    + errPanel()
+    + `<div class="toolbar" style="margin-bottom:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)">
+        <input class="control" id="evFilterService" placeholder="Filter Service…" style="width:160px">
+        <select class="control" id="evFilterSeverity" style="width:130px">
+          <option value="">All Severities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+          <option value="info">Info</option>
+        </select>
+        <input class="control" id="evFilterTrace" placeholder="Filter Trace ID…" style="width:200px">
+        <button class="btn small primary" data-action="filter-events">Filter Events</button>
+        <button class="btn small ghost" data-action="reset-filter-events">Reset</button>
+      </div>`
+    + (rows.length
+      ? table(rows, [
+          { label: 'Timestamp (Local)', render: r => formatLocalTime(r.timestamp) },
+          { label: 'Event Type', render: r => `<b>${esc(r.event_type)}</b>` },
+          { label: 'Service', keys: ['service_id'] },
+          { label: 'Severity', render: r => pill(r.severity) },
+          { label: 'Source / IP', render: r => `<code>${esc(r.source_resource || r.app_id || '—')}</code>` },
+          { label: 'Trace ID', render: r => `<code class="tiny dim">${esc(r.trace_id || '—')}</code>` },
+          { label: 'Details', render: r => `<button class="btn small ghost" data-action="inspect-event" data-id="${esc(r.event_id)}">JSON</button>` }
+        ])
+      : empty('No events returned', 'No live telemetry events found for this tenant.', !bearerToken)
+    );
+}
+
+// Filter Events
+async function filterEvents() {
+  const svc = $('#evFilterService')?.value.trim();
+  const sev = $('#evFilterSeverity')?.value.trim();
+  const tr = $('#evFilterTrace')?.value.trim();
+  const params = new URLSearchParams({ limit: '50' });
+  if (svc) params.set('service_id', svc);
+  if (sev) params.set('severity', sev);
+  if (tr) params.set('trace_id', tr);
+
+  try {
+    const list = await request(`/api/v1/events?${params.toString()}`);
+    cache.events = list;
+    render();
+  } catch (err) {
+    toast('Event query failed: ' + err.message);
+  }
+}
+
+// Inspect Raw Event Modal
+async function inspectEvent(eventId) {
+  try {
+    const ev = await request(`/api/v1/events/${encodeURIComponent(eventId)}`);
+    const inner = `
+      <div class="stack">
+        <div class="between">
+          <div><b>${esc(ev.event_type)}</b> <span class="tiny dim">(${esc(ev.event_id)})</span></div>
+          <div>${pill(ev.severity)}</div>
+        </div>
+        <div class="ce-kv">
+          <div class="cell"><small class="muted">Service</small><b>${esc(ev.service_id)}</b></div>
+          <div class="cell"><small class="muted">Timestamp (UTC)</small><b class="mono" style="font-size:10px">${esc(ev.timestamp)}</b></div>
+          <div class="cell"><small class="muted">Local Time</small><b>${formatLocalTime(ev.timestamp)}</b></div>
+          <div class="cell"><small class="muted">Trace ID</small><b class="mono" style="font-size:10px">${esc(ev.trace_id || '—')}</b></div>
+        </div>
+        <div>
+          <b>Attributes Payload</b>
+          <pre class="codebox" style="margin-top:6px;max-height:260px">${esc(JSON.stringify(ev.attributes, null, 2))}</pre>
+        </div>
+        <div>
+          <b>Provenance Metadata</b>
+          <pre class="codebox" style="margin-top:6px;max-height:140px">${esc(JSON.stringify(ev.provenance, null, 2))}</pre>
+        </div>
+      </div>
+    `;
+    openModal('Event Inspector: ' + ev.event_id, inner);
+  } catch (err) {
+    toast('Error loading event: ' + err.message);
+  }
+}
+
+// E. Historical Analysis Page
+function historical() {
+  return head('Historical Analysis', 'Bounded, indexed historical telemetry queries. Read-only safety: historical searches never trigger live detection or response actions.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
+    + errPanel()
+    + `<div class="panel pad">
+        <div class="between">
+          <div><h3 style="margin:0 0 4px">Indexed Time-Range Telemetry Query</h3><div class="tiny muted">Times are converted to UTC ISO-8601 for server query execution. Max bounded window: 90 days.</div></div>
+          <span class="pill info">Backend Indexed Search</span>
+        </div>
+        <div class="time-presets" style="margin:14px 0" id="historyPresets">
+          <button class="btn small" data-range="1h">1 hour</button>
+          <button class="btn small active" data-range="24h">24 hours</button>
+          <button class="btn small" data-range="7d">7 days</button>
+          <button class="btn small" data-range="30d">30 days</button>
+          <button class="btn small" data-range="90d">90 days</button>
+        </div>
+        <div class="timebar">
+          <div class="field"><label>From (local time)</label><input class="control" type="datetime-local" id="historyFrom"></div>
+          <div class="field"><label>To (local time)</label><input class="control" type="datetime-local" id="historyTo"></div>
+          <div class="field"><label>Event Category / Keyword</label><input class="control" id="historyCategory" placeholder="e.g. auth, exfiltration"></div>
+          <div class="field"><label>Minimum Severity</label>
+            <select class="control" id="historySeverity">
+              <option value="">Any severity</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="flex-wrap:wrap;margin-top:13px">
+          <label class="checkbox" style="margin:0"><input type="checkbox" id="historyCompare" checked> Compare with previous period</label>
+          <span class="spacer"></span>
+          <button class="btn primary" data-action="run-historical">Run Historical Query</button>
+        </div>
+      </div>
+      <div id="historicalResults" style="margin-top:13px">
+        ${empty('No query executed yet', 'Select a time window and click Run Historical Query.')}
+      </div>`;
+}
+
+function localDateTimeValue(d) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function setHistoryRange(range) {
+  const end = new Date();
+  const start = new Date(end);
+  const ms = { '1h': 3600000, '24h': 86400000, '7d': 7 * 86400000, '30d': 30 * 86400000, '90d': 90 * 86400000 }[range];
+  if (!ms) return;
+  start.setTime(end.getTime() - ms);
+  const a = $('#historyFrom');
+  const b = $('#historyTo');
+  if (a) a.value = localDateTimeValue(start);
+  if (b) b.value = localDateTimeValue(end);
+  $$('[data-range]').forEach(x => x.classList.toggle('active', x.dataset.range === range));
+}
+
+async function runHistorical() {
+  const fromVal = $('#historyFrom')?.value;
+  const toVal = $('#historyTo')?.value;
+  if (!fromVal || !toVal) {
+    toast('Select both start and end times.');
+    return;
+  }
+  const start = new Date(fromVal);
+  const end = new Date(toVal);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
+    toast('The start time must be strictly earlier than the end time.');
+    return;
+  }
+
+  const params = new URLSearchParams({
+    from: start.toISOString(),
+    to: end.toISOString(),
+    limit: '100'
+  });
+  const cat = $('#historyCategory')?.value.trim();
+  const sev = $('#historySeverity')?.value;
+  if (cat) params.set('category', cat);
+  if (sev) params.set('min_severity', sev);
+  if ($('#historyCompare')?.checked) params.set('compare_previous', 'true');
+
+  const target = $('#historicalResults');
+  if (target) target.innerHTML = '<div class="panel empty"><div class="skel" style="height:60px"></div><p style="margin-top:10px">Querying indexed database records…</p></div>';
+
+  try {
+    const data = await request(`/api/v1/events/search?${params.toString()}`);
+    cache.historical = data;
+    const eventsList = Array.isArray(data.events) ? data.events : [];
+    const summary = obj(data.summary);
+    const comparison = data.comparison;
+
+    if (target) {
+      target.innerHTML = `
+        <div class="panel pad">
+          <div class="between">
+            <div>
+              <h3 style="margin:0 0 4px">Historical Search Results</h3>
+              <div class="tiny muted">${esc(start.toLocaleString())} – ${esc(end.toLocaleString())} (UTC Window)</div>
+            </div>
+            <span class="pill good">Query Returned</span>
+          </div>
+          <div class="grid g3" style="margin:14px 0">
+            ${metric('Events Found', summary.total_events ?? eventsList.length, 'In selected window')}
+            ${metric('Critical & High', ((summary.by_severity?.critical || 0) + (summary.by_severity?.high || 0)), 'Priority events')}
+            ${comparison ? metric('Period Delta', (comparison.delta_events >= 0 ? '+' : '') + comparison.delta_events, `${comparison.percentage_change}% vs prior ${Math.round((end - start) / 3600000)}h`) : metric('Comparison', 'Disabled', 'Check box to enable')}
+          </div>
+          ${comparison ? `
+            <div class="callout" style="margin-bottom:12px">
+              <b>Previous Period Comparison:</b> Prior window had <b>${comparison.previous_total_events}</b> events. Net change is <b>${comparison.delta_events >= 0 ? '+' : ''}${comparison.delta_events}</b> (${comparison.percentage_change}%).
+            </div>
+          ` : ''}
+          ${eventsList.length ? table(eventsList, [
+              { label: 'Timestamp (Local)', render: r => formatLocalTime(r.timestamp) },
+              { label: 'Event Type', render: r => `<b>${esc(r.event_type)}</b>` },
+              { label: 'Service', keys: ['service_id'] },
+              { label: 'Severity', render: r => pill(r.severity) },
+              { label: 'Source', render: r => `<code>${esc(r.source_resource || r.app_id || '—')}</code>` },
+              { label: 'Trace ID', render: r => `<code class="tiny dim">${esc(r.trace_id || '—')}</code>` }
+            ])
+            : '<div class="empty">Zero telemetry events match the specified time range and filters.</div>'
+          }
+          <details style="margin-top:14px">
+            <summary class="tiny muted" style="cursor:pointer">View Raw Search JSON Payload</summary>
+            <pre class="codebox" style="margin-top:8px">${esc(JSON.stringify(data, null, 2))}</pre>
+          </details>
+        </div>
+      `;
+    }
+  } catch (err) {
+    if (target) target.innerHTML = `<div class="callout danger">Historical search failed: ${esc(err.message)}</div>`;
+  }
+}
+
+// Threat Hunting Workspace
+function hunting() {
+  return head('Threat Hunting', 'Form threat hypotheses and query telemetry across services, identities, and time windows.', '')
+    + `<div class="grid g2">
+        <div class="panel pad">
+          <div class="panelhead"><h3>Hunt Workspace</h3></div>
+          <p class="muted tiny" style="margin:10px 0">Query telemetry using indexed backend filters. Patterns can be promoted to candidate rules in the Rule Registry.</p>
+          <div class="field">
+            <label>Threat Hypothesis</label>
+            <input class="control" id="huntHypothesis" placeholder="e.g. Distributed credential spraying across auth services" style="width:100%">
+          </div>
+          <div class="field">
+            <label>Service or Event Category</label>
+            <input class="control" id="huntCategory" placeholder="e.g. auth, worker-service, exfiltration" style="width:100%">
+          </div>
+          <div class="field">
+            <label>Minimum Severity Threshold</label>
+            <select class="control" id="huntSeverity" style="width:100%">
+              <option value="">Any severity</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+          <button class="btn primary" data-action="run-hunt">Execute Hunt Query</button>
+        </div>
+        <div class="panel pad">
+          <div class="panelhead"><h3>Hunting Workflow</h3></div>
+          <div class="timeline" style="margin-top:12px">
+            <div class="tlitem"><b>1 · Form Threat Hypothesis</b><div class="tiny muted">Define suspicious activity pattern and affected microservices.</div></div>
+            <div class="tlitem"><b>2 · Query Telemetry</b><div class="tiny muted">Search across service events, trace IDs, and temporal windows.</div></div>
+            <div class="tlitem"><b>3 · Rule Promotion</b><div class="tiny muted">Submit validated detection logic to Rule Registry for replay validation.</div></div>
+          </div>
+        </div>
+      </div>
+      <div id="huntResults" style="margin-top:13px">
+        ${empty('No hunt query executed', 'Enter a threat hypothesis and click Execute Hunt Query.')}
+      </div>`;
+}
+
+async function runHunt() {
+  const hyp = $('#huntHypothesis')?.value.trim();
+  const cat = $('#huntCategory')?.value.trim();
+  const sev = $('#huntSeverity')?.value;
+  if (!hyp && !cat) {
+    toast('Enter a threat hypothesis or category to hunt.');
+    return;
+  }
+  const params = new URLSearchParams({ limit: '50' });
+  if (cat) params.set('category', cat);
+  if (sev) params.set('min_severity', sev);
+
+  const target = $('#huntResults');
+  if (target) target.innerHTML = '<div class="panel empty">Hunting telemetry…</div>';
+
+  try {
+    const res = await request(`/api/v1/events/search?${params.toString()}`);
+    const evs = res.events || [];
+    if (target) {
+      target.innerHTML = `
+        <div class="panel pad">
+          <div class="between">
+            <div><b>Hunt Telemetry Results</b><div class="tiny muted">Hypothesis: ${esc(hyp || 'Broad Search')}</div></div>
+            <span class="pill good">${evs.length} Matches Found</span>
+          </div>
+          ${evs.length ? table(evs, [
+              { label: 'Timestamp (Local)', render: r => formatLocalTime(r.timestamp) },
+              { label: 'Event Type', render: r => `<b>${esc(r.event_type)}</b>` },
+              { label: 'Service', keys: ['service_id'] },
+              { label: 'Severity', render: r => pill(r.severity) },
+              { label: 'Source', render: r => `<code>${esc(r.source_resource || r.app_id || '—')}</code>` },
+              { label: 'Trace ID', render: r => `<code class="tiny dim">${esc(r.trace_id || '—')}</code>` }
+            ]) : '<div class="empty">Zero telemetry records matched this hunt query.</div>'}
+        </div>
+      `;
+    }
+  } catch (err) {
+    if (target) target.innerHTML = `<div class="callout danger">Hunt query failed: ${esc(err.message)}</div>`;
+  }
+}
+
+// F. Threat Intelligence Page (Transparent Roadmap View)
+function threatIntel() {
+  return head('Threat Intelligence', 'External indicator feeds, STIX/TAXII integrations, and reputation enrichment.', '')
+    + `<div class="panel pad" style="border-color:#66512c">
+        <div class="between">
+          <div>
+            <h3 style="margin:0 0 5px">External Threat Intelligence Feed (Backend Capability Required)</h3>
+            <div class="tiny muted">Status: Architecturally Defined / Planned for Threat Intel Milestone</div>
+          </div>
+          <span class="pill warn">ROADMAP CAPABILITY</span>
+        </div>
+        <p class="muted" style="margin:12px 0;line-height:1.6">
+          The Ternline engine currently focuses on deterministic microservice sequence detection (Fast Track) and evidence-audited Deep Investigations. External Threat Intelligence feeds are not yet implemented in the backend database layer.
+        </p>
+        <div class="grid g2" style="margin:14px 0">
+          <div class="panel pad">
+            <b>Missing Backend Requirements</b>
+            <ul class="muted tiny" style="margin:8px 0;padding-left:18px;line-height:1.7">
+              <li>STIX 2.1 / TAXII 2.1 protocol ingestors & feed polling workers.</li>
+              <li>PostgreSQL IOC repository table (<code>threat_indicators</code>) with CIDR/hash indexes.</li>
+              <li>Continuous telemetry matching worker for incoming event indicator cross-referencing.</li>
+              <li>External threat feed API connectors (AlienVault OTX, AbuseIPDB, MISP).</li>
+            </ul>
+          </div>
+          <div class="panel pad">
+            <b>Product Guardrail Verification</b>
+            <p class="muted tiny" style="margin:8px 0;line-height:1.6">
+              In accordance with Ternline security integrity rules, zero synthetic or simulated indicators are displayed here. When the <code>/api/v1/threat-intelligence</code> service is deployed, live IOC records will populate this view automatically.
+            </p>
+          </div>
+        </div>
+      </div>`;
+}
+
+// G. Detection Rules Page
+function rules() {
+  const rows = records('rules');
+  return head('Rule Registry', 'Declarative detection rules lifecycle: Propose → Replay Validation → Human Approval → Live Fast Track Activation.', `<button class="btn small primary" data-action="open-propose-rule">+ Propose Rule</button><button class="btn small" data-action="refresh">↻ Refresh</button>`)
+    + errPanel()
+    + (rows.length
+      ? table(rows, [
+          { label: 'Rule Title / ID', render: r => `<b>${esc(r.title)}</b><div class="tiny dim">${esc(r.rule_id)}</div>` },
+          { label: 'Target Detector', render: r => `<code>${esc(r.target_detector)}</code>` },
+          { label: 'Version', render: r => `v${esc(r.version)}` },
+          { label: 'Lifecycle Status', render: r => pill(r.status) },
+          { label: 'Updated', render: r => formatLocalTime(r.created_at) },
+          { label: 'Actions', render: r => {
+              if (r.status === 'proposed') {
+                return `<button class="btn small primary" data-action="validate-rule" data-id="${esc(r.rule_id)}">Validate (Replay)</button>`;
+              } else if (r.status === 'validated') {
+                return `<button class="btn small" style="border-color:var(--purple);color:var(--purple)" data-action="approve-rule" data-id="${esc(r.rule_id)}">Approve</button>`;
+              } else if (r.status === 'approved') {
+                return `<button class="btn small primary" data-action="activate-rule" data-id="${esc(r.rule_id)}">Activate</button>`;
+              } else if (r.status === 'active') {
+                return `<button class="btn small danger" data-action="disable-rule" data-id="${esc(r.rule_id)}">Disable</button>`;
+              } else {
+                return `<span class="tiny dim">Archived</span>`;
+              }
+            }
+          }
+        ])
+      : empty('No rules registered', 'Zero declarative rules exist for this tenant. Propose a new rule to begin.', !bearerToken)
+    );
+}
+
+// Propose Rule Modal
+function openProposeRuleModal() {
+  const inner = `
+    <form id="proposeRuleForm">
+      <div class="field">
+        <label>Target Detector Engine</label>
+        <select class="control" name="target_detector" required style="width:100%">
+          <option value="detector.auth.brute_force">detector.auth.brute_force (Brute Force / Password Spray)</option>
+          <option value="detector.exfiltration.cross_service">detector.exfiltration.cross_service (Multi-service Attack)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Rule Title</label>
+        <input class="control" name="title" placeholder="e.g. Sensitive Database Exfiltration Threshold" required style="width:100%">
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea class="control" name="description" placeholder="Describe the threat pattern and operational context" required style="width:100%;min-height:70px"></textarea>
+      </div>
+      <div class="field">
+        <label>Rule Parameters (JSON)</label>
+        <textarea class="control mono" name="parameters" style="width:100%;min-height:90px" required>{
+  "threshold": 3,
+  "window_seconds": 300,
+  "severity": "high"
+}</textarea>
+        <small class="dim">Parameters are validated against strict schema. Dynamic code execution is rejected.</small>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn primary" type="submit">Submit Rule Proposal</button>
+        <button class="btn ghost" type="button" data-action="close-modal">Cancel</button>
+      </div>
+    </form>
+  `;
+  openModal('Propose New Declarative Rule', inner);
+}
+
+async function submitProposeRule(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const target_detector = fd.get('target_detector');
+  const title = fd.get('title');
+  const description = fd.get('description');
+  let parameters = {};
+  try {
+    parameters = JSON.parse(fd.get('parameters'));
+  } catch (err) {
+    toast('Invalid JSON parameters: ' + err.message);
+    return;
+  }
+
+  try {
+    const created = await request('/api/v1/rules', {
+      method: 'POST',
+      body: { target_detector, title, description, parameters }
+    });
+    toast(`Rule proposal '${created.rule_id}' submitted in 'proposed' state.`);
+    closeModal();
+    refresh();
+  } catch (err) {
+    toast('Rule proposal failed: ' + err.message);
+  }
+}
+
+// Rule Lifecycle Action Handlers
+async function validateRule(ruleId) {
+  try {
+    toast(`Running deterministic scenario replay for rule ${ruleId}…`);
+    const metrics = await request(`/api/v1/rules/${encodeURIComponent(ruleId)}/validate`, { method: 'POST' });
+    toast(`Validation complete: Passed=${metrics.passed}, Precision=${metrics.precision}, Recall=${metrics.recall}.`);
+    refresh();
+  } catch (err) {
+    toast(`Validation failed: ${err.message}`);
+  }
+}
+
+async function approveRule(ruleId) {
+  try {
+    await request(`/api/v1/rules/${encodeURIComponent(ruleId)}/approve`, {
+      method: 'POST',
+      body: { decision: 'approved', rationale: 'Approved by security engineer via Control Room.' }
+    });
+    toast(`Rule ${ruleId} approved. Ready for activation.`);
+    refresh();
+  } catch (err) {
+    toast(`Approval failed: ${err.message}`);
+  }
+}
+
+async function activateRule(ruleId) {
+  try {
+    await request(`/api/v1/rules/${encodeURIComponent(ruleId)}/activate`, { method: 'POST' });
+    toast(`Rule ${ruleId} ACTIVATED into Fast Track detection memory.`);
+    refresh();
+  } catch (err) {
+    toast(`Activation failed: ${err.message}`);
+  }
+}
+
+async function disableRule(ruleId) {
+  try {
+    await request(`/api/v1/rules/${encodeURIComponent(ruleId)}/disable`, {
+      method: 'POST',
+      body: { rationale: 'Disabled by analyst via Control Room.' }
+    });
+    toast(`Rule ${ruleId} disabled.`);
+    refresh();
+  } catch (err) {
+    toast(`Disable failed: ${err.message}`);
+  }
+}
+
+// H. Operations / Ingestion & Health
+function health() {
+  const h = obj(cache.health);
+  const ov = obj(cache.overview);
+  const pipe = obj(ov.pipeline_health);
+  return head('Ingestion & Health', 'Continuous telemetry pipeline health, latency metrics, and database connectivity.', `<button class="btn small" data-action="health">Run Health Probe</button>`)
+    + errPanel()
+    + `<div class="grid g3" style="margin-bottom:14px">
+        ${metric('API Status', h.status || 'unknown', `Environment: ${h.environment || 'dev'}`)}
+        ${metric('Database Connectivity', pipe.database_status || h.database || 'connected', `Latency: ${pipe.database_latency_ms !== undefined ? pipe.database_latency_ms + 'ms' : 'active'}`)}
+        ${metric('Fast Track Engine', pipe.fast_track_engine_status || 'healthy', pipe.fast_track_detection_latency || '<1ms latency')}
+      </div>
+      <div class="panel pad">
+        <div class="between">
+          <div><b>Prometheus Observability Metrics Exporter</b><div class="tiny muted">Standard Prometheus exposition format (0.0.4)</div></div>
+          <a class="btn small" href="${apiUrl('/metrics')}" target="_blank">Scrape /metrics</a>
+        </div>
+      </div>`;
+}
+
+// Audit & Evidence
+function audit() {
+  const rows = records('audit');
+  return head('Audit & Evidence', 'Live operational event bus audit trail tracking rule changes, validations, and security events.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
+    + errPanel()
+    + (rows.length
+      ? table(rows, [
+          { label: 'Time', render: r => formatLocalTime(r.timestamp) },
+          { label: 'Component', keys: ['component'] },
+          { label: 'Event Type', render: r => `<b>${esc(r.event_type)}</b>` },
+          { label: 'Level', render: r => pill(r.level) },
+          { label: 'Message', keys: ['message'] },
+          { label: 'Tenant', keys: ['tenant_id'] }
+        ])
+      : empty('No audit records returned', 'No engine audit logs buffered yet.')
+    );
+}
+
+// Incidents Page
+function incidents() {
+  return head('Incidents', 'Correlated security cases and incident response tracking.', '')
+    + `<div class="panel pad">
+        <div class="between">
+          <div><h3 style="margin:0 0 4px">Case Management Scheduled for Phase 2</h3><div class="tiny muted">Detections are currently managed via Security Findings.</div></div>
+          <span class="pill info">Phase 2 Roadmap</span>
+        </div>
+        <p class="muted" style="margin:12px 0;line-height:1.6">
+          Ternline engine currently persists detections with full cross-service evidence as <b>Security Findings</b>. Incident correlation and case assignment tickets will be introduced in the Phase 2 Case Management release.
+        </p>
+        <button class="btn primary small" data-page="findings">Go to Security Findings →</button>
+      </div>`;
+}
+
+// Entities & Correlation
+function entities() {
+  const ev = records('events');
+  if (!ev.length) {
+    return head('Entity Explorer', 'Pivot between services, identities, and traces observed in telemetry.', '')
+      + empty('No entity data loaded', 'Load telemetry events in Event Explorer to populate entity graph pivot.', true);
+  }
+  const svcs = new Map();
+  const actors = new Map();
+  for (const e of ev) {
+    if (e.service_id) svcs.set(e.service_id, (svcs.get(e.service_id) || 0) + 1);
+    const actor = e.source_resource || e.app_id;
+    if (actor) actors.set(actor, (actors.get(actor) || 0) + 1);
+  }
+  return head('Entity Explorer', 'Observed services and actors derived directly from live database telemetry.', '')
+    + `<div class="grid g2">
+        <div class="panel pad">
+          <div class="panelhead"><h3>Observed Microservices</h3><small>${svcs.size} services</small></div>
+          <div class="stack" style="margin-top:10px">
+            ${[...svcs.entries()].map(([s, cnt]) => `<div class="between tiny pad" style="background:var(--panel2);border-radius:6px"><b>${esc(s)}</b><span class="pill info">${cnt} events</span></div>`).join('')}
+          </div>
+        </div>
+        <div class="panel pad">
+          <div class="panelhead"><h3>Observed Network / Actor Entities</h3><small>${actors.size} actors</small></div>
+          <div class="stack" style="margin-top:10px">
+            ${[...actors.entries()].map(([a, cnt]) => `<div class="between tiny pad" style="background:var(--panel2);border-radius:6px"><code>${esc(a)}</code><span class="pill">${cnt} events</span></div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+}
+
+function correlation() {
+  const ev = records('events');
+  const traces = new Map();
+  for (const e of ev) {
+    if (e.trace_id) {
+      if (!traces.has(e.trace_id)) traces.set(e.trace_id, []);
+      traces.get(e.trace_id).push(e);
+    }
+  }
+  return head('Correlation Engine', 'Cross-service attack correlation across distributed traces.', '')
+    + (traces.size
+      ? table([...traces.entries()].map(([id, list]) => ({
+          trace_id: id,
+          count: list.length,
+          sequence: [...new Set(list.map(x => x.service_id))].join(' → ')
+        })), [
+          { label: 'Trace ID', render: r => `<code>${esc(r.trace_id)}</code>` },
+          { label: 'Event Count', keys: ['count'] },
+          { label: 'Cross-Service Flow', render: r => `<span class="pill good">${esc(r.sequence)}</span>` }
+        ])
+      : empty('No correlated traces loaded', 'Query events with trace IDs in Event Explorer to inspect cross-service paths.')
+    );
+}
+
+// Active Defense
+function defense() {
+  return head('Active Defense', 'Autonomous and gated containment orchestration.', '')
+    + `<div class="panel pad" style="border-color:#683939">
+        <div class="between">
+          <div><h3 style="margin:0 0 4px">Active Containment Boundary</h3><div class="tiny muted">Execution gated by server-side policy and verification engine</div></div>
+          <span class="pill bad">SAFETY BOUNDARY</span>
+        </div>
+        <p class="muted" style="margin:12px 0;line-height:1.6">
+          Active Defense execution (blocking IPs, isolating containers, revoking OAuth tokens) requires server-side verification, independent rollback hooks, and policy evaluation. This console strictly rejects unverified client-side execution.
+        </p>
+      </div>`;
+}
+
+function coverage() {
+  const rls = records('rules');
+  return head('Detection Coverage', 'Active detection coverage across services and attack vectors.', '')
+    + `<div class="panel pad">
+        <div class="between"><b>Registered Detection Rules Coverage</b><span class="pill good">${rls.length} Rules</span></div>
+        <p class="muted tiny" style="margin:8px 0 14px">Coverage mapped to registered Fast Track declarative rules.</p>
+        ${table(rls, [
+          { label: 'Rule Name', keys: ['title'] },
+          { label: 'Target Detector', keys: ['target_detector'] },
+          { label: 'Status', render: r => pill(r.status) }
+        ])}
+      </div>`;
+}
+
+function assets() {
+  return head('Assets & Identity', 'Inventory of protected microservices and identities.', '')
+    + empty('Asset Inventory Roadmap', 'Microservice inventory discovery will be linked in the Phase 2 integrations release.');
+}
+
+function integrations() {
+  return head('Platform Integrations', 'Connected infrastructure: Database, Redis state store, and LLM investigation adapters.', '')
+    + `<div class="grid g3">
+        <div class="panel pad"><b>PostgreSQL / SQLite</b><p class="tiny muted">Telemetry & finding storage</p><span class="pill good">CONNECTED</span></div>
+        <div class="panel pad"><b>Redis Distributed State</b><p class="tiny muted">Atomic cross-service correlation</p><span class="pill info">CONVERGED</span></div>
+        <div class="panel pad"><b>Deep Track Investigator</b><p class="tiny muted">Evidence-audited LLM adapter</p><span class="pill purple">MOCK / LLAMA</span></div>
+      </div>`;
+}
+
+function governance() {
+  return head('AI Governance', 'Auditability, citation verification, and model provenance.', '')
+    + `<div class="panel pad">
+        <b>Deep Track Evidence Grounding Rules</b>
+        <ul class="muted tiny" style="margin:10px 0;padding-left:18px;line-height:1.8">
+          <li>Every material claim in an investigation report MUST cite valid stored event IDs.</li>
+          <li>All citations are deterministically audited by <code>InvestigationQualityAuditor</code> before persistence.</li>
+          <li>Hypotheses MUST separate observed facts from inferred threat theories.</li>
+          <li>Candidate detector rules generated by LLMs are strictly PROPOSALS until passed through replay validation.</li>
+        </ul>
+      </div>`;
+}
+
+// I. Settings Page
+function settings() {
+  const fields = [
+    ['baseUrl', 'API Base URL', 'http://localhost:8000'],
+    ['health', 'Health Probe Route', '/health'],
+    ['overview', 'Operations Overview Route', '/api/v1/ops/overview'],
+    ['events', 'Events List Route', '/api/v1/events'],
+    ['historical', 'Historical Search Route', '/api/v1/events/search'],
+    ['findings', 'Findings Route', '/api/v1/findings'],
+    ['investigations', 'Investigations Route', '/api/v1/investigations'],
+    ['rules', 'Rules Registry Route', '/api/v1/rules'],
+    ['streamTicket', 'SSE Ticket Route', '/api/v1/ops/stream-ticket'],
+    ['eventsStream', 'SSE Event Stream Route', '/api/v1/ops/events/stream'],
+    ['recentAudit', 'Recent Operations Audit Route', '/api/v1/ops/events/recent']
+  ];
+
+  return head('Backend & Settings', 'Configure backend connection parameters, API routes, and session authentication credentials.', '')
+    + `<form id="settingsForm">
+        <div class="panel pad">
+          <div class="grid g2">
+            <div class="field">
+              <label>API Base URL</label>
+              <input class="control" name="baseUrl" value="${esc(config.baseUrl || defaultBaseUrl)}" placeholder="http://localhost:8000" required style="width:100%">
+              <small class="dim">FastAPI server URL. Configure CORS on backend if running on a different port/host.</small>
+            </div>
+            <div class="field">
+              <label>API Bearer Token (Session Only)</label>
+              <input class="control" id="bearerInput" type="password" autocomplete="off" value="${esc(bearerToken)}" placeholder="e.g. ce_live_test_api_key_secret_12345" style="width:100%">
+              <small class="dim">Kept in JavaScript memory only; never saved to localStorage or exposed on disk.</small>
+            </div>
+          </div>
+          <div class="divider" style="height:1px;background:var(--line);margin:12px 0 16px"></div>
+          <h4>FastAPI Route Configuration</h4>
+          <p class="muted tiny">Mapped to verified backend endpoints. Update only if deploying behind custom reverse proxies.</p>
+          <div class="grid g2">
+            ${fields.map(([k, l, ph]) => `
+              <div class="field">
+                <label>${esc(l)}</label>
+                <input class="control" name="${k}" value="${esc(config[k] || '')}" placeholder="${esc(ph)}" style="width:100%">
+              </div>
+            `).join('')}
+          </div>
+          <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:14px">
+            <button class="btn primary" type="submit">Save Settings & Connect</button>
+            <button class="btn" type="button" data-action="load-dev-token" style="border-color:var(--lime);color:var(--lime)">Use Dev Sandbox Key</button>
+            <button class="btn" type="button" data-action="test-connection">Probe Backend Health</button>
+            <button class="btn ghost" type="button" data-action="clear-token">Clear Session Token</button>
+          </div>
+          <div id="connectionTest" class="tiny muted" style="margin-top:12px">No probe executed in this session.</div>
+        </div>
+      </form>`;
+}
+
+// Live SSE Operations Stream Connection
+async function toggleLiveStream() {
+  if (sseConnected && eventSource) {
+    eventSource.close();
+    eventSource = null;
+    sseConnected = false;
+    updateStreamUI(false);
+    toast('Live SSE stream disconnected.');
+    return;
+  }
+
+  if (!bearerToken) {
+    toast('Authentication required: Configure Bearer token in Settings to connect SSE.');
+    return;
+  }
+
+  try {
+    toast('Requesting single-use stream ticket…');
+    const ticketRes = await request(endpoint('streamTicket') || '/api/v1/ops/stream-ticket', { method: 'POST' });
+    if (!ticketRes?.ticket) throw new Error('No stream ticket returned by server.');
+
+    const sseUrl = apiUrl(endpoint('eventsStream') || '/api/v1/ops/events/stream') + '?ticket=' + encodeURIComponent(ticketRes.ticket);
+    eventSource = new EventSource(sseUrl);
+
+    eventSource.onopen = () => {
+      sseConnected = true;
+      updateStreamUI(true);
+      toast('Live SSE Operations Stream connected.');
+    };
+
+    eventSource.onmessage = e => {
+      try {
+        const ev = JSON.parse(e.data);
+        handleLiveEvent(ev);
+      } catch (_) {}
+    };
+
+    eventSource.onerror = () => {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+      sseConnected = false;
+      updateStreamUI(false);
+    };
+  } catch (err) {
+    toast('SSE stream connection failed: ' + err.message);
+    updateStreamUI(false);
+  }
+}
+
+function updateStreamUI(connected) {
+  const btn = $('#streamToggleBtn');
+  const banner = $('#liveStreamBanner');
+  if (btn) btn.textContent = connected ? '✕ Disconnect SSE' : '⌁ Connect SSE';
+  if (banner) banner.classList.toggle('hide', !connected);
+}
+
+function handleLiveEvent(ev) {
+  const feed = $('#liveStreamFeed');
+  if (!feed) return;
+  const line = document.createElement('div');
+  line.style.padding = '2px 0';
+  line.innerHTML = `<span class="dim">[${formatLocalTime(ev.timestamp)}]</span> <b style="color:var(--lime)">${esc(ev.component)}</b> · <span>${esc(ev.message || ev.event_type)}</span>`;
+  feed.prepend(line);
+  while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+}
+
+// Rendering & Lifecycle
+function render() {
+  const fn = {
+    overview,
+    incidents,
+    findings,
+    events,
+    hunting,
+    historical,
+    threatIntel,
+    investigations,
+    entities,
+    correlation,
+    rules,
+    coverage,
+    assets,
+    health,
+    audit,
+    defense,
+    integrations,
+    governance,
+    settings
+  }[page];
+
+  const crumb = $('#crumb');
+  if (crumb) crumb.textContent = titles[page] || 'Ternline';
+  $$('[data-page]').forEach(b => {
+    if (b && b.classList && b.classList.contains('nav')) b.classList.toggle('active', b.dataset.page === page);
+  });
+
+  const viewEl = $('#view');
+  if (viewEl) {
+    viewEl.innerHTML = fn ? fn() : empty('Page unavailable', 'No renderer is registered for this view.');
+  }
+}
+
+// Auto-bootstrap session in development mode or restore from session
+async function bootstrapSession() {
+  if (bearerToken) return true;
+  try {
+    const demo = await request('/api/v1/demo/session');
+    if (demo && demo.api_key) {
+      bearerToken = demo.api_key;
+      currentTenant = demo.tenant_id || 'tenant-alpha';
+      const td = $('#tenantDisplay');
+      if (td) td.textContent = currentTenant + ' (Dev Sandbox)';
+      const bi = $('#bearerInput');
+      if (bi) bi.value = bearerToken;
+      return true;
+    }
+  } catch (_) {
+    // In staging / production, demo session is prohibited
+  }
+  return false;
+}
+
+async function loadDevToken() {
+  bearerToken = 'ce_live_test_api_key_secret_12345';
+  currentTenant = 'tenant-alpha';
+  const td = $('#tenantDisplay');
+  if (td) td.textContent = currentTenant + ' (Dev Sandbox)';
+  const bi = $('#bearerInput');
+  if (bi) bi.value = bearerToken;
+  toast('Loaded baseline development sandbox API key.');
+  await refresh();
+}
+
+async function runAttackSimulation() {
+  toast('Running attack simulation: emitting 3-stage cross-service attack sequence…');
+  try {
+    const sim = await request('/api/v1/simulation/run', {
+      method: 'POST',
+      body: { scenario: 'exfiltration' }
+    });
+    toast(`Attack simulation complete: ${sim.events_emitted} events emitted, ${sim.findings_generated} security findings generated.`);
+    await refresh();
+  } catch (err) {
+    toast('Simulation failed: ' + err.message);
+  }
+}
+
+async function refresh() {
+  if (loading) return;
+  loading = true;
+  lastError = '';
+
+  const viewEl = $('#view');
+  if (viewEl) {
+    viewEl.innerHTML = `${head(titles[page] || 'Loading', 'Requesting live data from Ternline API…')}<div class="skelrow"><div class="skel" style="height:74px"></div><div class="skel" style="height:180px"></div></div>`;
+  }
+
+  try {
+    if (page === 'health') {
+      cache.health = await request(endpoint('health') || '/health');
+      try { cache.overview = await request(endpoint('overview') || '/api/v1/ops/overview'); } catch (_) {}
+    } else if (page === 'historical') {
+      render();
+      setHistoryRange('24h');
+      loading = false;
+      return;
+    } else {
+      const k = readPages[page];
+      if (k) {
+        const p = endpoint(k);
+        if (p) {
+          delete cache[k];
+          const data = await request(p);
+          if (k === 'overview') {
+            cache.overview = data;
+            if (data.tenant_id) {
+              currentTenant = data.tenant_id;
+              const td = $('#tenantDisplay');
+              if (td) td.textContent = data.tenant_id + ' (Verified)';
+            }
+          } else {
+            cache[k] = unwrap(data, [k, 'items', 'results', 'data', 'events']);
+          }
+        }
+      }
+      if (page === 'overview') {
+        try { cache.health = await request(endpoint('health') || '/health'); } catch (_) {}
+      }
+    }
+    setConnection(true);
+  } catch (err) {
+    lastError = err.message;
+  } finally {
+    loading = false;
+    render();
+    updateConnectionPill();
+  }
+}
+
+async function testConnection() {
+  const el = $('#connectionTest');
+  if (el) el.textContent = 'Probing backend health…';
+  try {
+    const d = await request(endpoint('health') || '/health');
+    cache.health = d;
+    if (el) el.textContent = '✓ Backend health probe succeeded: ' + JSON.stringify(d).slice(0, 300);
+    setConnection(true);
+    toast('Backend connection verified.');
+  } catch (err) {
+    if (el) el.textContent = '✕ Probe failed: ' + err.message;
+    setConnection(false);
+    toast('Backend connection failed: ' + err.message);
+  }
+}
+
+function setConnection(ok, label) {
+  const p = $('#connectionPill');
+  const s = $('#sideStatus');
+  const d = $('#sideDot');
+  if (ok) {
+    if (p) { p.textContent = 'BACKEND CONNECTED'; p.className = 'pill good'; }
+    if (s) { s.textContent = 'API reachable'; if (s.style) s.style.color = 'var(--green)'; }
+    if (d && d.style) d.style.background = 'var(--green)';
+  } else {
+    if (p) { p.textContent = label || 'BACKEND DISCONNECTED'; p.className = 'pill warn'; }
+    if (s) { s.textContent = label || 'Not connected'; if (s.style) s.style.color = 'var(--amber)'; }
+    if (d && d.style) d.style.background = 'var(--amber)';
+  }
+}
+
+function updateConnectionPill() {
+  setConnection(!lastError);
+}
+
+function setPage(p) {
+  if (!titles[p]) return;
+  page = p;
+  $('#sidebar')?.classList.remove('open');
+  if (p === 'historical') {
+    render();
+    setHistoryRange('24h');
+    return;
+  }
+  refresh();
+}
+
+function saveSettings(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  for (const [k, v] of fd.entries()) {
+    config[k] = String(v).trim();
+  }
+  bearerToken = $('#bearerInput')?.value.trim() || '';
+  persist();
+  cache = {};
+  toast('Connection settings saved.');
+  testConnection().then(() => refresh());
+}
+
+// Global Event Delegation
+document.addEventListener('click', e => {
+  const preset = e.target.closest('[data-range]');
+  if (preset) {
+    setHistoryRange(preset.dataset.range);
+    return;
+  }
+
+  const p = e.target.closest('[data-page]');
+  if (p) {
+    setPage(p.dataset.page);
+    return;
+  }
+
+  const a = e.target.closest('[data-action]');
+  if (!a) return;
+  const action = a.dataset.action;
+
+  switch (action) {
+    case 'refresh':
+      refresh();
+      break;
+    case 'health':
+    case 'test-connection':
+      testConnection();
+      break;
+    case 'clear-token':
+      bearerToken = '';
+      if ($('#bearerInput')) $('#bearerInput').value = '';
+      $('#tenantDisplay').textContent = 'Unauthenticated';
+      toast('Session token cleared.');
+      refresh();
+      break;
+    case 'run-historical':
+      runHistorical();
+      break;
+    case 'run-hunt':
+      runHunt();
+      break;
+    case 'filter-events':
+      filterEvents();
+      break;
+    case 'reset-filter-events':
+      if ($('#evFilterService')) $('#evFilterService').value = '';
+      if ($('#evFilterSeverity')) $('#evFilterSeverity').value = '';
+      if ($('#evFilterTrace')) $('#evFilterTrace').value = '';
+      refresh();
+      break;
+    case 'inspect-finding':
+      inspectFinding(a.dataset.id);
+      break;
+    case 'inspect-event':
+      inspectEvent(a.dataset.id);
+      break;
+    case 'view-investigation':
+      viewInvestigationReport(a.dataset.id);
+      break;
+    case 'run-investigation':
+      triggerDeepInvestigation(a.dataset.id);
+      break;
+    case 'feedback-finding':
+      sendFindingFeedback(a.dataset.id, a.dataset.status);
+      break;
+    case 'open-propose-rule':
+      openProposeRuleModal();
+      break;
+    case 'validate-rule':
+      validateRule(a.dataset.id);
+      break;
+    case 'approve-rule':
+      approveRule(a.dataset.id);
+      break;
+    case 'activate-rule':
+      activateRule(a.dataset.id);
+      break;
+    case 'disable-rule':
+      disableRule(a.dataset.id);
+      break;
+    case 'toggle-stream':
+      toggleLiveStream();
+      break;
+    case 'run-simulation':
+      runAttackSimulation();
+      break;
+    case 'load-dev-token':
+      loadDevToken();
+      break;
+    case 'close-drawer':
+      closeDrawer();
+      break;
+    case 'close-modal':
+      closeModal();
+      break;
+  }
+});
+
+document.addEventListener('submit', e => {
+  if (e.target && e.target.id === 'settingsForm') saveSettings(e);
+  if (e.target && e.target.id === 'proposeRuleForm') submitProposeRule(e);
+});
+
+$('#refreshBtn')?.addEventListener('click', refresh);
+$('#menuBtn')?.addEventListener('click', () => $('#sidebar')?.classList.toggle('open'));
+
+$('#globalSearch')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const q = e.target.value.trim().toLowerCase();
+    const matches = Object.entries(cache).flatMap(([k, v]) =>
+      Array.isArray(v) ? v.filter(x => JSON.stringify(x).toLowerCase().includes(q)).map(x => ({ source: k, record: x })) : []
+    );
+    const viewEl = $('#view');
+    if (viewEl) {
+      viewEl.innerHTML = head('Search Results', `Live records matching "${esc(q)}".`)
+        + (matches.length
+          ? `<div class="panel pad"><pre class="codebox">${esc(JSON.stringify(matches, null, 2))}</pre></div>`
+          : empty('No matches found', 'Zero currently loaded live records match this search term.')
+        );
+    }
+  }
+});
+
+// Initial Mount
+render();
+if (config.baseUrl) {
+  testConnection().then(async () => {
+    await bootstrapSession();
+    refresh();
+  });
+}
+})();
+</script>
+</body>
+</html>

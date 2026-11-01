@@ -202,6 +202,43 @@ async def investigate_finding(
             _in_flight_investigations.discard(flight_key)
 
 
+@router.get("", response_model=List[InvestigationFinding])
+async def list_investigations(
+    limit: int = Query(50, ge=1, le=200, description="Max reports to return"),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_current_auth),
+):
+    """
+    Lists investigation reports for the authenticated tenant.
+    Enforces strict tenant isolation and descending chronological ordering.
+    """
+    reports = (
+        db.query(InvestigationReport)
+        .filter(InvestigationReport.tenant_id == auth.tenant_id)
+        .order_by(InvestigationReport.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    return [
+        InvestigationFinding(
+            investigation_id=r.investigation_id,
+            finding_id=r.finding_id,
+            tenant_id=r.tenant_id,
+            verdict=r.verdict,
+            summary=r.summary,
+            hypotheses=[Hypothesis(**h) for h in (r.hypotheses or [])],
+            candidate_rules=[CandidateDetectorRule(**cr) for cr in (r.candidate_rules or [])],
+            recommended_mitigations=r.recommended_mitigations or [],
+            investigator_provider=r.investigator_provider,
+            investigator_model=r.investigator_model,
+            completed_at=r.created_at,
+        )
+        for r in reports
+    ]
+
+
 @router.get("/{investigation_id}", response_model=InvestigationFinding)
 async def get_investigation_report(
     investigation_id: str,

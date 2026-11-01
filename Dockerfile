@@ -19,7 +19,7 @@ COPY sdk ./sdk
 COPY scenarios ./scenarios
 COPY alembic.ini .
 COPY migrations ./migrations
-COPY index.html console.html ./
+COPY index.html console.html TERNLINE_Control_Room_Enhanced.html ./
 
 RUN useradd -m -u 10001 appuser && chown -R appuser /app
 USER appuser
