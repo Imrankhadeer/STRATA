@@ -42,6 +42,7 @@ class ApiKey(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
     expires_at = Column(DateTime, nullable=True)
+    scopes = Column(JSON, nullable=True, default=None)
 
     tenant = relationship("Tenant", back_populates="api_keys")
 
@@ -230,7 +231,6 @@ class DefenseActionModel(Base):
             "deduplication_fingerprint",
             unique=True,
             postgresql_where=text("status IN ('proposed', 'awaiting_approval', 'approved', 'executing', 'verifying', 'verified_active')"),
-            sqlite_where=text("status IN ('proposed', 'awaiting_approval', 'approved', 'executing', 'verifying', 'verified_active')"),
         ),
     )
 

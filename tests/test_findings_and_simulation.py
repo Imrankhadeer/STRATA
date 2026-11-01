@@ -49,8 +49,11 @@ def seed_findings(db_session):
         created_at=now - datetime.timedelta(minutes=5),
     )
     # Finding 3 for Beta tenant (to test tenant isolation)
-    beta_tenant = Tenant(id="tenant-beta", name="Beta Corp", is_active=True)
-    db_session.add(beta_tenant)
+    beta_tenant = db_session.query(Tenant).filter(Tenant.id == "tenant-beta").first()
+    if not beta_tenant:
+        beta_tenant = Tenant(id="tenant-beta", name="Beta Corp", is_active=True)
+        db_session.add(beta_tenant)
+        db_session.commit()
     f3 = SecurityFinding(
         finding_id="find-beta-001",
         tenant_id="tenant-beta",

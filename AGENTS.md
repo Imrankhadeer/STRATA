@@ -8,7 +8,7 @@ This document provides explicit instructions, configuration references, and exec
 
 * **Language:** Python 3.12+
 * **Framework:** FastAPI / Starlette / Uvicorn
-* **Database Layer:** SQLAlchemy 2.0 / Alembic (PostgreSQL 16 in production; automatic local SQLite fallback in development/test)
+* **Database Layer:** SQLAlchemy 2.0 / Alembic (PostgreSQL 16 exclusively; SQLite is strictly prohibited)
 * **Distributed State:** Redis 7+ with Lua scripting (or `InMemoryCorrelationStateStore` for single-worker/local test)
 * **Validation:** Pydantic v2
 * **Testing:** Pytest / AnyIO / Starlette TestClient / FakeRedis
@@ -28,7 +28,7 @@ pip install -r requirements.txt
 ```bash
 uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
-* **Auto-fallback:** If PostgreSQL or Redis is not running in your environment, the application automatically boots in single-worker mode using local SQLite (`cyber_engine_dev.db`) and `InMemoryCorrelationStateStore`. No external services are required.
+* **PostgreSQL Mandatory:** Ternline requires a running PostgreSQL instance (PostgreSQL 16). SQLite is not supported in any environment. Distributed correlation state optionally connects to Redis 7+ or uses in-memory single-worker state in development.
 * **API Documentation:** `http://localhost:8000/docs`
 
 ---

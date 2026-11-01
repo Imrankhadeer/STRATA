@@ -92,12 +92,7 @@ class MetricsRegistry:
             t_start = time.time()
             db_healthy = 1
             try:
-                dialect = getattr(db.bind, "dialect", None)
-                dname = dialect.name if dialect else ""
-                if "sqlite" in dname:
-                    db.execute(text("SELECT 1")).scalar()
-                else:
-                    db.execute(text("SELECT 1")).scalar()
+                db.execute(text("SELECT 1")).scalar()
                 db_latency = time.time() - t_start
             except Exception:
                 db_healthy = 0

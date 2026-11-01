@@ -43,7 +43,7 @@ from backend.models import (
     Tenant,
     TenantDefensePolicyModel,
 )
-from backend.core.auth import hash_api_key
+from backend.core.auth import hash_api_key, create_operator_token
 from backend.schemas.defense import (
     ActionScope,
     ActionStatus,
@@ -92,6 +92,7 @@ def auth_client():
             key_hash=h,
             key_prefix="ce_live_",
             is_active=True,
+            scopes=["admin"],
         ))
         s.commit()
 
@@ -494,24 +495,31 @@ def test_api_approve_action_dual_custody(auth_client: TestClient):
         action = create_pending_action(db, auth_client.test_tenant_id, requested_by="analyst:alice@corp.internal")
         action_id = action.action_id
 
+    token_alice = create_operator_token("analyst:alice@corp.internal", tenant_id=auth_client.test_tenant_id)
+    token_bob = create_operator_token("user:bob@corp.internal", tenant_id=auth_client.test_tenant_id)
+    token_bot = create_operator_token("service:bot", tenant_id=auth_client.test_tenant_id, is_human=False)
+
     # 1. Self-approval attempt via REST API -> 403 Forbidden
     self_res = auth_client.post(
         f"/api/v1/defense/actions/{action_id}/approve",
-        json={"approver_identity": "analyst:alice@corp.internal", "rationale": "I self-approve"}
+        json={"approver_identity": "analyst:alice@corp.internal", "rationale": "I self-approve"},
+        headers={"X-Operator-Token": f"Bearer {token_alice}"},
     )
     assert self_res.status_code == 403
 
     # 2. Service account approval attempt via REST API -> 422 / 403 Forbidden
     service_res = auth_client.post(
         f"/api/v1/defense/actions/{action_id}/approve",
-        json={"approver_identity": "service:bot", "rationale": "Bot approval"}
+        json={"approver_identity": "service:bot", "rationale": "Bot approval"},
+        headers={"X-Operator-Token": f"Bearer {token_bot}"},
     )
     assert service_res.status_code in (403, 422)
 
     # 3. Independent human approval -> 200 OK
     valid_res = auth_client.post(
         f"/api/v1/defense/actions/{action_id}/approve",
-        json={"approver_identity": "user:bob@corp.internal", "rationale": "Peer human approval"}
+        json={"approver_identity": "user:bob@corp.internal", "rationale": "Peer human approval"},
+        headers={"X-Operator-Token": f"Bearer {token_bob}"},
     )
     assert valid_res.status_code == 200
     assert valid_res.json()["status"] == "approved"
@@ -523,9 +531,11 @@ def test_api_reject_action(auth_client: TestClient):
         action = create_pending_action(db, auth_client.test_tenant_id, requested_by="analyst:alice@corp.internal")
         action_id = action.action_id
 
+    token_bob = create_operator_token("user:bob@corp.internal", tenant_id=auth_client.test_tenant_id)
     res = auth_client.post(
         f"/api/v1/defense/actions/{action_id}/reject",
-        json={"rejector_identity": "user:bob@corp.internal", "rationale": "Rejected by security analyst"}
+        json={"rejector_identity": "user:bob@corp.internal", "rationale": "Rejected by security analyst"},
+        headers={"X-Operator-Token": f"Bearer {token_bob}"},
     )
     assert res.status_code == 200
     assert res.json()["status"] == "rejected"

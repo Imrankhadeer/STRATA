@@ -258,9 +258,12 @@ def test_investigation_api_endpoints_and_persistence(populated_scenario, client,
 def test_tenant_boundary_isolation_on_investigations(populated_scenario, client, db_session):
     finding = populated_scenario
 
-    # Create a second tenant with its own API key
-    tenant_beta = Tenant(id="tenant-beta", name="Beta Corp", is_active=True)
-    db_session.add(tenant_beta)
+    # Create a second tenant with its own API key if not already present
+    tenant_beta = db_session.query(Tenant).filter(Tenant.id == "tenant-beta").first()
+    if not tenant_beta:
+        tenant_beta = Tenant(id="tenant-beta", name="Beta Corp", is_active=True)
+        db_session.add(tenant_beta)
+        db_session.flush()
     raw_beta_key = "ce_live_beta_secret_key_9999"
     api_key_beta = ApiKey(
         id="key-beta-001",

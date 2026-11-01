@@ -99,9 +99,21 @@ app.include_router(defense_router)
 
 @app.on_event("startup")
 def startup_db_init():
+    if getattr(app.state, "_db_initialized", False):
+        return
+    app.state._db_initialized = True
+
     from backend.config import validate_production_settings as _validate_prod
     _validate_prod()
     """Ensure tables exist, and only seed default dev tenant/key in development mode."""
+    # Fail fast if PostgreSQL is unreachable
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as e:
+        logger.critical("Failed to connect to PostgreSQL database: %s", e)
+        raise RuntimeError(f"PostgreSQL connection failed. Ternline requires a reachable PostgreSQL database: {e}") from e
+
     try:
         from backend.models import Tenant, ApiKey
         from backend.core.auth import hash_api_key

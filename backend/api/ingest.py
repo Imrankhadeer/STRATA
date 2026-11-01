@@ -10,7 +10,7 @@ from backend.config import settings
 from backend.db.session import get_db
 from backend.models import EventModel, SecurityFinding
 from backend.schemas.events import CanonicalEvent, IngestBatchRequest, IngestResponse
-from backend.core.auth import get_current_auth, AuthContext
+from backend.core.auth import get_current_auth, AuthContext, Permission, require_permission
 from backend.detection.baseline import BaseDetector, BruteForceLoginDetector, Finding
 from backend.detection.correlation import CrossServiceExfiltrationDetector
 from backend.detection.registry import runtime_rule_registry
@@ -208,7 +208,7 @@ def evaluate_and_persist_findings(
 @router.post("/events", response_model=IngestResponse, status_code=status.HTTP_202_ACCEPTED)
 async def ingest_event(
     event: CanonicalEvent,
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.EVENTS_INGEST)),
     db: Session = Depends(get_db)
 ):
     """
@@ -358,7 +358,7 @@ async def ingest_event(
 @router.post("/events/batch", response_model=IngestResponse, status_code=status.HTTP_202_ACCEPTED)
 async def ingest_events_batch(
     payload: IngestBatchRequest,
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.EVENTS_INGEST)),
     db: Session = Depends(get_db)
 ):
     """

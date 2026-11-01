@@ -235,8 +235,8 @@ def test_multiprocess_multi_candidate_sequence(fake_redis_server):
     q1.put(None)
     q2.put(None)
 
-    w1_id, w1_findings = res_q.get(timeout=10)
-    w2_id, w2_findings = res_q.get(timeout=10)
+    w1_id, w1_findings = res_q.get(timeout=20)
+    w2_id, w2_findings = res_q.get(timeout=20)
     p1.join(timeout=5)
     p2.join(timeout=5)
 

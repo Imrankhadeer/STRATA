@@ -5,16 +5,29 @@ Provides endpoints for:
 - Listing and inspecting defense actions.
 - Approving and rejecting containment actions under strict dual-custody enforcement.
 - Querying and updating tenant defense policy.
+
+Enforces:
+- Scope-based RBAC permissions on all endpoints.
+- Cryptographically verified human operator sessions for sensitive approval/rejection operations.
+- Prevention of caller-supplied approver identity spoofing / impersonation.
+- Immutable audit logging for policy modifications.
 """
 
 import datetime
 import logging
+import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from backend.db.session import get_db
-from backend.core.auth import AuthContext, get_current_auth
+from backend.core.auth import (
+    AuthContext,
+    Permission,
+    get_current_auth,
+    require_human_operator,
+    require_permission,
+)
 from backend.models import (
     DefenseActionModel,
     DefenseAuditLogModel,
@@ -29,6 +42,7 @@ from backend.schemas.defense import (
     ProtectionMode,
     TenantDefensePolicy,
     TenantDefensePolicyUpdate,
+    canonicalize_principal_id,
 )
 from backend.defense.approval import (
     ApprovalManager,
@@ -52,12 +66,13 @@ async def list_defense_actions(
     action_type: Optional[ActionType] = Query(None, description="Filter by action type"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.DEFENSE_ACTIONS_READ)),
     db: Session = Depends(get_db),
 ):
     """
     Lists defense actions for the authenticated tenant with optional status and type filters.
     Strictly tenant-isolated.
+    Requires permission: defense:actions:read
     """
     query = (
         db.query(DefenseActionModel)
@@ -82,11 +97,12 @@ async def list_defense_actions(
 @router.get("/actions/{action_id}", response_model=PlannedResponseAction)
 async def get_defense_action(
     action_id: str,
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.DEFENSE_ACTIONS_READ)),
     db: Session = Depends(get_db),
 ):
     """
     Retrieves detailed state and metadata for a specific defense action.
+    Requires permission: defense:actions:read
     """
     action = (
         db.query(DefenseActionModel)
@@ -110,22 +126,42 @@ async def get_defense_action(
 async def approve_defense_action(
     action_id: str,
     payload: ActionApprovalRequest,
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_human_operator),
     db: Session = Depends(get_db),
 ):
     """
     Approves a pending defense action.
     Enforces strict server-side dual-custody authorization:
     - Requesters cannot approve their own actions.
-    - Approvers must be authenticated human identities (API keys/service accounts rejected).
+    - Approver identity is derived strictly from verified cryptographic operator credentials.
+    - Caller-supplied assertions in the body that mismatch authenticated identity are rejected (403).
+    - Requires permission: defense:actions:approve
     """
+    if not auth.has_permission(Permission.DEFENSE_ACTIONS_APPROVE):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Forbidden: missing required permission '{Permission.DEFENSE_ACTIONS_APPROVE}'",
+        )
+
+    # Validate caller assertion if present (reject impersonation attempts)
+    if payload.approver_identity:
+        caller_canon = canonicalize_principal_id(payload.approver_identity)
+        auth_canon = canonicalize_principal_id(auth.operator_principal)
+        if caller_canon != auth_canon:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Dual-custody impersonation rejected (identity mismatch): caller supplied identity '{payload.approver_identity}' does not match authenticated operator '{auth.operator_principal}'",
+            )
+
+    # Canonical verified approver identity from auth context
+    verified_approver = auth.operator_principal
+
     manager = ApprovalManager(db)
-    approver = auth.operator_principal or payload.approver_identity
     try:
         updated = manager.approve_action(
             action_id=action_id,
             tenant_id=auth.tenant_id,
-            approver_identity=approver,
+            approver_identity=verified_approver,
             rationale=payload.rationale,
         )
         return updated
@@ -147,18 +183,36 @@ async def approve_defense_action(
 async def reject_defense_action(
     action_id: str,
     payload: ActionRejectRequest,
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_human_operator),
     db: Session = Depends(get_db),
 ):
     """
     Rejects a pending defense action and records rejection rationale in the immutable audit log.
+    Requires permission: defense:actions:reject
     """
+    if not auth.has_permission(Permission.DEFENSE_ACTIONS_REJECT):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Forbidden: missing required permission '{Permission.DEFENSE_ACTIONS_REJECT}'",
+        )
+
+    if payload.rejector_identity:
+        caller_canon = canonicalize_principal_id(payload.rejector_identity)
+        auth_canon = canonicalize_principal_id(auth.operator_principal)
+        if caller_canon != auth_canon:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Rejector identity mismatch: caller supplied identity '{payload.rejector_identity}' does not match authenticated operator '{auth.operator_principal}'",
+            )
+
+    verified_rejector = auth.operator_principal
+
     manager = ApprovalManager(db)
     try:
         updated = manager.reject_action(
             action_id=action_id,
             tenant_id=auth.tenant_id,
-            rejector_identity=payload.rejector_identity,
+            rejector_identity=verified_rejector,
             rationale=payload.rationale,
         )
         return updated
@@ -174,12 +228,13 @@ async def reject_defense_action(
 
 @router.get("/policy", response_model=TenantDefensePolicy)
 async def get_tenant_defense_policy(
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.DEFENSE_POLICY_READ)),
     db: Session = Depends(get_db),
 ):
     """
     Retrieves the tenant's Active Defense protection policy.
     Mandatory default mode is OBSERVE.
+    Requires permission: defense:policy:read
     """
     row = (
         db.query(TenantDefensePolicyModel)
@@ -208,13 +263,14 @@ async def get_tenant_defense_policy(
 @router.put("/policy", response_model=TenantDefensePolicy)
 async def update_tenant_defense_policy(
     payload: TenantDefensePolicyUpdate,
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.DEFENSE_POLICY_WRITE)),
     db: Session = Depends(get_db),
 ):
     """
-    Updates the tenant's Active Defense policy.
+    Updates the tenant's Active Defense policy and records an immutable audit log entry.
     Guaranteed safety invariants:
     - Sensitive actions (API key revocation, session containment) can never be set to autonomous.
+    Requires permission: defense:policy:write
     """
     row = (
         db.query(TenantDefensePolicyModel)
@@ -223,6 +279,9 @@ async def update_tenant_defense_policy(
     )
 
     now = datetime.datetime.now(datetime.timezone.utc)
+    old_mode = row.default_mode if row else "observe"
+    old_config = dict(row.configuration or {}) if row else {}
+
     if not row:
         row = TenantDefensePolicyModel(
             id=f"pol-{auth.tenant_id[:12]}",
@@ -250,6 +309,28 @@ async def update_tenant_defense_policy(
 
     row.configuration = config
     row.updated_at = now
+
+    # Record immutable audit entry
+    actor = auth.operator_principal or f"key:{auth.key_id}"
+    audit_entry = DefenseAuditLogModel(
+        log_id=f"log-{uuid.uuid4().hex[:12]}",
+        action_id=None,
+        tenant_id=auth.tenant_id,
+        from_status=old_mode,
+        to_status=row.default_mode,
+        transition_trigger="defense.policy_updated",
+        actor=actor,
+        details={
+            "old_mode": old_mode,
+            "new_mode": row.default_mode,
+            "reason": payload.reason or "Active Defense policy update",
+            "old_configuration": old_config,
+            "new_configuration": config,
+        },
+        timestamp=now,
+    )
+    db.add(audit_entry)
+
     db.commit()
     db.refresh(row)
 

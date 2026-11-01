@@ -363,9 +363,12 @@ def test_disabled_and_rolled_back_rule_stops_executing(client, auth_headers):
 
 # 9. Cross-tenant rules cannot be loaded or executed
 def test_cross_tenant_rules_isolation(client, auth_headers, db_session):
-    # Create tenant beta
-    beta_tenant = Tenant(id="tenant-beta", name="Beta Corp", is_active=True)
-    db_session.add(beta_tenant)
+    # Create tenant beta if needed
+    beta_tenant = db_session.query(Tenant).filter(Tenant.id == "tenant-beta").first()
+    if not beta_tenant:
+        beta_tenant = Tenant(id="tenant-beta", name="Beta Corp", is_active=True)
+        db_session.add(beta_tenant)
+        db_session.commit()
     beta_key = ApiKey(
         id="key-beta-01",
         tenant_id="tenant-beta",

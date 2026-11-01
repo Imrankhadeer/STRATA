@@ -17,7 +17,14 @@ from sqlalchemy.orm import Session
 
 from backend.db.session import get_db
 from backend.models import ApiKey
-from backend.core.auth import get_current_auth, AuthContext, generate_api_key
+from backend.core.auth import (
+    ALL_PERMISSIONS,
+    AuthContext,
+    Permission,
+    generate_api_key,
+    get_current_auth,
+    require_permission,
+)
 from backend.ops.bus import ops_bus
 
 router = APIRouter(prefix="/api/v1/keys", tags=["API Key Lifecycle"])
@@ -39,6 +46,10 @@ class CreateApiKeyRequest(BaseModel):
         le=365,
         description="Optional expiration in days (1 to 365)",
     )
+    scopes: Optional[List[str]] = Field(
+        default=None,
+        description="Optional list of RBAC permissions. Defaults to ['events:ingest']",
+    )
 
 
 class CreateApiKeyResponse(BaseModel):
@@ -47,6 +58,7 @@ class CreateApiKeyResponse(BaseModel):
     app_id: str
     api_key: str  # Raw secret, only exposed once upon creation
     key_prefix: str
+    scopes: List[str] = Field(default_factory=list)
     created_at: str
     expires_at: Optional[str]
     message: str = "Store this API key securely. It will not be shown again."
@@ -58,6 +70,7 @@ class ApiKeyInfoResponse(BaseModel):
     app_id: str
     key_prefix: str
     is_active: bool
+    scopes: List[str] = Field(default_factory=list)
     created_at: str
     expires_at: Optional[str]
 
@@ -77,6 +90,7 @@ class RotateApiKeyResponse(BaseModel):
     app_id: str
     new_api_key: str  # Raw secret, only exposed once upon rotation
     key_prefix: str
+    scopes: List[str] = Field(default_factory=list)
     created_at: str
     expires_at: Optional[str]
     message: str = "Old key revoked. Store this new API key securely. It will not be shown again."
@@ -87,13 +101,26 @@ class RotateApiKeyResponse(BaseModel):
 @router.post("", response_model=CreateApiKeyResponse, status_code=status.HTTP_201_CREATED)
 def create_api_key(
     payload: CreateApiKeyRequest,
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.KEYS_WRITE)),
     db: Session = Depends(get_db),
 ):
     """
     Issues a new cryptographically random API key for the authenticated tenant.
     The raw secret key is returned strictly in this response and never stored in plaintext.
+    Requires permission: keys:write
     """
+    # Validate scopes if provided
+    if payload.scopes is not None:
+        for s in payload.scopes:
+            if s not in ALL_PERMISSIONS and s != "*":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid scope '{s}'. Allowed scopes: {sorted(list(ALL_PERMISSIONS))}",
+                )
+        effective_scopes = payload.scopes
+    else:
+        effective_scopes = [Permission.EVENTS_INGEST]
+
     now = datetime.datetime.now(datetime.timezone.utc)
     raw_key, key_hash = generate_api_key(tenant_id=auth.tenant_id, app_id=payload.app_id)
     key_prefix = raw_key[:12]  # e.g., 'ce_live_...'
@@ -110,6 +137,7 @@ def create_api_key(
         key_hash=key_hash,
         key_prefix=key_prefix,
         is_active=True,
+        scopes=effective_scopes,
         created_at=now.replace(tzinfo=None),
         expires_at=expires_at.replace(tzinfo=None) if expires_at else None,
     )
@@ -123,7 +151,7 @@ def create_api_key(
         level="info",
         message=f"API key created for app '{payload.app_id}' with prefix '{key_prefix}'",
         tenant_id=auth.tenant_id,
-        metadata={"key_id": key_id, "app_id": payload.app_id, "key_prefix": key_prefix},
+        metadata={"key_id": key_id, "app_id": payload.app_id, "key_prefix": key_prefix, "scopes": effective_scopes},
     )
 
     return CreateApiKeyResponse(
@@ -132,6 +160,7 @@ def create_api_key(
         app_id=payload.app_id,
         api_key=raw_key,
         key_prefix=key_prefix,
+        scopes=effective_scopes,
         created_at=now.isoformat(),
         expires_at=expires_at.isoformat() if expires_at else None,
     )
@@ -161,6 +190,7 @@ def list_api_keys(
             app_id=k.app_id,
             key_prefix=k.key_prefix,
             is_active=k.is_active,
+            scopes=k.scopes or ([Permission.ADMIN] if k.id == "key-001" else [Permission.EVENTS_INGEST]),
             created_at=k.created_at.isoformat() if k.created_at else "",
             expires_at=k.expires_at.isoformat() if k.expires_at else None,
         )
@@ -171,12 +201,13 @@ def list_api_keys(
 @router.post("/{key_id}/revoke", response_model=RevokeApiKeyResponse)
 def revoke_api_key(
     key_id: str,
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.KEYS_WRITE)),
     db: Session = Depends(get_db),
 ):
     """
     Immediately deactivates an API key.
     Enforces tenant boundaries: an authenticated tenant can only revoke keys they own.
+    Requires permission: keys:write
     """
     key_rec = (
         db.query(ApiKey)
@@ -214,12 +245,13 @@ def revoke_api_key(
 @router.post("/{key_id}/rotate", response_model=RotateApiKeyResponse)
 def rotate_api_key(
     key_id: str,
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.KEYS_WRITE)),
     db: Session = Depends(get_db),
 ):
     """
     Rotates an API key: revokes the existing key and generates a new active key for the same app_id.
     Returns the new raw secret key strictly once.
+    Requires permission: keys:write
     """
     old_key = (
         db.query(ApiKey)
@@ -236,11 +268,12 @@ def rotate_api_key(
     # 1. Revoke the existing key
     old_key.is_active = False
 
-    # 2. Generate a new key for the same application
+    # 2. Generate a new key for the same application, preserving existing scopes
     now = datetime.datetime.now(datetime.timezone.utc)
     raw_key, key_hash = generate_api_key(tenant_id=auth.tenant_id, app_id=old_key.app_id)
     key_prefix = raw_key[:12]
     new_key_id = f"key-{uuid.uuid4().hex[:12]}"
+    scopes = old_key.scopes or [Permission.EVENTS_INGEST]
 
     new_key_rec = ApiKey(
         id=new_key_id,
@@ -249,6 +282,7 @@ def rotate_api_key(
         key_hash=key_hash,
         key_prefix=key_prefix,
         is_active=True,
+        scopes=scopes,
         created_at=now.replace(tzinfo=None),
         expires_at=None,
     )
@@ -272,7 +306,7 @@ def rotate_api_key(
         app_id=old_key.app_id,
         new_api_key=raw_key,
         key_prefix=key_prefix,
+        scopes=scopes,
         created_at=now.isoformat(),
         expires_at=None,
     )
-

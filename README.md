@@ -53,8 +53,8 @@ Ternline is an active security intelligence platform designed for microservices 
 
 Ternline supports two operational modes:
 
-### Mode A: Zero-Dependency Local Inspection (Development / CI)
-Requires **no external database or Redis**. Uses in-memory SQLite and `InMemoryCorrelationStateStore`:
+### Mode A: Local Development & Inspection
+Requires a running **PostgreSQL 16** database. Uses PostgreSQL for persistent relational state and in-memory or Redis correlation:
 ```bash
 # 1. Clone & create virtual environment
 python -m venv .venv
@@ -66,7 +66,10 @@ pip install -r requirements.txt
 # 3. Create .env with dev defaults
 cp .env.example .env
 
-# 4. Start the server (Single Worker)
+# 4. Apply database migrations
+alembic upgrade head
+
+# 5. Start the server (Single Worker)
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 * Interactive API Documentation: `http://localhost:8000/docs`
@@ -92,8 +95,7 @@ docker compose ps
 | :--- | :--- | :--- |
 | `ENVIRONMENT` | `development` | `development`, `testing`, `staging`, or `production`. |
 | `SECRET_KEY` | `dev-insecure...` | Internal JWT/API key signature. Must be $\ge 32$ chars in production. |
-| `DATABASE_URL` | `postgresql+psycopg2://...` | PostgreSQL connection string. |
-| `ALLOW_SQLITE_TEST_FALLBACK` | `true` | Allows automated SQLite fallback in local test environments. |
+| `DATABASE_URL` | `postgresql+psycopg2://...` | PostgreSQL connection string (mandatory; SQLite is prohibited). |
 | `WORKERS` | `1` | Worker process count. If $>1$, `REDIS_URL` is mandatory. |
 | `REDIS_URL` | `redis://localhost:6379/0` | Redis 7+ connection URL for distributed state. |
 | `REDIS_REQUIRED` | `false` | When `true`, startup fails fast if Redis is unreachable. |

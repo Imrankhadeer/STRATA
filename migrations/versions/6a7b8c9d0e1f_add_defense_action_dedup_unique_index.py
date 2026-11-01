@@ -25,7 +25,6 @@ def upgrade() -> None:
         ['tenant_id', 'deduplication_fingerprint'],
         unique=True,
         postgresql_where=sa.text("status IN ('proposed', 'awaiting_approval', 'approved', 'executing', 'verifying', 'verified_active')"),
-        sqlite_where=sa.text("status IN ('proposed', 'awaiting_approval', 'approved', 'executing', 'verifying', 'verified_active')"),
     )
 
 

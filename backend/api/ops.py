@@ -175,14 +175,9 @@ async def get_operations_overview(
     db_version = "PostgreSQL"
     t_db_start = time.time()
     try:
-        dialect_name = db.bind.dialect.name if getattr(db, "bind", None) else ""
-        if "sqlite" in dialect_name:
-            raw_ver = db.execute(text("SELECT sqlite_version()")).scalar()
-            db_version = f"SQLite {raw_ver}" if raw_ver else "SQLite"
-        else:
-            raw_ver = db.execute(text("SELECT version()")).scalar()
-            if raw_ver:
-                db_version = str(raw_ver).split(",")[0]
+        raw_ver = db.execute(text("SELECT version()")).scalar()
+        if raw_ver:
+            db_version = str(raw_ver).split(",")[0]
         db_latency_ms = round((time.time() - t_db_start) * 1000, 2)
     except Exception as e:
         logger.error("Overview DB query failed: %s", e)

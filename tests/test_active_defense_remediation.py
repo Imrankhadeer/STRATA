@@ -58,7 +58,7 @@ from backend.models import (
     Tenant,
     TenantDefensePolicyModel,
 )
-from backend.core.auth import hash_api_key
+from backend.core.auth import hash_api_key, create_operator_token
 from backend.schemas.defense import (
     ActionScope,
     ActionStatus,
@@ -118,6 +118,7 @@ def auth_client():
             key_hash=h,
             key_prefix="ce_live_",
             is_active=True,
+            scopes=["admin"],
         ))
         s.commit()
 
@@ -396,13 +397,15 @@ def test_remediation_expired_action_approval_rejected_via_api(auth_client):
         )
         action_id = action.action_id
 
-    # POST to approve endpoint -> HTTP 409 Conflict
+    # POST to approve endpoint with verified human operator token -> HTTP 409 Conflict
+    token_bob = create_operator_token("lead:bob@corp.internal", tenant_id=tenant_id)
     resp = auth_client.post(
         f"/api/v1/defense/actions/{action_id}/approve",
         json={
             "approver_identity": "lead:bob@corp.internal",
             "rationale": "Late approval attempt",
         },
+        headers={"X-Operator-Token": f"Bearer {token_bob}"},
     )
     assert resp.status_code == 409
     assert "expired" in resp.json()["detail"].lower()
@@ -411,7 +414,7 @@ def test_remediation_expired_action_approval_rejected_via_api(auth_client):
 def test_remediation_timezone_naive_legacy_expiry_handled_correctly():
     with Session(bind=engine) as db:
         # Timezone-naive past timestamp (simulating legacy database records)
-        naive_past = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+        naive_past = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)).replace(tzinfo=None)
         action = _create_sample_action(
             db,
             tenant_id="tenant-remed-naive",

@@ -277,12 +277,19 @@ class PolicyEvaluationResult(BaseModel):
 
 
 class ActionApprovalRequest(BaseModel):
-    approver_identity: str = Field(..., min_length=3, max_length=128, description="Authenticated human identity, e.g. 'user:analyst@corp.internal'")
+    approver_identity: Optional[str] = Field(
+        default=None,
+        min_length=3,
+        max_length=128,
+        description="Optional identity assertion. If provided, must match the authenticated human operator.",
+    )
     rationale: str = Field(..., min_length=5, max_length=1024, description="Audited operational rationale for approving containment action")
 
     @field_validator("approver_identity")
     @classmethod
-    def validate_human_approver(cls, v: str) -> str:
+    def validate_human_approver(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
         s = v.strip()
         is_human, reason = is_verified_human_principal(s)
         if not is_human:
@@ -291,7 +298,12 @@ class ActionApprovalRequest(BaseModel):
 
 
 class ActionRejectRequest(BaseModel):
-    rejector_identity: str = Field(..., min_length=3, max_length=128)
+    rejector_identity: Optional[str] = Field(
+        default=None,
+        min_length=3,
+        max_length=128,
+        description="Optional identity assertion. If provided, must match the authenticated human operator.",
+    )
     rationale: str = Field(..., min_length=5, max_length=1024)
 
 
@@ -301,6 +313,7 @@ class TenantDefensePolicyUpdate(BaseModel):
     max_autonomous_ttl_seconds: Optional[int] = Field(None, ge=60, le=86400)
     max_autonomous_actions_per_hour: Optional[int] = Field(None, ge=1, le=100)
     action_overrides: Optional[Dict[str, Any]] = None
+    reason: Optional[str] = Field(None, max_length=1024, description="Audited rationale for modifying tenant defense policy")
 
     @field_validator("allowed_autonomous_actions")
     @classmethod

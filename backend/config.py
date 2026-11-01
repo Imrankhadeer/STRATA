@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, field_validator
 from typing import Optional
 
 
@@ -15,12 +15,22 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = Field(
         default="postgresql+psycopg2://postgres:postgres@localhost:5432/cyber_engine",
-        description="Database connection string"
+        description="Database connection string (PostgreSQL exclusively)"
     )
-    ALLOW_SQLITE_TEST_FALLBACK: bool = Field(
-        default=True,
-        description="Allow SQLite fallback for testing environments without PostgreSQL"
-    )
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
+        if not v or "sqlite" in v.lower():
+            raise ValueError(
+                "SQLite is prohibited in Ternline. DATABASE_URL must be a valid PostgreSQL connection string "
+                "(e.g. postgresql+psycopg2://user:password@host:port/dbname)."
+            )
+        if not (v.startswith("postgresql://") or v.startswith("postgresql+") or v.startswith("postgres://")):
+            raise ValueError(
+                f"Unsupported database scheme in DATABASE_URL: {v}. Ternline requires PostgreSQL."
+            )
+        return v
 
     MAX_PAYLOAD_BYTES: int = 1_048_576  # 1 MB
     MAX_EVENTS_PER_BATCH: int = 100
@@ -61,7 +71,9 @@ settings = Settings()
 
 
 def validate_production_settings() -> None:
-    """Fail closed in production when insecure defaults are present or required distributed state is missing."""
+    """Fail closed when insecure defaults are present or required distributed state is missing."""
+    if "sqlite" in settings.DATABASE_URL.lower():
+        raise RuntimeError("SQLite is prohibited in Ternline. Set DATABASE_URL to a valid PostgreSQL connection string.")
     if settings.ENVIRONMENT.lower() in ("production", "staging"):
         insecure = "cyber-engine-dev-insecure-secret-key-32chars"
         if settings.SECRET_KEY == insecure or len(settings.SECRET_KEY) < 32:
