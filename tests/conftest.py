@@ -87,14 +87,16 @@ def auth_headers():
 
 @pytest.fixture(autouse=True)
 def reset_detectors():
-    from backend.api.ingest import fast_detectors
+    from backend.api.ingest import fast_detectors, _rate_limit_state
     from backend.detection.registry import runtime_rule_registry
     runtime_rule_registry.invalidate()
+    _rate_limit_state.clear()
     for d in fast_detectors:
         if hasattr(d, "reset"):
             d.reset()
     yield
     runtime_rule_registry.invalidate()
+    _rate_limit_state.clear()
     for d in fast_detectors:
         if hasattr(d, "reset"):
             d.reset()
