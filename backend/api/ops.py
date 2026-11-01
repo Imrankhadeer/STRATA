@@ -175,10 +175,15 @@ async def get_operations_overview(
     db_version = "PostgreSQL"
     t_db_start = time.time()
     try:
-        raw_ver = db.execute(text("SELECT version()")).scalar()
+        dialect_name = db.bind.dialect.name if getattr(db, "bind", None) else ""
+        if "sqlite" in dialect_name:
+            raw_ver = db.execute(text("SELECT sqlite_version()")).scalar()
+            db_version = f"SQLite {raw_ver}" if raw_ver else "SQLite"
+        else:
+            raw_ver = db.execute(text("SELECT version()")).scalar()
+            if raw_ver:
+                db_version = str(raw_ver).split(",")[0]
         db_latency_ms = round((time.time() - t_db_start) * 1000, 2)
-        if raw_ver:
-            db_version = str(raw_ver).split(",")[0]
     except Exception as e:
         logger.error("Overview DB query failed: %s", e)
         db_status = "degraded"
@@ -370,6 +375,7 @@ async def get_recent_events(
 @router.get("/events/stream")
 async def stream_operations_events(
     request: Request,
+    max_events: Optional[int] = Query(default=None, description="Optional limit of events before cleanly closing stream"),
     auth: AuthContext = Depends(get_stream_auth),
 ):
     """
@@ -384,6 +390,9 @@ async def stream_operations_events(
     async def event_generator():
         # Inform subscriber of connection
         yield f"event: connected\ndata: {json.dumps({'message': 'Connected to Ternline Live Operations Stream', 'tenant_id': tenant_id})}\n\n"
+        emitted = 1
+        if max_events is not None and emitted >= max_events:
+            return
 
         async for item in ops_bus.subscribe(tenant_id=tenant_id, replay_limit=50):
             # Check client disconnection
@@ -396,6 +405,9 @@ async def stream_operations_events(
             else:
                 payload = item.model_dump(mode="json")
                 yield f"event: ops_event\ndata: {json.dumps(payload)}\n\n"
+                emitted += 1
+                if max_events is not None and emitted >= max_events:
+                    break
 
     return StreamingResponse(
         event_generator(),

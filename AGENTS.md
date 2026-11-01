@@ -51,8 +51,8 @@ Use these credentials for all API requests to `/v1/events`, `/api/v1/findings`, 
 All tests are designed to execute deterministically without external services:
 
 ```bash
-# Run the complete test suite (166 tests)
-python -m pytest tests/ --ignore=tests/test_milestone7_ops.py -k "not test_live_meta_model_inference" -q
+# Run the complete test suite (178 tests, zero exclusions)
+python -m pytest tests/ -k "not test_live_meta_model_inference" -q
 
 # Run Distributed Correlation & Redis State Store tests (includes multi-process tests)
 python -m pytest tests/test_checkpoint5_completion.py tests/test_distributed_correlation.py -v
@@ -98,3 +98,4 @@ curl -X POST "http://localhost:8000/api/v1/investigations/{finding_id}" \
 2. **Zero Ingestion Latency Impact:** Fast Track detection must remain deterministic in pure Python/Redis Lua (<1ms). Never place synchronous LLM API calls on the ingestion path.
 3. **Tenant Boundary Enforcement:** All Redis keys, PostgreSQL queries, and state storage must remain strictly scoped by `tenant_id`.
 4. **No Silent In-Memory Fallback in Production:** In `production`/`staging` environments, required Redis dependencies must fail fast rather than silently falling back to process-local state.
+

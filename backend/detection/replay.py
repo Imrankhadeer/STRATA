@@ -11,6 +11,9 @@ Validates candidate declarative rules against standard incident evaluation suite
 
 from typing import Dict, List, Optional
 import datetime
+import logging
+
+logger = logging.getLogger("cyber_engine.replay")
 
 from backend.schemas.rules import (
     DeclarativeRule,
@@ -53,9 +56,13 @@ class ReplayValidationEngine:
 
             if getattr(settings, "REDIS_URL", None):
                 try:
-                    state_store = RedisCorrelationStateStore(settings.REDIS_URL)
-                    if redis_mandatory:
-                        state_store.client.ping()
+                    candidate_store = RedisCorrelationStateStore(
+                        settings.REDIS_URL,
+                        socket_timeout=settings.REDIS_STATE_TIMEOUT_MS / 1000.0,
+                    )
+                    # Explicitly ping Redis to verify live connectivity
+                    candidate_store.client.ping()
+                    state_store = candidate_store
                 except Exception as e:
                     if redis_mandatory:
                         raise RuntimeError(
@@ -67,11 +74,14 @@ class ReplayValidationEngine:
                         e,
                         settings.ENVIRONMENT,
                     )
+                    state_store = InMemoryCorrelationStateStore()
             elif redis_mandatory:
                 raise RuntimeError(
                     f"Fatal: Redis is required in {settings.ENVIRONMENT} mode (REDIS_REQUIRED={settings.REDIS_REQUIRED}, "
                     f"WORKERS={settings.WORKERS}), but REDIS_URL is not configured."
                 )
+            else:
+                state_store = InMemoryCorrelationStateStore()
 
             spec = GenericDeclarativeRuleDefinition(**rule.parameters)
             return GenericDeclarativeEvaluator(

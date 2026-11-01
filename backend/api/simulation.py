@@ -205,7 +205,7 @@ async def run_simulation(
     Security Gate: Disabled in production unless explicitly enabled.
     Reuses existing synthetic services; strictly rejects arbitrary code or shell injection.
     """
-    if settings.ENVIRONMENT != "development" and not getattr(settings, "ALLOW_SIMULATION_API", False):
+    if settings.ENVIRONMENT.lower() == "production" or (settings.ENVIRONMENT != "development" and not getattr(settings, "ALLOW_SIMULATION_API", False)):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Simulation API is strictly disabled in production environments.",
@@ -306,9 +306,10 @@ async def get_demo_session(db: Session = Depends(get_db)):
     """
     Development-only endpoint that returns credentials for the baseline development tenant.
     Allows the browser console to authenticate seamlessly during local testing.
-    Strictly blocked in production.
+    Strictly blocked in production and staging environments.
     """
-    if settings.ENVIRONMENT != "development":
+    env = settings.ENVIRONMENT.lower()
+    if env in ("production", "staging") or env != "development":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Demo session bootstrap is only permitted in development environments.",
