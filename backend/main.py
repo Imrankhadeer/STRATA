@@ -61,8 +61,11 @@ async def _security_headers(request, call_next):
     resp.headers.setdefault("X-Frame-Options", "DENY")
     resp.headers.setdefault("Referrer-Policy", "no-referrer")
     resp.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-    # Console ships its own meta CSP; API also sends a conservative default.
-    resp.headers.setdefault("Content-Security-Policy", "default-src 'self'; frame-ancestors 'self'")
+    # Console ships its own inline styles and fonts; allow self, unsafe-inline, and Google Fonts
+    resp.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'self'"
+    )
     if settings.ENVIRONMENT.lower() in ("production", "staging"):
         resp.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
     return resp

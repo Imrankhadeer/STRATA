@@ -42,21 +42,31 @@ class BaseDetector(ABC):
 
 class BruteForceLoginDetector(BaseDetector):
     """
-    Baseline deterministic detector that detects failed login threshold indicators
-    or high-risk authentication abuse signals within fast continuous telemetry.
+    Baseline deterministic detector that detects failed login threshold indicators,
+    brute-force attacks, and password spraying within rolling sliding windows.
     """
     detector_id = "detector.auth.failed_threshold"
     detector_version = "1.0.0"
-    description = "Detects repetitive login failures or suspicious brute-force attempts"
+    description = "Detects repetitive login failures, brute-force attempts, and password spraying"
 
-    def __init__(self, failure_threshold: int = 5):
+    def __init__(
+        self,
+        failure_threshold: int = 5,
+        window_seconds: float = 300.0,
+        spray_threshold: int = 5,
+    ):
         self.failure_threshold = failure_threshold
-        # In-memory fast path tracking for demonstration/baseline
-        self._failure_counts: Dict[str, int] = {}
+        self.window_seconds = window_seconds
+        self.spray_threshold = spray_threshold
+        # Sliding windows: key -> list of (timestamp_float, event_id)
+        self._actor_windows: Dict[str, List[tuple[float, str]]] = {}
+        # User windows for spray tracking: key -> list of (timestamp_float, event_id, actor)
+        self._user_windows: Dict[str, List[tuple[float, str, str]]] = {}
         self._seen_event_ids: Set[str] = set()
 
     def reset(self) -> None:
-        self._failure_counts.clear()
+        self._actor_windows.clear()
+        self._user_windows.clear()
         self._seen_event_ids.clear()
 
     def evaluate(self, event: CanonicalEvent) -> Optional[Finding]:
@@ -68,14 +78,58 @@ class BruteForceLoginDetector(BaseDetector):
             return None
         self._seen_event_ids.add(event.event_id)
 
-        actor = event.source_resource or event.attributes.get("client_ip") or "unknown_actor"
-        key = f"{event.tenant_id}:{actor}"
-        self._failure_counts[key] = self._failure_counts.get(key, 0) + 1
+        ev_time = event.timestamp.timestamp()
+        cutoff = ev_time - self.window_seconds
 
-        attempts = self._failure_counts[key]
+        actor = event.source_resource or (event.attributes and event.attributes.get("client_ip")) or "unknown_actor"
+        tenant = event.tenant_id or "default"
+        actor_key = f"{tenant}:{actor}"
+
+        # 1. Update and prune actor sliding window
+        window = self._actor_windows.get(actor_key, [])
+        window = [item for item in window if item[0] >= cutoff]
+        window.append((ev_time, event.event_id))
+        self._actor_windows[actor_key] = window
+
+        attempts = len(window)
+
+        # 2. Check for Password Spraying (multiple distinct IPs targeting same username)
+        username = None
+        if event.attributes and isinstance(event.attributes, dict):
+            username = event.attributes.get("username") or event.attributes.get("user")
+        if not username and event.target_resource and not event.target_resource.startswith("/"):
+            username = event.target_resource
+
+        if username:
+            user_key = f"{tenant}:{username}"
+            u_window = self._user_windows.get(user_key, [])
+            u_window = [item for item in u_window if item[0] >= cutoff]
+            u_window.append((ev_time, event.event_id, actor))
+            self._user_windows[user_key] = u_window
+
+            distinct_actors = {item[2] for item in u_window if item[2] != "unknown_actor"}
+            if len(distinct_actors) >= self.spray_threshold and actor != "unknown_actor":
+                return Finding(
+                    tenant_id=tenant,
+                    detector_id="detector.auth.password_spray",
+                    detector_version=self.detector_version,
+                    title=f"Potential Password Spraying Attack targeting {username}",
+                    severity="high",
+                    confidence="high",
+                    description=f"User account '{username}' targeted by {len(distinct_actors)} distinct sources within {self.window_seconds}s.",
+                    event_id=event.event_id,
+                    evidence={
+                        "target_user": username,
+                        "distinct_sources_count": len(distinct_actors),
+                        "sources": sorted(list(distinct_actors))[:10],
+                        "window_seconds": self.window_seconds,
+                    },
+                )
+
+        # 3. Standard Brute Force / Failed Login Threshold
         if attempts >= self.failure_threshold:
             return Finding(
-                tenant_id=event.tenant_id or "default",
+                tenant_id=tenant,
                 detector_id=self.detector_id,
                 detector_version=self.detector_version,
                 title=f"Potential Brute-force Attack from {actor}",
@@ -88,6 +142,8 @@ class BruteForceLoginDetector(BaseDetector):
                     "attempt_count": attempts,
                     "target_resource": event.target_resource,
                     "trace_id": event.trace_id,
-                }
+                    "window_seconds": self.window_seconds,
+                },
             )
+
         return None

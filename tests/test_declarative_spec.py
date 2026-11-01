@@ -86,8 +86,23 @@ def test_rejects_unsafe_executable_code_in_condition():
     assert "Unsafe expression detected" in str(exc.value)
 
     with pytest.raises(ValidationError) as exc2:
-        FieldCondition(field="target", operator="equals", value="SELECT * FROM users; DROP TABLE events;")
+        FieldCondition(field="target", operator="equals", value="eval('evil()')")
     assert "Unsafe expression detected" in str(exc2.value)
+
+
+def test_allows_legitimate_security_monitoring_sql_and_shell_terms():
+    # Legitimate rules monitoring SQL operations and process executions must pass schema validation
+    cond_sql = FieldCondition(field="attributes.query", operator="contains", value="SELECT * FROM users")
+    assert cond_sql.value == "SELECT * FROM users"
+
+    cond_shell = FieldCondition(field="process.name", operator="equals", value="bash")
+    assert cond_shell.value == "bash"
+
+    cond_ps = FieldCondition(field="process.name", operator="equals", value="powershell")
+    assert cond_ps.value == "powershell"
+
+    cond_dml = FieldCondition(field="attributes.action", operator="equals", value="DELETE")
+    assert cond_dml.value == "DELETE"
 
 
 def test_rejects_unsafe_executable_code_in_values_list():

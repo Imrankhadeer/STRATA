@@ -13,8 +13,17 @@ import datetime
 import uuid
 import re
 
-# Blocklist of patterns indicating code execution / shell / SQL injection attempts
+# Blocklist of patterns indicating dynamic code execution or script injection attempts.
+# Note: SQL keywords and shell names are deliberately NOT blocked to allow security monitoring of queries and processes.
 UNSAFE_PATTERNS = [
+    r"\bexec\b", r"\beval\b", r"\bimport\b", r"\b__\w+__\b",
+    r"\bos\.", r"\bsys\.", r"\bsubprocess\b",
+    r"<script\b", r"javascript:",
+]
+
+# Strict blocklist for legacy detector parameters (table names and endpoint prefixes)
+# Table names and URL prefixes must not contain SQL injection syntax, shell commands, or scripts
+LEGACY_UNSAFE_PATTERNS = [
     r"\bexec\b", r"\beval\b", r"\bimport\b", r"\b__\w+__\b",
     r"\bos\.", r"\bsys\.", r"\bsubprocess\b", r"\bsh\b", r"\bbash\b",
     r"\bpowershell\b", r"\bcmd\b", r"\bSELECT\b", r"\bDROP\b",
@@ -36,7 +45,7 @@ class CrossServiceRuleParameters(BaseModel):
     @classmethod
     def validate_safe_strings(cls, items: List[str]) -> List[str]:
         for item in items:
-            for pattern in UNSAFE_PATTERNS:
+            for pattern in LEGACY_UNSAFE_PATTERNS:
                 if re.search(pattern, item, re.IGNORECASE):
                     raise ValueError(f"Unsafe expression detected in declarative parameter: '{item}'")
         return items
@@ -125,16 +134,19 @@ class DeclarativeRule(BaseModel):
         """Strictly validates parameters against the specific target detector schema or generic declarative spec."""
         raw_params = self.parameters or {}
 
-        # Scan all values for unsafe code injection
-        for k, v in raw_params.items():
-            str_repr = str(v)
-            for pattern in UNSAFE_PATTERNS:
-                if re.search(pattern, str_repr, re.IGNORECASE):
-                    raise ValueError(f"Unsafe expression detected in rule parameter '{k}': '{v}'")
-
         if self.target_detector == "detector.cross_service.exfiltration":
+            for k, v in raw_params.items():
+                str_repr = str(v)
+                for pattern in LEGACY_UNSAFE_PATTERNS:
+                    if re.search(pattern, str_repr, re.IGNORECASE):
+                        raise ValueError(f"Unsafe expression detected in rule parameter '{k}': '{v}'")
             CrossServiceRuleParameters(**raw_params)
         elif self.target_detector == "detector.auth.failed_threshold":
+            for k, v in raw_params.items():
+                str_repr = str(v)
+                for pattern in UNSAFE_PATTERNS:
+                    if re.search(pattern, str_repr, re.IGNORECASE):
+                        raise ValueError(f"Unsafe expression detected in rule parameter '{k}': '{v}'")
             BruteForceRuleParameters(**raw_params)
         elif raw_params.get("rule_type") in ("threshold", "sequence"):
             from backend.schemas.declarative_spec import GenericDeclarativeRuleDefinition

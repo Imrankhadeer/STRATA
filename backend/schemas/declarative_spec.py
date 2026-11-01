@@ -12,12 +12,11 @@ from typing import List, Dict, Any, Optional, Literal, Union
 from pydantic import BaseModel, Field, field_validator, model_validator
 import re
 
-# Blocklist of patterns indicating code execution / shell / SQL injection attempts
+# Blocklist of patterns indicating dynamic code execution or script injection attempts.
+# Note: SQL keywords and shell names are deliberately NOT blocked to allow security monitoring of queries and processes.
 UNSAFE_PATTERNS = [
     r"\bexec\b", r"\beval\b", r"\bimport\b", r"\b__\w+__\b",
-    r"\bos\.", r"\bsys\.", r"\bsubprocess\b", r"\bsh\b", r"\bbash\b",
-    r"\bpowershell\b", r"\bcmd\b", r"\bSELECT\b", r"\bDROP\b",
-    r"\bDELETE\b", r"\bUNION\b", r"\bINSERT\b", r"\bUPDATE\b",
+    r"\bos\.", r"\bsys\.", r"\bsubprocess\b",
     r"<script\b", r"javascript:",
 ]
 

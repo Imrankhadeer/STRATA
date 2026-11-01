@@ -51,8 +51,8 @@ Use these credentials for all API requests to `/v1/events`, `/api/v1/findings`, 
 All tests are designed to execute deterministically without external services:
 
 ```bash
-# Run the complete test suite (166 tests)
-python -m pytest tests/ --ignore=tests/test_milestone7_ops.py -k "not test_live_meta_model_inference" -q
+# Run the complete test suite (178 tests, zero exclusions)
+python -m pytest tests/ -k "not test_live_meta_model_inference" -q
 
 # Run Distributed Correlation & Redis State Store tests (includes multi-process tests)
 python -m pytest tests/test_checkpoint5_completion.py tests/test_distributed_correlation.py -v

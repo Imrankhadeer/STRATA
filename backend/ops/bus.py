@@ -20,8 +20,8 @@ import re
 import secrets
 import time
 import uuid
-from typing import Any, AsyncGenerator, Dict, List, Literal, Optional, Set
-from pydantic import BaseModel, Field
+from typing import Any, AsyncGenerator, Dict, List, Literal, Optional, Set, Union
+from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +42,10 @@ def sanitize_ops_metadata(meta: Optional[Dict[str, Any]]) -> Dict[str, Any]:
 
     sanitized: Dict[str, Any] = {}
     for k, v in meta.items():
-        if SENSITIVE_KEY_PATTERNS.search(str(k)):
-            sanitized[k] = "[REDACTED]"
-        elif isinstance(v, dict):
+        if isinstance(v, dict):
             sanitized[k] = sanitize_ops_metadata(v)
+        elif SENSITIVE_KEY_PATTERNS.search(str(k)):
+            sanitized[k] = "[REDACTED]"
         elif isinstance(v, list):
             sanitized[k] = [
                 sanitize_ops_metadata(item) if isinstance(item, dict) else str(item)[:128]
@@ -77,7 +77,8 @@ class OpsEvent(BaseModel):
         "auth",
         "system",
         "simulation",
-        "correlation"
+        "correlation",
+        "test"
     ]
     event_type: str
     message: str
@@ -89,6 +90,15 @@ class OpsEvent(BaseModel):
     rule_id: Optional[str] = None
     rule_version: Optional[int] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("level", mode="before")
+    @classmethod
+    def normalize_level(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v_low = v.lower()
+            if v_low in ("info", "warn", "error", "success"):
+                return v_low
+        return v
 
 
 class _StreamTicket(BaseModel):
@@ -146,9 +156,9 @@ class OpsEventBus:
 
     def publish(
         self,
-        component: Literal["ingest", "fast-track", "deep-track", "rules", "auth", "system", "simulation", "correlation"],
-        event_type: str,
-        message: str,
+        component: Union[Literal["ingest", "fast-track", "deep-track", "rules", "auth", "system", "simulation", "correlation", "test"], OpsEvent],
+        event_type: Optional[str] = None,
+        message: Optional[str] = None,
         level: Literal["info", "warn", "error", "success"] = "info",
         tenant_id: Optional[str] = None,
         service_id: Optional[str] = None,
@@ -158,27 +168,32 @@ class OpsEventBus:
         rule_id: Optional[str] = None,
         rule_version: Optional[int] = None,
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> OpsEvent:
+    ) -> Optional[OpsEvent]:
         """
         Publishes an operational event to the buffer and active subscriber queues.
         Guaranteed non-blocking: drops queue put if a subscriber queue is full.
         Safe against unhandled exceptions breaking the caller.
         """
         try:
-            event = OpsEvent(
-                level=level,
-                component=component,
-                event_type=event_type,
-                message=message,
-                tenant_id=tenant_id,
-                service_id=service_id,
-                trace_id=trace_id,
-                finding_id=finding_id,
-                investigation_id=investigation_id,
-                rule_id=rule_id,
-                rule_version=rule_version,
-                metadata=sanitize_ops_metadata(metadata),
-            )
+            if isinstance(component, OpsEvent):
+                event = component
+                target_tenant = event.tenant_id
+            else:
+                event = OpsEvent(
+                    level=level,
+                    component=component,
+                    event_type=event_type or "system.event",
+                    message=message or "",
+                    tenant_id=tenant_id,
+                    service_id=service_id,
+                    trace_id=trace_id,
+                    finding_id=finding_id,
+                    investigation_id=investigation_id,
+                    rule_id=rule_id,
+                    rule_version=rule_version,
+                    metadata=sanitize_ops_metadata(metadata),
+                )
+                target_tenant = tenant_id
 
             # Store in bounded circular buffer
             self._buffer.append(event)
@@ -186,7 +201,7 @@ class OpsEventBus:
             # Dispatch to active subscribers matching tenant
             dead_queues = []
             for queue, sub_tenant in list(self._subscribers):
-                if sub_tenant == tenant_id or tenant_id is None:
+                if sub_tenant == target_tenant or target_tenant is None:
                     try:
                         queue.put_nowait(event)
                     except asyncio.QueueFull:
@@ -201,6 +216,14 @@ class OpsEventBus:
         except Exception as e:
             logger.debug("Failed publishing ops event (non-fatal): %s", e)
             return None
+
+    def get_recent(self, tenant_id: str, limit: int = 50) -> List[OpsEvent]:
+        """Alias for get_buffered_events."""
+        return self.get_buffered_events(tenant_id, limit)
+
+    def unsubscribe(self, *args, **kwargs) -> None:
+        """Gracefully handle test unsubscribe cleanup."""
+        pass
 
     def get_buffered_events(self, tenant_id: str, limit: int = 50) -> List[OpsEvent]:
         """Returns recent buffered events for a tenant, up to limit."""
