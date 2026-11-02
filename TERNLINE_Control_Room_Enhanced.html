@@ -135,18 +135,7 @@
       </div>
     </div>
 
-    <!-- Target Engine API Endpoint -->
-    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:16px;">
-      <div class="between" style="margin-bottom:6px;">
-        <label style="font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:700;letter-spacing:0.08em;margin:0;">Target Engine API Endpoint</label>
-        <span id="gateBackendStatus" style="font-size:11px;font-weight:700;color:var(--muted);">Probing...</span>
-      </div>
-      <div class="row" style="gap:8px;">
-        <input class="control" id="gateBackendUrl" placeholder="http://localhost:8000" onchange="updateGateBackend(this.value)" style="flex:1;font-size:12px;">
-        <button class="btn small" type="button" onclick="probeGateBackend()" title="Check connection">Ping</button>
-      </div>
-      <div class="tiny dim" style="margin-top:4px;">Connects this SOC console to your AWS EC2 or local engine instance.</div>
-    </div>
+
 
     <!-- Auth Mode Tabs -->
     <div style="display:flex;border-bottom:1px solid var(--line);margin-bottom:16px;">
@@ -202,6 +191,24 @@
       <button class="btn primary" type="submit" id="gateKeyBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Connect with API Key</button>
     </form>
 
+        <!-- Self-Hosted / Custom Engine Toggle (Collapsible) -->
+    <div style="margin-top:18px;text-align:center;">
+      <button class="btn ghost small" type="button" onclick="$('#gateHostCollapse').classList.toggle('hide')" style="color:var(--muted);font-size:10px;padding:4px 8px;">
+        ⚙ Engine Host Configuration (Self-Hosted / AWS EC2)
+      </button>
+      <div id="gateHostCollapse" class="hide" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;text-align:left;">
+        <div class="between" style="margin-bottom:4px;">
+          <label style="font-size:9px;text-transform:uppercase;color:var(--muted);font-weight:700;">Target Engine API Host</label>
+          <span id="gateBackendStatus" style="font-size:10px;font-weight:700;color:var(--muted);">Probing...</span>
+        </div>
+        <div class="row" style="gap:6px;">
+          <input class="control" id="gateBackendUrl" placeholder="http://localhost:8000" onchange="updateGateBackend(this.value)" style="flex:1;font-size:11px;">
+          <button class="btn small" type="button" onclick="probeGateBackend()">Ping</button>
+        </div>
+        <div class="tiny dim" style="margin-top:3px;">Only configure if pointing console to a separate backend port or custom AWS domain.</div>
+      </div>
+    </div>
+
     <div class="row between" style="margin-top:22px;border-top:1px solid var(--line);padding-top:14px;font-size:11px;color:var(--muted);">
       <span>PostgreSQL 16 Relational Engine</span>
       <span>Redis 7+ Distributed State</span>
@@ -237,7 +244,7 @@
   </div>
   <div><div class="navgroup">Govern & connect</div>
    <button class="nav" data-page="defense"><span class="ico">⛨</span>Active Defense<span class="nav-badge hide" id="badge-defense">0</span></button>
-   <button class="nav" data-page="integrations"><span class="ico">⇄</span>Integrations</button>
+   <button class="nav" data-page="integrations"><span class="ico">⇄</span>Connect Application<span class="nav-badge" style="background:rgba(197,243,107,.15);color:var(--lime);">SDK</span></button>
    <button class="nav" data-page="governance"><span class="ico">⚖</span>AI Governance</button>
    <button class="nav" data-page="settings"><span class="ico">⚙</span>Backend & Settings</button>
   </div>
@@ -258,6 +265,7 @@
     </span>
     <button class="btn small" id="refreshBtn" title="Refresh state">↻ Refresh</button>
     <a class="btn small ghost" href="/documentation" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">Docs ↗</a>
+    <button class="btn small primary" onclick="setPage('integrations')" style="display:inline-flex;align-items:center;gap:4px;font-weight:700;">⚡ Connect App</button>
     <div id="userChip" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:11px;">
       <span style="color:var(--lime)">👤</span> <span id="userChipEmail">Operator</span>
       <button class="btn small ghost" onclick="signOutOperator()" style="padding:1px 5px;font-size:10px;margin-left:4px;color:var(--muted);" title="Sign Out">Sign Out</button>
@@ -363,7 +371,7 @@ const titles = {
   health: 'Operations / Ingestion & Health',
   audit: 'Trust / Audit & Evidence',
   defense: 'Response / Active Defense',
-  integrations: 'Platform / Integrations',
+  integrations: 'Platform / Connect Application & SDK',
   governance: 'Trust / AI Governance',
   settings: 'Platform / Backend & Settings'
 };
@@ -1816,12 +1824,399 @@ function assets() {
 }
 
 function integrations() {
-  return head('Platform Integrations', 'Connected infrastructure: Database, Redis state store, and LLM investigation adapters.', '')
-    + `<div class="grid g3">
-        <div class="panel pad"><b>PostgreSQL 16+</b><p class="tiny muted">Exclusive relational storage</p><span class="pill good">CONNECTED</span></div>
-        <div class="panel pad"><b>Redis Distributed State</b><p class="tiny muted">Atomic cross-service correlation</p><span class="pill info">CONVERGED</span></div>
-        <div class="panel pad"><b>Deep Track Investigator</b><p class="tiny muted">Evidence-audited LLM adapter</p><span class="pill purple">${esc((obj(cache.overview?.investigations).provider || 'AI').toUpperCase())} / ${esc(obj(cache.overview?.investigations).model || 'Llama-3.3-70B')}</span></div>
-      </div>`;
+  const keys = Array.isArray(cache.apiKeys) ? cache.apiKeys : (cache.assets || []);
+  const activeKey = keys.find(k => k.is_active !== false) || keys[0];
+  const sampleKey = activeKey ? activeKey.key_prefix : (bearerToken || 'ce_live_your_app_key_secret');
+  const engineUrl = config.baseUrl || defaultBaseUrl || 'https://api.ternline.security';
+  const recentEvents = Array.isArray(cache.events) ? cache.events : [];
+  
+  // Discover apps from recent events or keys
+  const connectedApps = new Map();
+  keys.forEach(k => {
+    if (k.app_id) connectedApps.set(k.app_id, { app_id: k.app_id, key: k.key_prefix, lastSeen: k.created_at, status: 'Provisioned' });
+  });
+  recentEvents.forEach(e => {
+    const aid = e.app_id || e.service_id || 'default-service';
+    connectedApps.set(aid, { app_id: aid, key: sampleKey, lastSeen: e.timestamp, status: 'Live Ingesting' });
+  });
+  const appsList = Array.from(connectedApps.values());
+
+  return head('Connect Application & Telemetry Ingestion', 'Instrument any microservice, backend API, container, or edge gateway to stream runtime security events into Ternline.', '')
+    + `<div class="grid" style="gap:20px;">
+
+      <!-- Card 1: Ingestion Pipeline Overview -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+          <div>
+            <b style="font-size:14px;color:var(--lime);">1. Application Ingestion Credentials & Target Endpoint</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Independent microservices authenticate via Bearer token to emit structured security telemetry.</p>
+          </div>
+          <button class="btn primary small" type="button" onclick="openProvisionKeyModal()">+ Provision New Application Key</button>
+        </div>
+
+        <div class="grid g2" style="margin-bottom:10px;">
+          <div class="field">
+            <label>Live Ingestion API Endpoint (POST)</label>
+            <div class="row" style="gap:8px;">
+              <input class="control" readonly value="${esc(engineUrl)}/v1/events" style="flex:1;font-family:monospace;font-size:12px;">
+              <button class="btn small" type="button" onclick="navigator.clipboard.writeText('${esc(engineUrl)}/v1/events');toast('Copied ingestion endpoint URL!');">Copy</button>
+            </div>
+            <small class="dim">Fast Track ingestion gateway with deterministic sub-millisecond evaluation.</small>
+          </div>
+          <div class="field">
+            <label>Active Tenant API Key</label>
+            <div class="row" style="gap:8px;">
+              <input class="control" readonly value="${esc(sampleKey)}" style="flex:1;font-family:monospace;font-size:12px;">
+              <button class="btn small" type="button" onclick="navigator.clipboard.writeText('${esc(sampleKey)}');toast('Copied API Key!');">Copy</button>
+            </div>
+            <small class="dim">Scoped to tenant <b>${esc(currentTenant || 'Primary Workspace')}</b>. Never exposes database credentials.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Interactive Code Snippets for Independent Applications -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+          <div>
+            <b style="font-size:14px;color:var(--lime);">2. Choose Your Technology Stack</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Copy and paste the client initialization snippet directly into your independent application.</p>
+          </div>
+        </div>
+
+        <div class="tabs" style="padding:0;margin-bottom:14px;">
+          <button class="tab active" id="tabSdkPython" type="button" onclick="switchSdkTab('python')">Python (SDK & FastAPI/Django)</button>
+          <button class="tab" id="tabSdkNode" type="button" onclick="switchSdkTab('node')">Node.js / TypeScript</button>
+          <button class="tab" id="tabSdkCurl" type="button" onclick="switchSdkTab('curl')">cURL / REST API</button>
+          <button class="tab" id="tabSdkGo" type="button" onclick="switchSdkTab('go')">Go (Golang)</button>
+          <button class="tab" id="tabSdkOtel" type="button" onclick="switchSdkTab('otel')">OpenTelemetry / WAF Proxy</button>
+        </div>
+
+        <!-- Tab 1: Python -->
+        <div id="sdkPanePython">
+          <div class="codebox" style="margin:0 0 10px;font-size:11px;background:#0b130e;border-color:#2a3d2e;">
+# 1. Install official lightweight telemetry client
+pip install cyber-engine-sdk
+          </div>
+          <div class="codebox" style="margin:0;font-size:11px;background:#0b130e;border-color:#2a3d2e;">
+from cyber_engine import CyberEngine, Event
+
+# 2. Initialize Ternline Ingest Client in your service startup
+engine = CyberEngine(
+    api_key="${esc(sampleKey)}",
+    app="payments-api",                  # Your independent application ID
+    endpoint="${esc(engineUrl)}",        # Target Ternline engine host
+    buffered=True                        # High-throughput non-blocking background queue
+)
+
+# 3. Emit security telemetry on sensitive, authentication, or anomalous execution
+engine.emit(
+    event_type="auth.login.failed",
+    service="auth-service",
+    severity="medium",
+    trace_id="req-9b82c4-118",
+    details={
+        "client_ip": "198.51.100.24",
+        "attempt_count": 3,
+        "reason": "invalid_credential"
+    }
+)
+          </div>
+          <div class="row" style="margin-top:10px;justify-content:flex-end;">
+            <button class="btn small" type="button" onclick="navigator.clipboard.writeText(document.querySelector('#sdkPanePython .codebox:last-of-type').textContent.trim());toast('Copied Python snippet!');">Copy Python Code</button>
+          </div>
+        </div>
+
+        <!-- Tab 2: Node.js -->
+        <div id="sdkPaneNode" class="hide">
+          <div class="codebox" style="margin:0;font-size:11px;background:#0b130e;border-color:#2a3d2e;">
+// Send telemetry to Ternline from Express, Fastify, Next.js, or NestJS
+export async function emitTernlineEvent(event: {
+  eventType: string;
+  service: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  traceId: string;
+  details: Record<string, any>;
+}) {
+  const endpoint = "${esc(engineUrl)}/v1/events";
+  const apiKey = "${esc(sampleKey)}";
+
+  await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      events: [{
+        event_type: event.eventType,
+        service_name: event.service,
+        severity: event.severity,
+        trace_id: event.traceId,
+        timestamp: new Date().toISOString(),
+        attributes: event.details
+      }]
+    })
+  });
+}
+          </div>
+          <div class="row" style="margin-top:10px;justify-content:flex-end;">
+            <button class="btn small" type="button" onclick="navigator.clipboard.writeText(document.querySelector('#sdkPaneNode .codebox').textContent.trim());toast('Copied Node.js snippet!');">Copy Node.js Code</button>
+          </div>
+        </div>
+
+        <!-- Tab 3: cURL -->
+        <div id="sdkPaneCurl" class="hide">
+          <div class="codebox" style="margin:0;font-size:11px;background:#0b130e;border-color:#2a3d2e;">
+curl -X POST "${esc(engineUrl)}/v1/events" \
+  -H "Authorization: Bearer ${esc(sampleKey)}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": [
+      {
+        "event_type": "api.access.denied",
+        "service_name": "payments-api",
+        "severity": "medium",
+        "trace_id": "tr-9812-78",
+        "timestamp": "' + new Date().toISOString() + '",
+        "attributes": {
+          "endpoint": "/v1/charges",
+          "status_code": 403,
+          "client_ip": "198.51.100.44"
+        }
+      }
+    ]
+  }'
+          </div>
+          <div class="row" style="margin-top:10px;justify-content:flex-end;">
+            <button class="btn small" type="button" onclick="navigator.clipboard.writeText(document.querySelector('#sdkPaneCurl .codebox').textContent.trim());toast('Copied cURL snippet!');">Copy cURL Command</button>
+          </div>
+        </div>
+
+        <!-- Tab 4: Go -->
+        <div id="sdkPaneGo" class="hide">
+          <div class="codebox" style="margin:0;font-size:11px;background:#0b130e;border-color:#2a3d2e;">
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+    "time"
+)
+
+type EventPayload struct {
+    Events []map[string]interface{} `json:"events"`
+}
+
+func EmitSecurityEvent(eventType, service, severity, traceID string, details map[string]interface{}) error {
+    payload := EventPayload{
+        Events: []map[string]interface{}{
+            {
+                "event_type":   eventType,
+                "service_name": service,
+                "severity":     severity,
+                "trace_id":     traceID,
+                "timestamp":    time.Now().UTC().Format(time.RFC3339),
+                "attributes":   details,
+            },
+        },
+    }
+    body, _ := json.Marshal(payload)
+    req, _ := http.NewRequest("POST", "${esc(engineUrl)}/v1/events", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer ${esc(sampleKey)}")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{Timeout: 5 * time.Second}
+    _, err := client.Do(req)
+    return err
+}
+          </div>
+          <div class="row" style="margin-top:10px;justify-content:flex-end;">
+            <button class="btn small" type="button" onclick="navigator.clipboard.writeText(document.querySelector('#sdkPaneGo .codebox').textContent.trim());toast('Copied Go snippet!');">Copy Go Code</button>
+          </div>
+        </div>
+
+        <!-- Tab 5: OpenTelemetry & Reverse Proxy -->
+        <div id="sdkPaneOtel" class="hide">
+          <div class="codebox" style="margin:0;font-size:11px;background:#0b130e;border-color:#2a3d2e;">
+# OpenTelemetry Collector (otel-collector-config.yaml)
+exporters:
+  otlphttp/ternline:
+    endpoint: "${esc(engineUrl)}/v1/events"
+    headers:
+      Authorization: "Bearer ${esc(sampleKey)}"
+
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/ternline]
+          </div>
+          <div class="row" style="margin-top:10px;justify-content:flex-end;">
+            <button class="btn small" type="button" onclick="navigator.clipboard.writeText(document.querySelector('#sdkPaneOtel .codebox').textContent.trim());toast('Copied OTel config!');">Copy OTel Config</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Interactive Ingestion Verifier (Test Pipeline) -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+          <div>
+            <b style="font-size:14px;color:var(--lime);">3. Interactive Ingestion Pipe Simulator</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Dispatch a live, validated test event directly from this console to confirm your ingestion pipeline.</p>
+          </div>
+          <span class="pill good">FAST-TRACK &lt;1MS</span>
+        </div>
+
+        <form id="simTestEventForm" onsubmit="dispatchTestEvent(event)">
+          <div class="grid g4" style="margin-bottom:12px;">
+            <div class="field">
+              <label>Application ID</label>
+              <input class="control" id="simAppId" value="customer-backend" required style="width:100%;">
+            </div>
+            <div class="field">
+              <label>Service Name</label>
+              <input class="control" id="simService" value="auth-service" required style="width:100%;">
+            </div>
+            <div class="field">
+              <label>Event Type</label>
+              <select class="control" id="simEventType" style="width:100%;">
+                <option value="auth.login.failed">auth.login.failed (Brute force signal)</option>
+                <option value="api.egress.burst">api.egress.burst (Data exfiltration signal)</option>
+                <option value="credential.token.invalid">credential.token.invalid (Tampering signal)</option>
+                <option value="permission.escalation.attempt">permission.escalation.attempt (Privilege escalation)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Severity</label>
+              <select class="control" id="simSeverity" style="width:100%;">
+                <option value="medium">MEDIUM</option>
+                <option value="high">HIGH</option>
+                <option value="critical">CRITICAL</option>
+                <option value="low">LOW</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row between" style="align-items:flex-start;">
+            <button class="btn primary" type="submit" id="simSubmitBtn">Dispatch Verified Telemetry Event</button>
+            <div class="row" style="gap:8px;">
+              <button class="btn small" type="button" onclick="setPage('events')">View Event Explorer ↗</button>
+              <button class="btn small" type="button" onclick="setPage('correlation')">View Correlation Engine ↗</button>
+            </div>
+          </div>
+          <div id="simOutput" class="codebox" style="margin-top:10px;font-size:11px;min-height:36px;">Ready to dispatch test telemetry event.</div>
+        </form>
+      </div>
+
+      <!-- Card 4: Discovered Applications Table -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+          <div>
+            <b style="font-size:14px;color:var(--lime);">4. Connected Independent Applications</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Applications actively provisioned or currently streaming security telemetry into this tenant workspace.</p>
+          </div>
+          <span class="pill info">${appsList.length} CONNECTED APPS</span>
+        </div>
+
+        ${appsList.length ? `
+          <div style="overflow-x:auto;">
+            <table class="tbl" style="width:100%;font-size:12px;">
+              <thead>
+                <tr>
+                  <th>Application ID</th>
+                  <th>Key Prefix</th>
+                  <th>Last Telemetry Seen</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${appsList.map(a => `
+                  <tr>
+                    <td><b>${esc(a.app_id)}</b></td>
+                    <td><code>${esc(a.key)}</code></td>
+                    <td class="muted">${formatLocalTime(a.lastSeen)}</td>
+                    <td><span class="pill good tiny">● LIVE INGESTING</span></td>
+                    <td style="text-align:right;">
+                      <button class="btn small" type="button" onclick="setPage('events')">Inspect Telemetry</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : `
+          <div class="empty" style="padding:20px;">
+            <p class="muted">No independent applications connected yet. Use the code snippets above to connect your first service.</p>
+          </div>
+        `}
+      </div>
+
+    </div>`;
+}
+
+function switchSdkTab(lang) {
+  const tabs = ['python', 'node', 'curl', 'go', 'otel'];
+  tabs.forEach(t => {
+    const pane = document.getElementById('sdkPane' + t.charAt(0).toUpperCase() + t.slice(1));
+    const tabBtn = document.getElementById('tabSdk' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (pane) pane.classList.toggle('hide', t !== lang);
+    if (tabBtn) tabBtn.classList.toggle('active', t === lang);
+  });
+}
+
+async function dispatchTestEvent(e) {
+  if (e) e.preventDefault();
+  const appId = $('#simAppId')?.value.trim() || 'customer-backend';
+  const service = $('#simService')?.value.trim() || 'auth-service';
+  const eventType = $('#simEventType')?.value || 'auth.login.failed';
+  const severity = $('#simSeverity')?.value || 'medium';
+  const btn = $('#simSubmitBtn');
+  const out = $('#simOutput');
+
+  if (btn) btn.disabled = true;
+  if (out) out.textContent = 'Sending telemetry to POST /v1/events...';
+
+  const testPayload = {
+    events: [
+      {
+        event_type: eventType,
+        service_name: service,
+        severity: severity,
+        trace_id: 'test-trace-' + Math.random().toString(36).slice(2, 9),
+        timestamp: new Date().toISOString(),
+        attributes: {
+          app_id: appId,
+          source_ip: '198.51.100.77',
+          user_agent: 'Ternline-Integration-Test/1.0',
+          test_simulation: true
+        }
+      }
+    ]
+  };
+
+  try {
+    const res = await request('/v1/events', {
+      method: 'POST',
+      body: JSON.stringify(testPayload)
+    });
+    if (out) {
+      out.style.color = 'var(--lime)';
+      out.textContent = `✓ Accepted (HTTP 202): ${JSON.stringify(res, null, 2)}`;
+    }
+    toast('Test event successfully ingested into engine!');
+    refresh();
+  } catch (err) {
+    if (out) {
+      out.style.color = 'var(--red)';
+      out.textContent = `✕ Ingestion failed: ${err.message}`;
+    }
+    toast('Ingestion error: ' + err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function governance() {
@@ -2727,7 +3122,10 @@ initSidebarTooltips();
       loading = false;
       return;
     } else {
-      if (page === 'settings') {
+      if (page === 'integrations') {
+        try { cache.apiKeys = unwrap(await request('/api/v1/keys'), ['keys', 'items', 'data']); } catch (_) {}
+        try { cache.events = unwrap(await request('/api/v1/events?limit=25'), ['events', 'items', 'data']); } catch (_) {}
+      } else if (page === 'settings') {
         try { cache.defensePolicy = await request('/api/v1/defense/policy'); } catch (_) {}
         try { cache.apiKeys = unwrap(await request('/api/v1/keys'), ['keys', 'items', 'data']); } catch (_) {}
         try { cache.health = await request('/health'); } catch (_) {}
