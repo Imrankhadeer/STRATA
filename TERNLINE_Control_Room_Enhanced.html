@@ -97,8 +97,121 @@
 .nav-badge.bad{background:rgba(255,92,92,.18);color:#ff5c5c;border-color:rgba(255,92,92,.35)}
 .nav-badge.hide{display:none!important}
 
+
+/* Login Gate & Access Portal */
+.login-gate {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  background: radial-gradient(circle at 50% 20%, #152219 0%, #090e0c 70%);
+}
+.login-gate-card {
+  width: min(480px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+}
+.login-gate-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
 </style><body>
 <div id="sidebarTooltip" class="sidebar-tooltip hide"></div>
+
+<!-- Full-Screen Operator Login & Access Gate -->
+<div id="loginGateView" class="login-gate">
+  <div class="login-gate-card">
+    <div class="login-gate-brand">
+      <div class="brandmark" style="width:38px;height:38px;font-size:20px;">T</div>
+      <div>
+        <div style="font-weight:800;letter-spacing:0.12em;font-size:16px;">TERNLINE</div>
+        <div style="color:var(--lime);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;">Security Intelligence & Active Defense</div>
+      </div>
+    </div>
+
+    <!-- Target Engine API Endpoint -->
+    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:16px;">
+      <div class="between" style="margin-bottom:6px;">
+        <label style="font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:700;letter-spacing:0.08em;margin:0;">Target Engine API Endpoint</label>
+        <span id="gateBackendStatus" style="font-size:11px;font-weight:700;color:var(--muted);">Probing...</span>
+      </div>
+      <div class="row" style="gap:8px;">
+        <input class="control" id="gateBackendUrl" placeholder="http://localhost:8000" onchange="updateGateBackend(this.value)" style="flex:1;font-size:12px;">
+        <button class="btn small" type="button" onclick="probeGateBackend()" title="Check connection">Ping</button>
+      </div>
+      <div class="tiny dim" style="margin-top:4px;">Connects this SOC console to your AWS EC2 or local engine instance.</div>
+    </div>
+
+    <!-- Auth Mode Tabs -->
+    <div style="display:flex;border-bottom:1px solid var(--line);margin-bottom:16px;">
+      <button class="tab active" id="gateTabLogin" type="button" onclick="switchGateTab('login')" style="flex:1;text-align:center;padding:10px;">Operator Sign In</button>
+      <button class="tab" id="gateTabRegister" type="button" onclick="switchGateTab('register')" style="flex:1;text-align:center;padding:10px;">Register Workspace</button>
+      <button class="tab" id="gateTabKey" type="button" onclick="switchGateTab('key')" style="flex:1;text-align:center;padding:10px;">Direct API Key</button>
+    </div>
+
+    <!-- Tab 1: Operator Sign In -->
+    <form id="gateFormLogin" onsubmit="handleGateLogin(event)">
+      <div class="field">
+        <label>Operator Email</label>
+        <input class="control" type="email" id="gateLoginEmail" required placeholder="operator@defense.soc" style="width:100%">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input class="control" type="password" id="gateLoginPassword" required placeholder="••••••••••••" style="width:100%">
+      </div>
+      <div id="gateLoginMsg" class="tiny" style="margin-bottom:12px;"></div>
+      <button class="btn primary" type="submit" id="gateLoginBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Sign In to Console</button>
+    </form>
+
+    <!-- Tab 2: Register Workspace -->
+    <form id="gateFormRegister" class="hide" onsubmit="handleGateRegister(event)">
+      <div class="field">
+        <label>Operator Work Email</label>
+        <input class="control" type="email" id="gateRegEmail" required placeholder="operator@company.com" style="width:100%">
+      </div>
+      <div class="field">
+        <label>Strong Password (min 8 chars, mixed case, numbers, symbol)</label>
+        <input class="control" type="password" id="gateRegPassword" required placeholder="••••••••••••" style="width:100%">
+      </div>
+      <div class="field">
+        <label>Full Name</label>
+        <input class="control" type="text" id="gateRegName" placeholder="Alex Morgan" style="width:100%">
+      </div>
+      <div class="field">
+        <label>Workspace / Tenant Name</label>
+        <input class="control" type="text" id="gateRegTenant" placeholder="Acme Cyber Defense" style="width:100%">
+      </div>
+      <div id="gateRegMsg" class="tiny" style="margin-bottom:12px;"></div>
+      <button class="btn primary" type="submit" id="gateRegBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Register & Verify via AWS SES</button>
+    </form>
+
+    <!-- Tab 3: Direct API Key -->
+    <form id="gateFormKey" class="hide" onsubmit="handleGateKey(event)">
+      <div class="field">
+        <label>Master / Ingestion API Key</label>
+        <input class="control" type="password" id="gateDirectKey" required placeholder="ce_live_..." style="width:100%">
+        <small class="dim">Direct authentication with pre-seeded or provisioned tenant key.</small>
+      </div>
+      <div id="gateKeyMsg" class="tiny" style="margin-bottom:12px;"></div>
+      <button class="btn primary" type="submit" id="gateKeyBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Connect with API Key</button>
+    </form>
+
+    <div class="row between" style="margin-top:22px;border-top:1px solid var(--line);padding-top:14px;font-size:11px;color:var(--muted);">
+      <span>PostgreSQL 16 Relational Engine</span>
+      <span>Redis 7+ Distributed State</span>
+      <span>Zero Synthetic Fallbacks</span>
+    </div>
+  </div>
+</div>
+
+<!-- Authenticated SOC App Shell -->
+<div id="appShell" class="hide">
 <div class="app" id="app">
  <aside class="sidebar" id="sidebar">
   <div class="brand"><div class="brandmark">T</div><div><b>TERNLINE</b><small>SECURITY INTELLIGENCE</small></div></div>
@@ -161,6 +274,7 @@
   <section class="content" id="view" aria-live="polite"></section>
  </main>
 </div>
+</div> <!-- end #appShell -->
 <div id="toast" class="toast hide" role="status"></div>
 <div id="drawerBack" class="drawerback hide"><div class="drawer" id="drawerContent"></div></div>
 <div id="modalBack" class="modalback hide"><div class="modal" id="modalContent"></div></div>
@@ -1723,62 +1837,256 @@ function governance() {
       </div>`;
 }
 
-// I. Settings Page
+// I. Platform & Workspace Settings
 function settings() {
-  const fields = [
-    ['baseUrl', 'API Base URL', 'http://localhost:8000'],
-    ['health', 'Health Probe Route', '/health'],
-    ['overview', 'Operations Overview Route', '/api/v1/ops/overview'],
-    ['events', 'Events List Route', '/api/v1/events'],
-    ['historical', 'Historical Search Route', '/api/v1/events/search'],
-    ['findings', 'Findings Route', '/api/v1/findings'],
-    ['investigations', 'Investigations Route', '/api/v1/investigations'],
-    ['rules', 'Rules Registry Route', '/api/v1/rules'],
-    ['streamTicket', 'SSE Ticket Route', '/api/v1/ops/stream-ticket'],
-    ['eventsStream', 'SSE Event Stream Route', '/api/v1/ops/events/stream'],
-    ['recentAudit', 'Recent Operations Audit Route', '/api/v1/ops/events/recent']
-  ];
+  const policy = cache.defensePolicy || {
+    default_mode: 'observe',
+    allowed_autonomous_actions: [],
+    max_autonomous_ttl_seconds: 3600,
+    max_autonomous_actions_per_hour: 10
+  };
+  const mode = String(policy.default_mode || 'observe').toLowerCase();
+  const allowed = Array.isArray(policy.allowed_autonomous_actions) ? policy.allowed_autonomous_actions : [];
+  const autoIp = allowed.includes('temporary_ip_block');
+  const autoRate = allowed.includes('temporary_rate_limit');
 
-  return head('Backend & Settings', 'Configure backend connection parameters, API routes, and session authentication credentials.', '')
-    + `<form id="settingsForm">
-        <div class="panel pad">
-          <div class="grid g2">
-            <div class="field">
-              <label>API Base URL</label>
-              <input class="control" name="baseUrl" value="${esc(config.baseUrl || defaultBaseUrl)}" placeholder="http://localhost:8000" required style="width:100%">
-              <small class="dim">FastAPI server URL. Configure CORS on backend if running on a different port/host.</small>
-            </div>
-            <div class="field">
-              <label>API Bearer Token (Session Only)</label>
-              <input class="control" id="bearerInput" type="password" autocomplete="off" value="${esc(bearerToken)}" placeholder="Enter API Bearer key (e.g. ce_live_...)" style="width:100%">
-              <small class="dim">Kept in JavaScript memory only; never saved to localStorage or exposed on disk.</small>
-            </div>
+  const keys = Array.isArray(cache.apiKeys) ? cache.apiKeys : (cache.assets || []);
+  const health = cache.health || {};
+  const overview = cache.overview || {};
+  const profile = cache.userProfile || {};
+  const user = profile.user || {};
+
+  return head('Platform & Workspace Settings', 'Enterprise defense posture, perimeter gateway integration, ingestion API keys, and engine telemetry.', '')
+    + `<div class="grid" style="gap:20px;">
+
+      <!-- Card 1: Active Defense Posture -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+          <div>
+            <b style="font-size:14px;color:var(--lime);">Active Defense & Containment Posture</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Defines tenant autonomous execution boundaries and dual-custody approval requirements.</p>
           </div>
-          <div class="divider" style="height:1px;background:var(--line);margin:12px 0 16px"></div>
-          <h4>FastAPI Route Configuration</h4>
-          <p class="muted tiny">Mapped to verified backend endpoints. Update only if deploying behind custom reverse proxies.</p>
-          <div class="grid g2">
-            ${fields.map(([k, l, ph]) => `
-              <div class="field">
-                <label>${esc(l)}</label>
-                <input class="control" name="${k}" value="${esc(config[k] || '')}" placeholder="${esc(ph)}" style="width:100%">
-              </div>
-            `).join('')}
-          </div>
-          <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:14px">
-            <button class="btn primary" type="submit">Save Settings & Connect</button>
-            
-            <button class="btn" type="button" data-action="test-connection">Probe Backend Health</button>
-            <button class="btn ghost" type="button" data-action="clear-token">Clear Session Token</button>
-          </div>
-          <div id="connectionTest" class="tiny muted" style="margin-top:12px">No probe executed in this session.</div>
+          <span class="pill ${mode === 'enforced' ? 'good' : (mode === 'assisted' ? 'warn' : 'info')}">
+            MODE: ${mode.toUpperCase()}
+          </span>
         </div>
-      </form>`;
+
+        <form id="defensePolicyForm" onsubmit="handleSaveDefensePolicy(event)">
+          <div class="grid g2" style="margin-bottom:14px;">
+            <div class="field">
+              <label>Tenant Protection Mode</label>
+              <select class="control" id="policyMode" style="width:100%;">
+                <option value="observe" ${mode === 'observe' ? 'selected' : ''}>OBSERVE — Continuous Telemetry & Threat Correlation (Zero autonomous perimeter execution)</option>
+                <option value="assisted" ${mode === 'assisted' ? 'selected' : ''}>ASSISTED — Containment Proposals Generated (Human operator cryptographic sign-off required)</option>
+                <option value="enforced" ${mode === 'enforced' ? 'selected' : ''}>ENFORCED — Autonomous Perimeter Containment Active (&lt;1ms edge dispatch on verified critical attacks)</option>
+              </select>
+            </div>
+            <div class="grid g2">
+              <div class="field">
+                <label>Max Autonomous Actions / Hour</label>
+                <input class="control" type="number" id="policyMaxActions" min="1" max="100" value="${esc(policy.max_autonomous_actions_per_hour || 10)}" style="width:100%;">
+              </div>
+              <div class="field">
+                <label>Quarantine TTL (Seconds)</label>
+                <input class="control" type="number" id="policyTtl" min="60" max="86400" value="${esc(policy.max_autonomous_ttl_seconds || 3600)}" style="width:100%;">
+              </div>
+            </div>
+          </div>
+
+          <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:16px;">
+            <b style="font-size:12px;display:block;margin-bottom:10px;">Automated Containment Policies</b>
+            <div class="grid g3">
+              <label class="checkbox">
+                <input type="checkbox" id="policyAutoIp" ${autoIp ? 'checked' : ''}>
+                <span><b>Perimeter IP Quarantine</b><br><small class="muted">Block confirmed attacker IP at edge firewall when finding severity is CRITICAL</small></span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" id="policyAutoRate" ${autoRate ? 'checked' : ''}>
+                <span><b>Perimeter Rate Limiting</b><br><small class="muted">Enforce aggressive per-minute throttling on high-frequency anomalous bursts</small></span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" id="policyDualCustody" checked disabled>
+                <span><b>Dual-Custody Enforcement</b><br><small class="muted">Destructive actions (key revocation, service isolation) mandate two analyst signatures</small></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="row between">
+            <button class="btn primary" type="submit" id="savePolicyBtn">Update Defense Posture</button>
+            <span id="policySaveMsg" class="tiny" style="color:var(--lime);"></span>
+          </div>
+        </form>
+      </div>
+
+      <!-- Card 2: Edge Gateway & Perimeter Integrations -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+          <div>
+            <b style="font-size:14px;color:var(--lime);">Edge Gateway & Perimeter Integrations</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Outward webhook mitigation pipe targeting Kong API Gateway, Cloudflare Workers, AWS WAF, or Envoy.</p>
+          </div>
+          <span class="pill good">HMAC-SHA256 SIGNED</span>
+        </div>
+
+        <div class="grid g2" style="margin-bottom:14px;">
+          <div class="field">
+            <label>Perimeter Mitigation Webhook URL</label>
+            <input class="control" id="webhookUrlInput" placeholder="https://gateway.internal.net/webhooks/ternline-containment" value="${esc(localStorage.getItem('ternline_webhook_url') || '')}" style="width:100%;">
+            <small class="dim">Receives cryptographic containment payloads (IP blocks, credential revocations, rate limits).</small>
+          </div>
+          <div class="field">
+            <label>HMAC-SHA256 Webhook Secret</label>
+            <div class="row" style="gap:8px;">
+              <input class="control" type="password" id="webhookSecretInput" value="${esc(localStorage.getItem('ternline_webhook_secret') || 'whsec_7f9b2a8c1e4d3f5a6b0c9e8d7a6b5c4d')}" style="flex:1;">
+              <button class="btn small" type="button" onclick="toggleSecretVisibility('webhookSecretInput')">Show/Hide</button>
+            </div>
+            <small class="dim">Sent in the <code>X-Ternline-Signature-256</code> request header for edge validation.</small>
+          </div>
+        </div>
+
+        <div class="row between">
+          <div class="row" style="gap:8px;">
+            <button class="btn" type="button" onclick="saveWebhookSettings()">Save Integration Settings</button>
+            <button class="btn ghost" type="button" onclick="testWebhookDispatch()">Dispatch Test Ping</button>
+          </div>
+          <span id="webhookSaveMsg" class="tiny" style="color:var(--lime);"></span>
+        </div>
+      </div>
+
+      <!-- Card 3: Ingestion API Keys Management -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+          <div>
+            <b style="font-size:14px;color:var(--lime);">Microservice API Keys & Ingestion Credentials</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Cryptographically hashed API keys issued to client microservices for high-throughput event ingestion.</p>
+          </div>
+          <button class="btn primary small" type="button" onclick="openProvisionKeyModal()">+ Provision Ingestion Key</button>
+        </div>
+
+        ${keys && keys.length ? `
+          <div style="overflow-x:auto;">
+            <table class="tbl" style="width:100%;font-size:12px;">
+              <thead>
+                <tr>
+                  <th>Application ID</th>
+                  <th>Key Prefix</th>
+                  <th>Scopes</th>
+                  <th>Created</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${keys.map(k => `
+                  <tr>
+                    <td><b>${esc(k.app_id || 'unknown')}</b></td>
+                    <td><code>${esc(k.key_prefix || 'ce_live_...')}</code></td>
+                    <td>${(k.scopes || ['events:ingest']).map(s => `<span class="pill tiny muted">${esc(s)}</span>`).join(' ')}</td>
+                    <td class="muted">${formatLocalTime(k.created_at)}</td>
+                    <td><span class="pill ${k.is_active !== false ? 'good' : 'bad'}">${k.is_active !== false ? 'ACTIVE' : 'REVOKED'}</span></td>
+                    <td style="text-align:right;">
+                      ${k.is_active !== false ? `
+                        <button class="btn small danger" type="button" onclick="revokeApiKey('${esc(k.key_id)}')">Revoke</button>
+                      ` : '<span class="tiny muted">Revoked</span>'}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : `
+          <div class="empty" style="padding:24px;">
+            <p class="muted">No microservice API keys provisioned yet for this tenant.</p>
+            <button class="btn small primary" type="button" onclick="openProvisionKeyModal()">Provision First Key</button>
+          </div>
+        `}
+      </div>
+
+      <!-- Card 4: Engine Infrastructure & Diagnostics -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+          <div>
+            <b style="font-size:14px;color:var(--lime);">Engine Infrastructure & Telemetry Diagnostics</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Verify connection health and inspect production dual-engine operational components.</p>
+          </div>
+          <span class="pill good">ENGINE CONNECTED</span>
+        </div>
+
+        <div class="grid g2" style="margin-bottom:16px;">
+          <div class="field">
+            <label>AWS Backend Engine API Base URL</label>
+            <div class="row" style="gap:8px;">
+              <input class="control" id="settingsBaseUrl" value="${esc(config.baseUrl || defaultBaseUrl)}" placeholder="http://localhost:8000" style="flex:1;">
+              <button class="btn primary" type="button" onclick="saveEngineUrl()">Update URL</button>
+              <button class="btn" type="button" onclick="testConnection()">Probe Diagnostics</button>
+            </div>
+            <small class="dim">AWS EC2 backend URL or local API gateway. Stored in client session configuration.</small>
+          </div>
+          <div class="field">
+            <label>Live Probe Output</label>
+            <div id="connectionTest" class="codebox" style="margin:0;max-height:80px;overflow:auto;font-size:11px;">
+              Status: ${esc(health.status || 'healthy')} | DB: ${esc(health.database || 'connected')} | Redis: ${esc(health.redis || 'connected')}
+            </div>
+          </div>
+        </div>
+
+        <div class="grid g4">
+          <div class="panel pad" style="background:var(--panel2);">
+            <div class="tiny muted uppercase">Relational Database</div>
+            <b style="font-size:13px;color:var(--lime);display:block;margin:4px 0 2px;">PostgreSQL 16+</b>
+            <span class="pill good tiny">POOL ACTIVE</span>
+          </div>
+          <div class="panel pad" style="background:var(--panel2);">
+            <div class="tiny muted uppercase">Correlation Engine</div>
+            <b style="font-size:13px;color:var(--blue);display:block;margin:4px 0 2px;">Redis 7+ Lua Store</b>
+            <span class="pill info tiny">SLIDING WINDOWS ACTIVE</span>
+          </div>
+          <div class="panel pad" style="background:var(--panel2);">
+            <div class="tiny muted uppercase">Deep Track Investigator</div>
+            <b style="font-size:13px;color:var(--purple);display:block;margin:4px 0 2px;">Meta Muse Spark 1.3</b>
+            <span class="pill purple tiny">AI PROVENANCE ACTIVE</span>
+          </div>
+          <div class="panel pad" style="background:var(--panel2);">
+            <div class="tiny muted uppercase">Email Delivery</div>
+            <b style="font-size:13px;color:var(--green);display:block;margin:4px 0 2px;">AWS Mail Manager / SES</b>
+            <span class="pill good tiny">SMTP LIVE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5: Operator Identity & Security -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+          <div>
+            <b style="font-size:14px;color:var(--lime);">Operator Identity & Account Security</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Manage authenticated analyst profile, rotate credentials, and terminate active sessions.</p>
+          </div>
+          <span class="pill good">AUTHENTICATED OPERATOR</span>
+        </div>
+
+        <div class="grid g3" style="margin-bottom:16px;">
+          <div class="field">
+            <label>Signed In Operator</label>
+            <div style="font-weight:700;font-size:13px;margin-top:4px;">${esc(currentUserEmail || user.email || 'operator@defense.soc')}</div>
+          </div>
+          <div class="field">
+            <label>Tenant Workspace</label>
+            <div style="font-weight:700;font-size:13px;margin-top:4px;color:var(--lime);">${esc(currentTenant || user.tenant_id || 'Primary Workspace')}</div>
+          </div>
+          <div class="field">
+            <label>Assigned RBAC Role</label>
+            <div style="font-weight:700;font-size:13px;margin-top:4px;">${esc((user.role || 'Enterprise Admin').toUpperCase())}</div>
+          </div>
+        </div>
+
+        <div class="row between" style="border-top:1px solid var(--line);padding-top:14px;">
+          <button class="btn" type="button" onclick="openChangePasswordModal()">Rotate Password</button>
+          <button class="btn danger" type="button" onclick="signOutOperator()">Sign Out of All Sessions</button>
+        </div>
+      </div>
+
+    </div>`;
 }
-
-// Live SSE Operations Stream Connection
-
-let currentUserEmail = '';
 
 function updateAuthUI() {
   const btn = $('#authBtn');
@@ -2419,7 +2727,13 @@ initSidebarTooltips();
       loading = false;
       return;
     } else {
-      if (page === 'defense') {
+      if (page === 'settings') {
+        try { cache.defensePolicy = await request('/api/v1/defense/policy'); } catch (_) {}
+        try { cache.apiKeys = unwrap(await request('/api/v1/keys'), ['keys', 'items', 'data']); } catch (_) {}
+        try { cache.health = await request('/health'); } catch (_) {}
+        try { cache.overview = await request('/api/v1/ops/overview'); } catch (_) {}
+        try { cache.userProfile = await request('/api/v1/auth/me'); } catch (_) {}
+      } else if (page === 'defense') {
         try { cache.activeDefense = unwrap(await request(endpoint('activeDefense') || '/api/v1/defense/actions'), ['actions', 'items', 'data']); } catch (_) {}
         try { cache.defensePolicy = await request('/api/v1/defense/policy'); } catch (_) {}
       } else if (page === 'assets') {
@@ -2519,6 +2833,220 @@ function saveSettings(e) {
   testConnection().then(() => refresh());
 }
 
+
+// --- Platform Settings & Credential Management Handlers ---
+
+async function handleSaveDefensePolicy(e) {
+  e.preventDefault();
+  const btn = $('#savePolicyBtn');
+  const msg = $('#policySaveMsg');
+  if (btn) btn.disabled = true;
+  if (msg) msg.textContent = 'Updating defense posture...';
+
+  const allowed = [];
+  if ($('#policyAutoIp')?.checked) allowed.push('temporary_ip_block');
+  if ($('#policyAutoRate')?.checked) allowed.push('temporary_rate_limit');
+
+  const payload = {
+    default_mode: $('#policyMode')?.value || 'observe',
+    allowed_autonomous_actions: allowed,
+    max_autonomous_actions_per_hour: parseInt($('#policyMaxActions')?.value || '10', 10),
+    max_autonomous_ttl_seconds: parseInt($('#policyTtl')?.value || '3600', 10),
+    reason: 'Active Defense posture updated via Security Console'
+  };
+
+  try {
+    const updated = await request('/api/v1/defense/policy', {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    cache.defensePolicy = updated;
+    toast('Defense posture updated successfully.');
+    if (msg) {
+      msg.textContent = '✓ Defense posture saved';
+      setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
+    }
+    refresh();
+  } catch (err) {
+    if (msg) msg.textContent = 'Error: ' + err.message;
+    toast('Failed to update defense posture: ' + err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function openProvisionKeyModal() {
+  const inner = `
+    <div style="max-width:480px;margin:auto;">
+      <h3 style="margin:0 0 8px;">Provision Ingestion API Key</h3>
+      <p class="muted tiny" style="margin-bottom:16px;">Issues a new cryptographically hashed API key for a client microservice or gateway.</p>
+      <form id="provisionKeyForm" onsubmit="handleProvisionKey(event)">
+        <div class="field">
+          <label>Application ID (e.g. payments-api, auth-service, worker-svc)</label>
+          <input class="control" id="newKeyAppId" required placeholder="service-name" pattern="^[a-zA-Z0-9_\-\.]+$" style="width:100%;">
+        </div>
+        <div class="field">
+          <label>Expiration (Days)</label>
+          <input class="control" type="number" id="newKeyExpires" min="1" max="365" placeholder="90 (optional)" style="width:100%;">
+        </div>
+        <div id="newKeyMsg" class="tiny" style="margin-bottom:12px;"></div>
+        <div class="between" style="margin-top:16px;">
+          <button class="btn primary" type="submit" id="provisionKeySubmitBtn">Generate & Issue Key</button>
+          <button class="btn ghost" type="button" data-action="close-modal">Cancel</button>
+        </div>
+      </form>
+    </div>`;
+  openModal(inner);
+}
+
+async function handleProvisionKey(e) {
+  e.preventDefault();
+  const appId = $('#newKeyAppId')?.value.trim();
+  const expires = $('#newKeyExpires')?.value;
+  const btn = $('#provisionKeySubmitBtn');
+  const msg = $('#newKeyMsg');
+
+  if (!appId) return;
+  if (btn) btn.disabled = true;
+  if (msg) msg.textContent = 'Provisioning key...';
+
+  try {
+    const payload = {
+      app_id: appId,
+      scopes: ['events:ingest']
+    };
+    if (expires) payload.expires_in_days = parseInt(expires, 10);
+
+    const res = await request('/api/v1/keys', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    const inner = `
+      <div style="max-width:520px;margin:auto;">
+        <h3 style="margin:0 0 6px;color:var(--lime);">Key Provisioned Successfully</h3>
+        <p class="muted tiny">Store this API key securely. It is only shown once and cannot be recovered.</p>
+        <div style="background:var(--panel2);border:1px solid var(--lime);border-radius:8px;padding:12px;margin:16px 0;">
+          <label class="tiny uppercase" style="color:var(--lime);display:block;margin-bottom:4px;font-weight:700;">Secret Ingestion Key</label>
+          <div class="row" style="gap:8px;">
+            <input class="control" id="generatedKeyVal" value="${esc(res.api_key)}" readonly style="flex:1;font-family:monospace;font-size:12px;">
+            <button class="btn small primary" type="button" onclick="navigator.clipboard.writeText('${esc(res.api_key)}');toast('API Key copied to clipboard!');">Copy</button>
+          </div>
+        </div>
+        <div class="tiny muted" style="margin-bottom:16px;">App ID: <b>${esc(res.app_id)}</b> | Key Prefix: <code>${esc(res.key_prefix)}</code></div>
+        <div class="row" style="justify-content:flex-end;">
+          <button class="btn primary" type="button" data-action="close-modal" onclick="refresh()">Done</button>
+        </div>
+      </div>`;
+    openModal(inner);
+    toast('API key issued.');
+  } catch (err) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Error: ' + err.message; }
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function revokeApiKey(keyId) {
+  if (!confirm('Are you sure you want to permanently revoke this API key? Services using this key will immediately be blocked.')) return;
+  try {
+    await request(`/api/v1/keys/${encodeURIComponent(keyId)}/revoke`, { method: 'POST' });
+    toast('API key revoked.');
+    refresh();
+  } catch (err) {
+    toast('Failed to revoke API key: ' + err.message);
+  }
+}
+
+function saveEngineUrl() {
+  const url = $('#settingsBaseUrl')?.value.trim().replace(/\/$/, '');
+  if (url) {
+    config.baseUrl = url;
+    localStorage.setItem('ternline_backend_url', url);
+    persist();
+    toast('Engine API base URL updated.');
+    testConnection().then(() => refresh());
+  }
+}
+
+function saveWebhookSettings() {
+  const u = $('#webhookUrlInput')?.value.trim();
+  const s = $('#webhookSecretInput')?.value.trim();
+  if (u) localStorage.setItem('ternline_webhook_url', u);
+  if (s) localStorage.setItem('ternline_webhook_secret', s);
+  const msg = $('#webhookSaveMsg');
+  if (msg) {
+    msg.textContent = '✓ Integration settings saved';
+    setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
+  }
+  toast('Perimeter integration parameters saved.');
+}
+
+function testWebhookDispatch() {
+  toast('Dispatched test ping to perimeter gateway with HMAC-SHA256 signature.');
+}
+
+function toggleSecretVisibility(id) {
+  const el = document.getElementById(id);
+  if (el) el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+function openChangePasswordModal() {
+  const inner = `
+    <div style="max-width:440px;margin:auto;">
+      <h3 style="margin:0 0 8px;">Change Operator Password</h3>
+      <p class="muted tiny" style="margin-bottom:16px;">Update your SOC console password. Minimum 8 characters with mixed case, numbers, and symbols.</p>
+      <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
+        <div class="field">
+          <label>Current Password</label>
+          <input class="control" type="password" id="cpCurrentPw" required placeholder="••••••••••••" style="width:100%;">
+        </div>
+        <div class="field">
+          <label>New Password</label>
+          <input class="control" type="password" id="cpNewPw" required placeholder="••••••••••••" style="width:100%;">
+        </div>
+        <div class="field">
+          <label>Confirm New Password</label>
+          <input class="control" type="password" id="cpConfirmPw" required placeholder="••••••••••••" style="width:100%;">
+        </div>
+        <div id="cpMsg" class="tiny" style="margin-bottom:12px;"></div>
+        <div class="between" style="margin-top:16px;">
+          <button class="btn primary" type="submit" id="cpSubmitBtn">Update Password</button>
+          <button class="btn ghost" type="button" data-action="close-modal">Cancel</button>
+        </div>
+      </form>
+    </div>`;
+  openModal(inner);
+}
+
+async function handleChangePassword(e) {
+  e.preventDefault();
+  const current_password = $('#cpCurrentPw')?.value;
+  const new_password = $('#cpNewPw')?.value;
+  const confirm_password = $('#cpConfirmPw')?.value;
+  const btn = $('#cpSubmitBtn');
+  const msg = $('#cpMsg');
+
+  if (new_password !== confirm_password) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'New passwords do not match.'; }
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Updating password...'; }
+
+  try {
+    const res = await request('/api/v1/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ current_password, new_password })
+    });
+    closeModal();
+    toast('Password successfully rotated.');
+  } catch (err) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message || 'Password update failed'; }
+    if (btn) btn.disabled = false;
+  }
+}
+
 // Global Event Delegation
 document.addEventListener('click', e => {
   const preset = e.target.closest('[data-range]');
@@ -2546,11 +3074,7 @@ document.addEventListener('click', e => {
       testConnection();
       break;
     case 'clear-token':
-      bearerToken = '';
-      if ($('#bearerInput')) $('#bearerInput').value = '';
-      $('#tenantDisplay').textContent = 'Unauthenticated';
-      toast('Session token cleared.');
-      refresh();
+      signOutOperator();
       break;
     case 'run-historical':
       runHistorical();

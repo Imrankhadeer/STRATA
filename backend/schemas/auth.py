@@ -32,6 +32,11 @@ class PasswordResetConfirmRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=128, description="New strong password")
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1, description="Existing account password")
+    new_password: str = Field(min_length=8, max_length=128, description="New strong password")
+
+
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -55,4 +60,3 @@ class TokenResponse(BaseModel):
 class MessageResponse(BaseModel):
     message: str
     success: bool = True
-

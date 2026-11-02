@@ -1,3 +1,4 @@
+import uuid
 import datetime
 import pytest
 from starlette.testclient import TestClient
@@ -241,3 +242,48 @@ def test_auth_brute_force_rate_limiting():
     assert blocked_resp.status_code == 429
     assert "too many" in blocked_resp.json()["detail"].lower()
 
+
+
+def test_change_password_flow():
+    email = f"operator_{uuid.uuid4().hex[:8]}@defense.soc"
+    old_pw = "SecurePassword123!"
+    new_pw = "NewSuperSecure456!"
+
+    # 1. Register
+    reg_resp = client.post("/api/v1/auth/register", json={"email": email, "password": old_pw})
+    assert reg_resp.status_code == 201
+
+    # 2. Verify Email
+    token = email_service.get_last_sent_email()["metadata"]["token"]
+    ver_resp = client.post("/api/v1/auth/verify-email", json={"token": token})
+    assert ver_resp.status_code == 200
+
+    # 3. Login to get session token
+    login_resp = client.post("/api/v1/auth/login", json={"email": email, "password": old_pw})
+    assert login_resp.status_code == 200
+    jwt_token = login_resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {jwt_token}"}
+
+    # 4. Attempt change with wrong current password -> 400
+    bad_resp = client.post(
+        "/api/v1/auth/change-password",
+        headers=headers,
+        json={"current_password": "WrongPassword999!", "new_password": new_pw},
+    )
+    assert bad_resp.status_code == 400
+
+    # 5. Successful change
+    good_resp = client.post(
+        "/api/v1/auth/change-password",
+        headers=headers,
+        json={"current_password": old_pw, "new_password": new_pw},
+    )
+    assert good_resp.status_code == 200
+    assert good_resp.json()["success"] is True
+
+    # 6. Old password fails, new password succeeds
+    fail_login = client.post("/api/v1/auth/login", json={"email": email, "password": old_pw})
+    assert fail_login.status_code == 401
+
+    ok_login = client.post("/api/v1/auth/login", json={"email": email, "password": new_pw})
+    assert ok_login.status_code == 200

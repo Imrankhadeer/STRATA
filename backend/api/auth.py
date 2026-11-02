@@ -30,6 +30,7 @@ from backend.schemas.auth import (
     UserResponse,
     TokenResponse,
     MessageResponse,
+    ChangePasswordRequest,
 )
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication & User Management"])
@@ -333,3 +334,50 @@ def get_current_user_profile(
         "user": UserResponse.model_validate(user) if user else None,
     }
 
+
+
+@router.post(
+    "/change-password",
+    response_model=MessageResponse,
+    summary="Change operator account password",
+)
+def change_password(
+    req: ChangePasswordRequest,
+    auth: AuthContext = Depends(get_current_auth),
+    db: Session = Depends(get_db),
+):
+    if not auth.operator_principal:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Password modification requires an active human operator session.",
+        )
+    user = db.query(UserModel).filter(UserModel.email == auth.operator_principal).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Operator account not found.",
+        )
+    if not verify_password(req.current_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+    is_strong, err_msg = validate_password_strength(req.new_password)
+    if not is_strong:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=err_msg or "New password does not meet complexity requirements.",
+        )
+    user.hashed_password = hash_password(req.new_password)
+    user.updated_at = datetime.datetime.now(datetime.timezone.utc)
+    db.commit()
+    ops_bus.publish(
+        component="auth",
+        event_type="auth.password_changed",
+        level="info",
+        message=f"Operator password rotated: {user.email}",
+    )
+    return MessageResponse(
+        message="Password successfully updated.",
+        success=True,
+    )
