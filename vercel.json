@@ -10,11 +10,11 @@
     },
     {
       "source": "/console",
-      "destination": "/TERNLINE_Control_Room_Enhanced.html"
+      "destination": "/console.html"
     },
     {
       "source": "/docs",
-      "destination": "/documentation.html"
+      "destination": "/docs.html"
     },
     {
       "source": "/documentation",
@@ -22,15 +22,15 @@
     },
     {
       "source": "/guide",
-      "destination": "/documentation.html"
+      "destination": "/docs.html"
     },
     {
       "source": "/verify-email",
-      "destination": "/TERNLINE_Control_Room_Enhanced.html"
+      "destination": "/console.html"
     },
     {
       "source": "/reset-password",
-      "destination": "/TERNLINE_Control_Room_Enhanced.html"
+      "destination": "/console.html"
     }
   ],
   "headers": [
@@ -74,4 +74,3 @@
     }
   ]
 }
-
