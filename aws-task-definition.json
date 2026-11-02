@@ -1,0 +1,75 @@
+{
+  "family": "ternline-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "ternline-backend",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/ternline-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "ENVIRONMENT", "value": "production" },
+        { "name": "LOG_LEVEL", "value": "INFO" },
+        { "name": "HOST", "value": "0.0.0.0" },
+        { "name": "PORT", "value": "8000" },
+        { "name": "WORKERS", "value": "1" },
+        { "name": "REDIS_REQUIRED", "value": "true" },
+        { "name": "ALLOW_SIMULATION_API", "value": "false" },
+        { "name": "CORS_ALLOW_VERCEL", "value": "true" },
+        { "name": "ALLOWED_CORS_ORIGINS", "value": "https://ternline.vercel.app" },
+        { "name": "FRONTEND_URL", "value": "https://ternline.vercel.app" },
+        { "name": "AWS_REGION", "value": "us-east-1" },
+        { "name": "AWS_SES_SOURCE", "value": "noreply@ternline.io" },
+        { "name": "EMAIL_VERIFICATION_EXPIRE_HOURS", "value": "24" },
+        { "name": "INVESTIGATOR_PROVIDER", "value": "muse" },
+        { "name": "INVESTIGATOR_BASE_URL", "value": "https://api.meta.ai/v1" },
+        { "name": "INVESTIGATOR_MODEL", "value": "muse-spark-1.3" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:ternline/production/database_url"
+        },
+        {
+          "name": "REDIS_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:ternline/production/redis_url"
+        },
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:ternline/production/secret_key"
+        },
+        {
+          "name": "INVESTIGATOR_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:ternline/production/investigator_api_key"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/ops/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 15
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ternline-backend-production",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "backend"
+        }
+      }
+    }
+  ]
+}
+

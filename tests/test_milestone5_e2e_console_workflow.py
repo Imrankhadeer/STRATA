@@ -30,7 +30,7 @@ def test_full_console_lifecycle_e2e(client, auth_headers):
 
     console_resp = client.get("/console")
     assert console_resp.status_code == 200
-    assert "Interactive Security Console" in console_resp.text
+    assert "TERNLINE CONTROL ROOM" in console_resp.text
 
     # 2. Bootstrap demo session
     session_resp = client.get("/api/v1/demo/session")

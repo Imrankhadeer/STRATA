@@ -27,6 +27,9 @@ from backend.api.ops import router as ops_router
 from backend.api.keys import router as keys_router
 from backend.api.events import router as events_router
 from backend.api.defense import router as defense_router
+from backend.api.incidents import router as incidents_router
+from backend.api.threat_intel import router as threat_intel_router
+from backend.api.auth import router as auth_router
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -44,19 +47,25 @@ app = FastAPI(
     openapi_url=None if _is_prod else "/openapi.json",
 )
 
-# Secure CORS: Disallow wildcard origins when allow_credentials=True
-raw_cors = os.getenv("ALLOWED_CORS_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000")
+# Secure CORS: Support explicitly configured origins and Vercel domains
+raw_cors = os.getenv("ALLOWED_CORS_ORIGINS", settings.ALLOWED_CORS_ORIGINS)
 allowed_origins = [o.strip() for o in raw_cors.split(",") if o.strip()]
 if settings.ENVIRONMENT.lower() == "development":
     if "null" not in allowed_origins:
         allowed_origins.append("null")
 
+cors_kwargs = {
+    "allow_origins": allowed_origins,
+    "allow_credentials": True,
+    "allow_methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
+    "allow_headers": ["Authorization", "Content-Type", "Accept", "X-Tenant-ID", "X-Operator-Token"],
+}
+if getattr(settings, "CORS_ALLOW_VERCEL", True):
+    cors_kwargs["allow_origin_regex"] = r"^https://.*\.vercel\.app$"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
-    allow_headers=["Authorization", "Content-Type", "Accept", "X-Tenant-ID"],
+    **cors_kwargs,
 )
 
 
@@ -95,6 +104,9 @@ app.include_router(ops_router)
 app.include_router(keys_router)
 app.include_router(events_router)
 app.include_router(defense_router)
+app.include_router(incidents_router)
+app.include_router(threat_intel_router)
+app.include_router(auth_router)
 
 
 @app.on_event("startup")
@@ -154,7 +166,60 @@ def startup_db_init():
                     session.commit()
             logger.info("Development database initialized with sandbox baseline credentials.")
         else:
-            logger.info("Production mode: Auto-seeding of development baseline credentials is prohibited.")
+            # Production/Staging mode: Safe first-time bootstrap if database is empty
+            with Session(engine) as session:
+                from backend.models import TenantDefensePolicyModel
+                tenant_count = session.query(Tenant).count()
+                if tenant_count == 0:
+                    tenant_id = settings.INITIAL_TENANT_ID or "tenant-alpha"
+                    admin_key = settings.INITIAL_ADMIN_API_KEY
+                    auto_generated = False
+                    if not admin_key:
+                        from backend.core.auth import generate_api_key
+                        admin_key, key_hash = generate_api_key(tenant_id, "admin-console")
+                        auto_generated = True
+                    else:
+                        key_hash = hash_api_key(admin_key)
+
+                    t = Tenant(id=tenant_id, name="Default Organization", is_active=True)
+                    session.add(t)
+                    session.flush()
+
+                    k = ApiKey(
+                        id="key-admin-001",
+                        tenant_id=tenant_id,
+                        app_id="admin-console",
+                        key_hash=key_hash,
+                        key_prefix="ce_live_",
+                        scopes=["*"],
+                        is_active=True,
+                    )
+                    session.add(k)
+
+                    pol = TenantDefensePolicyModel(
+                        id="pol-admin-001",
+                        tenant_id=tenant_id,
+                        default_mode="observe",
+                        is_active=True,
+                        configuration={"default_mode": "observe"},
+                    )
+                    session.add(pol)
+                    session.commit()
+
+                    if auto_generated:
+                        logger.warning(
+                            "\n====================================================================\n"
+                            "FIRST-TIME INITIALIZATION: No tenants found in database.\n"
+                            "Generated Initial Production Admin API Key:\n"
+                            f"  Tenant ID: {tenant_id}\n"
+                            f"  API Key:   {admin_key}\n"
+                            "STORE THIS KEY SECURELY. IT CANNOT BE RETRIEVED AFTER LOGGING.\n"
+                            "===================================================================="
+                        )
+                    else:
+                        logger.info("Production bootstrap: Seeded initial organization and admin key from INITIAL_ADMIN_API_KEY.")
+                else:
+                    logger.info("Production mode: Database verified and operational.")
     except Exception as e:
         logger.warning(f"Database auto-init on startup skipped or deferred: {e}")
 
@@ -177,23 +242,13 @@ async def root():
 
 
 @app.get("/console", include_in_schema=False)
-async def console():
-    """
-    Serves the interactive security console.
-    """
-    console_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "console.html")
-    if os.path.exists(console_path):
-        return FileResponse(console_path)
-    cr_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "TERNLINE_Control_Room_Enhanced.html")
-    if os.path.exists(cr_path):
-        return FileResponse(cr_path)
-    return JSONResponse({"error": "Console interface not found"}, status_code=404)
-
-
 @app.get("/control-room", include_in_schema=False)
+@app.get("/ui", include_in_schema=False)
+@app.get("/app", include_in_schema=False)
+@app.get("/verify-email", include_in_schema=False)
 async def control_room():
     """
-    Serves the enhanced Ternline Control Room.
+    Serves the production Ternline Control Room.
     """
     cr_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "TERNLINE_Control_Room_Enhanced.html")
     if os.path.exists(cr_path):
@@ -201,7 +256,21 @@ async def control_room():
     return JSONResponse({"error": "Control Room interface not found"}, status_code=404)
 
 
+@app.get("/documentation", include_in_schema=False)
+@app.get("/guide", include_in_schema=False)
+@app.get("/docs/guide", include_in_schema=False)
+async def documentation():
+    """
+    Serves the Ternline Developer Onboarding & SDK Guide.
+    """
+    doc_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "documentation.html")
+    if os.path.exists(doc_path):
+        return FileResponse(doc_path)
+    return JSONResponse({"error": "Documentation page not found"}, status_code=404)
+
+
 @app.get("/health", tags=["health"])
+@app.get("/api/v1/ops/health", tags=["health"])
 async def health_check(db: Session = Depends(get_db)):
     """
     Health check endpoint verifying backend liveness and database connectivity.

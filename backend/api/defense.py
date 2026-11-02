@@ -31,13 +31,16 @@ from backend.core.auth import (
 from backend.models import (
     DefenseActionModel,
     DefenseAuditLogModel,
+    SecurityFinding,
     TenantDefensePolicyModel,
 )
 from backend.schemas.defense import (
     ActionApprovalRequest,
     ActionRejectRequest,
+    ActionRollbackRequest,
     ActionStatus,
     ActionType,
+    DefenseAuditLogEntry,
     PlannedResponseAction,
     ProtectionMode,
     TenantDefensePolicy,
@@ -120,6 +123,37 @@ async def get_defense_action(
 
     manager = ApprovalManager(db)
     return manager._model_to_planned(action)
+
+
+@router.post("/actions/plan/{finding_id}", response_model=List[PlannedResponseAction])
+async def plan_defense_action_for_finding(
+    finding_id: str,
+    auth: AuthContext = Depends(require_permission(Permission.DEFENSE_ACTIONS_PROPOSE)),
+    db: Session = Depends(get_db),
+):
+    """
+    Synthesizes and durably plans candidate defense actions for a specific SecurityFinding.
+    Applies deduplication, policy resolution, target validation, and audit recording.
+    Requires permission: defense:actions:propose
+    """
+    finding = (
+        db.query(SecurityFinding)
+        .filter(
+            SecurityFinding.finding_id == finding_id,
+            SecurityFinding.tenant_id == auth.tenant_id,
+        )
+        .first()
+    )
+    if not finding:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Security finding '{finding_id}' not found",
+        )
+
+    from backend.defense.planner import ResponsePlanner
+    planner = ResponsePlanner(db)
+    actions = planner.plan_from_finding(finding)
+    return actions
 
 
 @router.post("/actions/{action_id}/approve", response_model=PlannedResponseAction)
@@ -224,6 +258,72 @@ async def reject_defense_action(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except InvalidActionStatusError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+
+@router.post("/actions/{action_id}/execute", response_model=PlannedResponseAction)
+async def execute_defense_action(
+    action_id: str,
+    auth: AuthContext = Depends(require_permission(Permission.DEFENSE_ACTIONS_EXECUTE)),
+    db: Session = Depends(get_db),
+):
+    """
+    Executes an approved or autonomous containment action.
+    Acquires tenant lock, records EXECUTING status in DB, dispatches to provider adapter,
+    runs out-of-band verification, and registers TTL expiration.
+    Requires permission: defense:actions:execute
+    """
+    from backend.defense.executor import ResponseExecutor
+    executor = ResponseExecutor(db)
+    try:
+        actor_id = auth.operator_principal or f"key:{auth.app_id}"
+        executed = executor.execute_action(action_id=action_id, tenant_id=auth.tenant_id, actor=actor_id)
+        return executed
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/actions/{action_id}/rollback", response_model=PlannedResponseAction)
+async def rollback_defense_action(
+    action_id: str,
+    payload: ActionRollbackRequest,
+    auth: AuthContext = Depends(require_permission(Permission.DEFENSE_ACTIONS_ROLLBACK)),
+    db: Session = Depends(get_db),
+):
+    """
+    Reverts an active or executing containment action.
+    Restores normal operational state, invokes provider adapter rollback,
+    records immutable audit log, and publishes SSE notification.
+    Requires permission: defense:actions:rollback
+    """
+    from backend.defense.rollback import RollbackManager
+    manager = RollbackManager(db)
+    try:
+        actor_id = payload.actor or auth.operator_principal or f"key:{auth.app_id}"
+        rolled_back = manager.rollback_action(
+            action_id=action_id,
+            tenant_id=auth.tenant_id,
+            actor=actor_id,
+            rationale=payload.rationale,
+        )
+        return rolled_back
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.post("/actions/reconcile-expirations", response_model=List[str])
+async def reconcile_action_expirations(
+    auth: AuthContext = Depends(require_permission(Permission.DEFENSE_ACTIONS_READ)),
+    db: Session = Depends(get_db),
+):
+    """
+    Scans for verified active actions whose Time-to-Live (TTL) has expired and automatically rolls them back.
+    Requires permission: defense:actions:read
+    """
+    from backend.defense.rollback import RollbackManager
+    manager = RollbackManager(db)
+    expired = manager.check_and_expire_due_actions(tenant_id=auth.tenant_id)
+    return expired
+
 
 
 @router.get("/policy", response_model=TenantDefensePolicy)
@@ -344,3 +444,46 @@ async def update_tenant_defense_policy(
     )
 
     return await get_tenant_defense_policy(auth=auth, db=db)
+
+
+@router.get("/audit", response_model=List[DefenseAuditLogEntry])
+async def list_defense_audit_logs(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    action_id: Optional[str] = Query(None, description="Filter by specific action ID"),
+    auth: AuthContext = Depends(require_permission(Permission.DEFENSE_ACTIONS_READ)),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieves the immutable Active Defense audit log for the authenticated tenant.
+    Chronologically ordered (newest first).
+    Requires permission: defense:actions:read
+    """
+    query = (
+        db.query(DefenseAuditLogModel)
+        .filter(DefenseAuditLogModel.tenant_id == auth.tenant_id)
+    )
+    if action_id:
+        query = query.filter(DefenseAuditLogModel.action_id == action_id)
+
+    rows = (
+        query.order_by(DefenseAuditLogModel.timestamp.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        DefenseAuditLogEntry(
+            log_id=r.log_id,
+            action_id=r.action_id,
+            tenant_id=r.tenant_id,
+            from_status=r.from_status,
+            to_status=r.to_status,
+            transition_trigger=r.transition_trigger,
+            actor=r.actor,
+            details=r.details or {},
+            timestamp=r.timestamp,
+        )
+        for r in rows
+    ]

@@ -1,0 +1,103 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ternline_prod_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_prod_password_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-cyber_engine}
+    volumes:
+      - ternline_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-cyber_engine}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+
+  redis:
+    image: redis:7-alpine
+    container_name: ternline_prod_redis
+    restart: always
+    volumes:
+      - ternline_redis_data:/data
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "volatile-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ternline/backend:latest
+    container_name: ternline_prod_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://postgres:postgres_prod_password_change_me@db:5432/cyber_engine}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - REDIS_REQUIRED=true
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_CORS_ORIGINS=${ALLOWED_CORS_ORIGINS:-https://ternline.vercel.app}
+      - CORS_ALLOW_VERCEL=true
+      - FRONTEND_URL=${FRONTEND_URL:-https://ternline.vercel.app}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_SES_SOURCE=${AWS_SES_SOURCE:-noreply@ternline.io}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-noreply@ternline.io}
+      - INVESTIGATOR_PROVIDER=${INVESTIGATOR_PROVIDER:-muse}
+      - INVESTIGATOR_BASE_URL=${INVESTIGATOR_BASE_URL:-https://api.meta.ai/v1}
+      - INVESTIGATOR_MODEL=${INVESTIGATOR_MODEL:-muse-spark-1.3}
+      - INVESTIGATOR_API_KEY=${INVESTIGATOR_API_KEY:-}
+      - ALLOW_SIMULATION_API=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/ops/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+volumes:
+  ternline_pg_data:
+  ternline_redis_data:
+
+

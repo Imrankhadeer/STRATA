@@ -12,7 +12,7 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from backend.db.session import get_db
 from backend.core.auth import get_current_auth, AuthContext
@@ -187,10 +187,15 @@ async def search_events_historical(
         base_query = base_query.filter(EventModel.service_id == service_id.strip())
 
     if category:
-        # Category matches event_type prefix or contains pattern safely
+        # Match across event_type, service_id, or source/target resource safely
         cat = category.strip().lower()
         base_query = base_query.filter(
-            EventModel.event_type.ilike(f"%{cat}%")
+            or_(
+                EventModel.event_type.ilike(f"%{cat}%"),
+                EventModel.service_id.ilike(f"%{cat}%"),
+                EventModel.source_resource.ilike(f"%{cat}%"),
+                EventModel.target_resource.ilike(f"%{cat}%"),
+            )
         )
 
     if min_severity:

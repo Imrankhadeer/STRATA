@@ -1,26 +1,56 @@
 services:
   - type: web
-    name: instatern-instagram-app
+    name: ternline-cyber-engine
     runtime: python
-    rootDir: apps/instagram_app
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    plan: free
+    startCommand: alembic upgrade head && uvicorn backend.main:app --host 0.0.0.0 --port $PORT --workers 1
+    plan: starter
     region: oregon
     envVars:
-      - key: CYBER_ENGINE_URL
-        sync: false
-        value: https://cyber-engine.onrender.com
-      - key: CYBER_ENGINE_API_KEY
-        sync: false
-      - key: TENANT_ID
-        value: tenant-alpha
-      - key: APP_ID
-        value: instagram-app
-      - key: SERVICE_ID
-        value: instagram-api
-      - key: TELEMETRY_ENABLED
-        value: "true"
-      - key: TELEMETRY_BUFFERED
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cyber-engine-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: cyber-engine-redis
+          property: connectionString
+      - key: REDIS_REQUIRED
         value: "false"
+      - key: WORKERS
+        value: "1"
+      - key: INVESTIGATOR_PROVIDER
+        value: muse
+      - key: INVESTIGATOR_MODEL
+        value: muse-spark-1.3
+      - key: INVESTIGATOR_BASE_URL
+        value: https://api.meta.ai/v1
+      - key: INVESTIGATOR_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: INITIAL_ADMIN_API_KEY
+        generateValue: true
+      - key: INITIAL_TENANT_ID
+        value: tenant-alpha
+      - key: ALLOW_SIMULATION_API
+        value: "false"
+      - key: ALLOWED_CORS_ORIGINS
+        value: https://ternline-cyber-engine.onrender.com
 
+  - type: redis
+    name: cyber-engine-redis
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: volatile-lru
+    ipAllowList: []
+
+databases:
+  - name: cyber-engine-postgres
+    plan: starter
+    databaseName: cyber_engine
+    user: postgres
+    region: oregon

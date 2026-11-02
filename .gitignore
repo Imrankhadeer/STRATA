@@ -20,10 +20,24 @@ env/
 ENV/
 
 # Secrets and local environments
+.env
+.env.*
 .env.local
 .env.*.local
 !.env.example
-!.env
+!.env.production.example
+
+# Credentials and TLS certificates
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+*.cer
+id_rsa*
+id_ed25519*
+.aws/
+credentials
 
 # Local databases and Docker volumes
 postgres_data/

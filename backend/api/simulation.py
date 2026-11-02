@@ -279,6 +279,14 @@ async def run_simulation(
 
     finding_ids = [f.finding_id for f in emitter.generated_findings]
 
+    # Auto-correlate simulated findings into incident cases
+    for f in emitter.generated_findings:
+        try:
+            from backend.incidents.correlator import IncidentCorrelator
+            IncidentCorrelator(db).correlate_finding(f)
+        except Exception as e:
+            logger.warning("Simulation incident auto-correlation error: %s", e)
+
     ops_bus.publish(
         component="simulation",
         event_type="simulation.completed",

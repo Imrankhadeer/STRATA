@@ -25,6 +25,36 @@ class Tenant(Base):
 
     api_keys = relationship("ApiKey", back_populates="tenant", cascade="all, delete-orphan")
     events = relationship("EventModel", back_populates="tenant", cascade="all, delete-orphan")
+    users = relationship("UserModel", back_populates="tenant", cascade="all, delete-orphan")
+
+
+class UserModel(Base):
+    """
+    User accounts for human operators, tenant administrators, and security analysts.
+    Includes verification token and timestamp for self-securing email verification.
+    """
+    __tablename__ = "users"
+
+    id = Column(String(64), primary_key=True)
+    tenant_id = Column(String(64), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    full_name = Column(String(128), nullable=True)
+    role = Column(String(32), default="operator", nullable=False)  # admin, operator, analyst, viewer
+    is_active = Column(Boolean, default=True, nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
+    verification_token = Column(String(128), nullable=True, unique=True, index=True)
+    verification_token_expires_at = Column(DateTime, nullable=True)
+    reset_token = Column(String(128), nullable=True, unique=True, index=True)
+    reset_token_expires_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+
+    tenant = relationship("Tenant", back_populates="users")
+
+    __table_args__ = (
+        Index("ix_users_lookup", "email", "is_active", "is_verified"),
+    )
 
 
 class ApiKey(Base):
@@ -256,6 +286,83 @@ class DefenseAuditLogModel(Base):
 
     __table_args__ = (
         Index("ix_defense_audit_log_tenant_time", "tenant_id", "timestamp"),
+    )
+
+
+class IncidentModel(Base):
+    """
+    Phase 2: Aggregated incident case correlating multiple SecurityFinding records.
+    """
+    __tablename__ = "incidents"
+
+    incident_id = Column(String(64), primary_key=True)
+    tenant_id = Column(String(64), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    summary = Column(Text, nullable=True)
+    severity = Column(String(32), default="medium", nullable=False)      # critical, high, medium, low
+    status = Column(String(32), default="open", nullable=False)          # open, investigating, contained, resolved, false_positive
+    lead_detector_id = Column(String(128), nullable=True)
+    primary_entity_type = Column(String(64), nullable=True)              # ip, user, service, api_key
+    primary_entity_id = Column(String(255), nullable=True)
+    trace_ids = Column(JSON, default=list, nullable=False)
+    affected_services = Column(JSON, default=list, nullable=False)
+    mitre_tactics = Column(JSON, default=list, nullable=False)
+    mitre_techniques = Column(JSON, default=list, nullable=False)
+    finding_count = Column(Integer, default=1, nullable=False)
+    assigned_to = Column(String(128), nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index("ix_incidents_tenant_status", "tenant_id", "status"),
+        Index("ix_incidents_tenant_severity", "tenant_id", "severity"),
+        Index("ix_incidents_tenant_created", "tenant_id", "created_at"),
+    )
+
+
+class IncidentFindingModel(Base):
+    """
+    Phase 2: Junction table linking incidents to their constituent SecurityFindings.
+    """
+    __tablename__ = "incident_findings"
+
+    incident_id = Column(String(64), ForeignKey("incidents.incident_id", ondelete="CASCADE"), primary_key=True)
+    finding_id = Column(String(64), ForeignKey("security_findings.finding_id", ondelete="CASCADE"), primary_key=True)
+    tenant_id = Column(String(64), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    added_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index("ix_incident_findings_tenant", "tenant_id"),
+        Index("ix_incident_findings_finding", "finding_id"),
+    )
+
+
+class ThreatIntelIocModel(Base):
+    """
+    Phase 2: Tenant-isolated Indicators of Compromise (IOC) registry.
+    """
+    __tablename__ = "threat_intel_iocs"
+
+    ioc_id = Column(String(64), primary_key=True)
+    tenant_id = Column(String(64), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    ioc_type = Column(String(64), nullable=False)                       # ip, domain, sha256, user_agent, query_pattern
+    value = Column(String(512), nullable=False)
+    threat_actor = Column(String(128), nullable=True)
+    description = Column(Text, nullable=True)
+    severity = Column(String(32), default="high", nullable=False)        # critical, high, medium, low
+    confidence = Column(String(32), default="high", nullable=False)      # high, medium, low
+    mitre_tactics = Column(JSON, default=list, nullable=False)
+    mitre_techniques = Column(JSON, default=list, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    source = Column(String(128), default="manual", nullable=False)
+    expires_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index("ix_threat_intel_tenant_type_val", "tenant_id", "ioc_type", "value"),
+        Index("ix_threat_intel_tenant_active", "tenant_id", "is_active"),
     )
 
 

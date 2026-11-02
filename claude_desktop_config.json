@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "ternline": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_server"
+      ],
+      "env": {
+        "TERNLINE_ENDPOINT": "http://localhost:8000",
+        "TERNLINE_API_KEY": "ce_live_test_api_key_secret_12345"
+      }
+    }
+  }
+}
+

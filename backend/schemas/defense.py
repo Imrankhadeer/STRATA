@@ -307,6 +307,12 @@ class ActionRejectRequest(BaseModel):
     rationale: str = Field(..., min_length=5, max_length=1024)
 
 
+class ActionRollbackRequest(BaseModel):
+    rationale: str = Field(..., min_length=3, max_length=1024, description="Audited operational rationale for rolling back containment.")
+    actor: Optional[str] = Field(default=None, description="Optional actor identity override")
+
+
+
 class TenantDefensePolicyUpdate(BaseModel):
     default_mode: Optional[ProtectionMode] = None
     allowed_autonomous_actions: Optional[List[ActionType]] = None
@@ -326,3 +332,15 @@ class TenantDefensePolicyUpdate(BaseModel):
                 names = ", ".join(x.value for x in intersect)
                 raise ValueError(f"Mandatory safety violation: [{names}] can never be configured for autonomous execution")
         return v
+
+
+class DefenseAuditLogEntry(BaseModel):
+    log_id: str
+    action_id: Optional[str] = None
+    tenant_id: str
+    from_status: Optional[str] = None
+    to_status: str
+    transition_trigger: str
+    actor: str
+    details: Dict[str, Any] = Field(default_factory=dict)
+    timestamp: datetime.datetime

@@ -9,6 +9,7 @@ from backend.investigation.adapters import (
     MockInvestigator,
     MetaModelInvestigator,
     OpenAICompatibleInvestigator,
+    MuseInvestigator,
 )
 
 
@@ -19,7 +20,14 @@ def get_investigator(provider_override: Optional[str] = None) -> BaseInvestigato
     """
     provider = (provider_override or settings.INVESTIGATOR_PROVIDER).lower().strip()
 
-    if provider == "meta":
+    if provider == "muse":
+        return MuseInvestigator(
+            api_key=settings.INVESTIGATOR_API_KEY,
+            base_url=settings.INVESTIGATOR_BASE_URL,
+            model=settings.INVESTIGATOR_MODEL,
+            timeout=settings.INVESTIGATOR_TIMEOUT_SECONDS,
+        )
+    elif provider == "meta":
         return MetaModelInvestigator(
             api_key=settings.INVESTIGATOR_API_KEY,
             base_url=settings.INVESTIGATOR_BASE_URL,
@@ -34,5 +42,14 @@ def get_investigator(provider_override: Optional[str] = None) -> BaseInvestigato
             timeout=settings.INVESTIGATOR_TIMEOUT_SECONDS,
         )
 
-    return MockInvestigator()
+    elif provider == "mock":
+        return MockInvestigator()
+
+    # Default to Muse AI provider
+    return MuseInvestigator(
+        api_key=settings.INVESTIGATOR_API_KEY,
+        base_url=settings.INVESTIGATOR_BASE_URL,
+        model=settings.INVESTIGATOR_MODEL,
+        timeout=settings.INVESTIGATOR_TIMEOUT_SECONDS,
+    )
 

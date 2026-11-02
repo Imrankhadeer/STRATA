@@ -4,8 +4,13 @@ Allows triggering selective investigations and retrieving investigation reports.
 """
 
 import asyncio
+import datetime
+import uuid
 from typing import List, Optional, Set
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import StreamingResponse
+import json
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.db.session import get_db
@@ -14,6 +19,7 @@ from backend.models import Tenant, SecurityFinding, InvestigationReport
 from backend.investigation.collector import EvidenceCollector
 from backend.investigation.factory import get_investigator
 from backend.investigation.quality import InvestigationQualityAuditor
+from backend.investigation.scope import is_query_in_scope
 from backend.schemas.investigation import (
     InvestigationFinding,
     Hypothesis,
@@ -26,6 +32,367 @@ router = APIRouter(prefix="/api/v1/investigations", tags=["Investigations"])
 # In-flight lock tracking to prevent concurrent duplicate model calls
 _in_flight_investigations: Set[str] = set()
 _in_flight_lock = asyncio.Lock()
+
+
+class DeepSearchRequest(BaseModel):
+    query: str = Field(..., min_length=3, max_length=2000, description="Natural language prompt or query for AI investigation")
+    target_service: Optional[str] = None
+    target_entity: Optional[str] = None
+    trace_id: Optional[str] = None
+
+
+@router.post("/query", response_model=InvestigationFinding, status_code=status.HTTP_200_OK)
+async def query_deep_investigator(
+    payload: DeepSearchRequest,
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_current_auth),
+):
+    """
+    Direct Deep Track AI Query & Investigation entrypoint.
+    Allows human analysts to prompt the AI to investigate telemetry, analyze anomalies,
+    audit traces, or synthesize declarative detection rules on demand.
+    Enforces scope verification to reject non-security, trivia, or irrelevant queries.
+    """
+    query_finding_id = f"query-{uuid.uuid4().hex[:8]}"
+
+    # Scope and relevancy verification gate
+    in_scope, reason = is_query_in_scope(payload.query)
+    if not in_scope:
+        out_of_scope_finding = InvestigationFinding(
+            finding_id=query_finding_id,
+            tenant_id=auth.tenant_id,
+            verdict="inconclusive",
+            summary=(
+                f"Query Out of Scope: {reason} CYBER ENGINE Deep Track AI is restricted strictly "
+                f"to enterprise cybersecurity telemetry, distributed trace correlation, system observability, "
+                f"and threat detection. Non-security, entertainment, or trivia queries cannot be evaluated."
+            ),
+            hypotheses=[],
+            candidate_rules=[],
+            recommended_mitigations=[
+                "Submit operational or security queries regarding microservice telemetry, distributed traces, authentication anomalies, database access, or active threats."
+            ],
+            investigator_provider="cyber-engine-gateway",
+            investigator_model="relevancy-gatekeeper-1.0",
+        )
+
+        synthesized_finding = SecurityFinding(
+            finding_id=query_finding_id,
+            tenant_id=auth.tenant_id,
+            detector_id="investigator.deep_search",
+            detector_version="1.0.0",
+            title=f"AI Deep Search (Out of Scope): {payload.query[:60]}",
+            severity="info",
+            confidence="high",
+            description=payload.query,
+            evidence={
+                "query": payload.query,
+                "rejection_reason": reason,
+            },
+            status="resolved",
+            created_at=datetime.datetime.now(datetime.timezone.utc),
+        )
+        db.add(synthesized_finding)
+
+        db_report = InvestigationReport(
+            investigation_id=out_of_scope_finding.investigation_id,
+            finding_id=query_finding_id,
+            tenant_id=auth.tenant_id,
+            verdict=out_of_scope_finding.verdict,
+            summary=out_of_scope_finding.summary,
+            hypotheses=[],
+            candidate_rules=[],
+            recommended_mitigations=out_of_scope_finding.recommended_mitigations,
+            investigator_provider=out_of_scope_finding.investigator_provider,
+            investigator_model=out_of_scope_finding.investigator_model,
+        )
+        db.add(db_report)
+        db.commit()
+
+        ops_bus.publish(
+            component="deep-track",
+            event_type="investigation.query_rejected_out_of_scope",
+            level="warn",
+            message=f"Deep Search query rejected as out-of-scope: '{payload.query[:60]}'",
+            tenant_id=auth.tenant_id,
+            finding_id=query_finding_id,
+            metadata={"query": payload.query, "reason": reason},
+        )
+        return out_of_scope_finding
+
+    synthesized_finding = SecurityFinding(
+        finding_id=query_finding_id,
+        tenant_id=auth.tenant_id,
+        detector_id="investigator.deep_search",
+        detector_version="1.0.0",
+        title=f"AI Deep Search: {payload.query[:60]}",
+        severity="info",
+        confidence="high",
+        description=payload.query,
+        evidence={
+            "query": payload.query,
+            "target_service": payload.target_service,
+            "target_entity": payload.target_entity,
+            "trace_id": payload.trace_id,
+        },
+        status="resolved",
+        created_at=datetime.datetime.now(datetime.timezone.utc),
+    )
+    db.add(synthesized_finding)
+    db.commit()
+
+    collector = EvidenceCollector(db)
+    context = collector.assemble_query_context(
+        tenant_id=auth.tenant_id,
+        query=payload.query,
+        finding_id=query_finding_id,
+        target_service=payload.target_service,
+        target_entity=payload.target_entity,
+        trace_id=payload.trace_id,
+    )
+
+    ops_bus.publish(
+        component="deep-track",
+        event_type="investigation.query_started",
+        level="info",
+        message=f"Deep Search query started: '{payload.query[:60]}' ({len(context.timeline_events)} timeline events)",
+        tenant_id=auth.tenant_id,
+        finding_id=query_finding_id,
+        metadata={"query": payload.query, "events_count": len(context.timeline_events)},
+    )
+
+    investigator = get_investigator()
+    report = await investigator.investigate(context)
+
+    auditor = InvestigationQualityAuditor()
+    audit_report = auditor.audit(context, report)
+    if audit_report.hallucinated_event_ids or audit_report.citation_fidelity_errors:
+        ops_bus.publish(
+            component="deep-track",
+            event_type="investigation.quality_audit_failed",
+            level="error",
+            message=f"Deep search citation audit failed: {len(audit_report.hallucinated_event_ids)} ungrounded citations",
+            tenant_id=auth.tenant_id,
+            finding_id=query_finding_id,
+            investigation_id=report.investigation_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error": "Investigation report failed evidence grounding audit",
+                "hallucinated_event_ids": audit_report.hallucinated_event_ids,
+                "fidelity_errors": audit_report.citation_fidelity_errors,
+            },
+        )
+
+    # If the AI confirmed an actual threat, promote the finding to open / high severity
+    if report.verdict == "confirmed_threat":
+        synthesized_finding.status = "open"
+        synthesized_finding.severity = "high"
+    else:
+        synthesized_finding.status = "resolved"
+        synthesized_finding.severity = "info"
+
+    db_report = InvestigationReport(
+        investigation_id=report.investigation_id,
+        finding_id=query_finding_id,
+        tenant_id=auth.tenant_id,
+        verdict=report.verdict,
+        summary=report.summary,
+        hypotheses=[h.model_dump() for h in report.hypotheses],
+        candidate_rules=[r.model_dump() for r in report.candidate_rules],
+        recommended_mitigations=report.recommended_mitigations,
+        investigator_provider=report.investigator_provider,
+        investigator_model=report.investigator_model,
+    )
+    db.add(db_report)
+    db.commit()
+
+    ops_bus.publish(
+        component="deep-track",
+        event_type="investigation.query_completed",
+        level="success",
+        message=f"Deep Search completed for '{payload.query[:40]}': verdict='{report.verdict}' ({len(report.candidate_rules)} candidate rules proposed)",
+        tenant_id=auth.tenant_id,
+        finding_id=query_finding_id,
+        investigation_id=report.investigation_id,
+    )
+
+    return report
+
+
+@router.post("/query/stream")
+async def stream_query_investigator(
+    payload: DeepSearchRequest,
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_current_auth),
+):
+    """
+    Streaming Deep Track AI Query & Investigation entrypoint.
+    Streams real-time progress stages, reasoning chunks, and the completed grounded report over SSE.
+    """
+    query_finding_id = f"query-{uuid.uuid4().hex[:8]}"
+
+    async def event_generator():
+        # Stage 1: Scope & Relevancy Verification
+        yield f"data: {json.dumps({'stage': 'scope_verification', 'detail': 'Verifying inquiry relevance and domain boundaries...'})}\n\n"
+        await asyncio.sleep(0.01)
+
+        in_scope, reason = is_query_in_scope(payload.query)
+        if not in_scope:
+            out_of_scope_finding = InvestigationFinding(
+                finding_id=query_finding_id,
+                tenant_id=auth.tenant_id,
+                verdict="inconclusive",
+                summary=(
+                    f"Query Out of Scope: {reason} CYBER ENGINE Deep Track AI is restricted strictly "
+                    f"to enterprise cybersecurity telemetry, distributed trace correlation, system observability, "
+                    f"and threat detection. Non-security, entertainment, or trivia queries cannot be evaluated."
+                ),
+                hypotheses=[],
+                candidate_rules=[],
+                recommended_mitigations=[
+                    "Submit operational or security queries regarding microservice telemetry, distributed traces, authentication anomalies, database access, or active threats."
+                ],
+                investigator_provider="cyber-engine-gateway",
+                investigator_model="relevancy-gatekeeper-1.0",
+            )
+            synthesized_finding = SecurityFinding(
+                finding_id=query_finding_id,
+                tenant_id=auth.tenant_id,
+                detector_id="investigator.deep_search",
+                detector_version="1.0.0",
+                title=f"AI Deep Search (Out of Scope): {payload.query[:60]}",
+                severity="info",
+                confidence="high",
+                description=payload.query,
+                evidence={"query": payload.query, "rejection_reason": reason},
+                status="resolved",
+                created_at=datetime.datetime.now(datetime.timezone.utc),
+            )
+            db.add(synthesized_finding)
+            db_report = InvestigationReport(
+                investigation_id=out_of_scope_finding.investigation_id,
+                finding_id=query_finding_id,
+                tenant_id=auth.tenant_id,
+                verdict=out_of_scope_finding.verdict,
+                summary=out_of_scope_finding.summary,
+                hypotheses=[],
+                candidate_rules=[],
+                recommended_mitigations=out_of_scope_finding.recommended_mitigations,
+                investigator_provider=out_of_scope_finding.investigator_provider,
+                investigator_model=out_of_scope_finding.investigator_model,
+            )
+            db.add(db_report)
+            db.commit()
+
+            yield f"data: {json.dumps({'stage': 'scope_rejected', 'reason': reason, 'verdict': 'inconclusive', 'report': out_of_scope_finding.model_dump()})}\n\n"
+            yield f"data: {json.dumps({'stage': 'complete', 'verdict': 'inconclusive', 'report': out_of_scope_finding.model_dump()})}\n\n"
+            return
+
+        yield f"data: {json.dumps({'stage': 'scope_verified', 'detail': 'Inquiry verified within cybersecurity domain.'})}\n\n"
+
+        # Stage 2: Evidence Context Assembly
+        yield f"data: {json.dumps({'stage': 'evidence_collection', 'detail': 'Assembling cross-service distributed trace context and telemetry baselines...'})}\n\n"
+        await asyncio.sleep(0.01)
+
+        synthesized_finding = SecurityFinding(
+            finding_id=query_finding_id,
+            tenant_id=auth.tenant_id,
+            detector_id="investigator.deep_search",
+            detector_version="1.0.0",
+            title=f"AI Deep Search: {payload.query[:60]}",
+            severity="info",
+            confidence="high",
+            description=payload.query,
+            evidence={
+                "query": payload.query,
+                "target_service": payload.target_service,
+                "target_entity": payload.target_entity,
+                "trace_id": payload.trace_id,
+            },
+            status="resolved",
+            created_at=datetime.datetime.now(datetime.timezone.utc),
+        )
+        db.add(synthesized_finding)
+        db.commit()
+
+        collector = EvidenceCollector(db)
+        context = collector.assemble_query_context(
+            tenant_id=auth.tenant_id,
+            query=payload.query,
+            finding_id=query_finding_id,
+            target_service=payload.target_service,
+            target_entity=payload.target_entity,
+            trace_id=payload.trace_id,
+        )
+
+        srv_list = context.services or ["telemetry-gateway"]
+        yield f"data: {json.dumps({'stage': 'evidence_ready', 'events_count': len(context.timeline_events), 'services': context.services, 'detail': f'Gathered {len(context.timeline_events)} timeline events across services: {srv_list}'})}\n\n"
+
+        # Stage 3: Model Inference & Reasoning
+        investigator = get_investigator()
+        model_name = getattr(investigator, "model_name", "muse-spark-1.3")
+        provider_name = getattr(investigator, "provider_name", "meta")
+
+        yield f"data: {json.dumps({'stage': 'inference_dispatched', 'provider': provider_name, 'model': model_name, 'detail': f'Executing inference with {provider_name} ({model_name})...'})}\n\n"
+
+        report = None
+        async for chunk in investigator.stream_investigate(context):
+            if chunk.get("stage") == "model_completed":
+                report = chunk.get("report")
+            yield f"data: {json.dumps(chunk, default=str)}\n\n"
+
+        if not report:
+            report = await investigator.investigate(context)
+
+        # Stage 4: Mathematical Citation Audit
+        yield f"data: {json.dumps({'stage': 'citation_audit', 'detail': 'Auditing mathematical evidence grounding against PostgreSQL ground truth...'})}\n\n"
+
+        auditor = InvestigationQualityAuditor()
+        audit_report = auditor.audit(context, report)
+        if audit_report.hallucinated_event_ids or audit_report.citation_fidelity_errors:
+            yield f"data: {json.dumps({'stage': 'audit_failed', 'detail': 'Report failed evidence grounding audit', 'hallucinated': audit_report.hallucinated_event_ids})}\n\n"
+            return
+
+        yield f"data: {json.dumps({'stage': 'audit_passed', 'detail': f'Audited {len(report.hypotheses)} hypotheses: 0 hallucinated events, all citations verified.'})}\n\n"
+
+        if report.verdict == "confirmed_threat":
+            synthesized_finding.status = "open"
+            synthesized_finding.severity = "high"
+        else:
+            synthesized_finding.status = "resolved"
+            synthesized_finding.severity = "info"
+
+        db_report = InvestigationReport(
+            investigation_id=report.investigation_id,
+            finding_id=query_finding_id,
+            tenant_id=auth.tenant_id,
+            verdict=report.verdict,
+            summary=report.summary,
+            hypotheses=[h.model_dump() for h in report.hypotheses],
+            candidate_rules=[r.model_dump() for r in report.candidate_rules],
+            recommended_mitigations=report.recommended_mitigations,
+            investigator_provider=report.investigator_provider,
+            investigator_model=report.investigator_model,
+        )
+        db.add(db_report)
+        db.commit()
+
+        ops_bus.publish(
+            component="deep-track",
+            event_type="investigation.query_stream_completed",
+            level="success",
+            message=f"Deep Search stream completed for '{payload.query[:40]}': verdict='{report.verdict}'",
+            tenant_id=auth.tenant_id,
+            finding_id=query_finding_id,
+            investigation_id=report.investigation_id,
+        )
+
+        # Stage 5: Final Completed Event
+        yield f"data: {json.dumps({'stage': 'complete', 'verdict': report.verdict, 'report': report.model_dump()}, default=str)}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.post("/{finding_id}", response_model=InvestigationFinding, status_code=status.HTTP_200_OK)
@@ -200,6 +567,142 @@ async def investigate_finding(
     finally:
         async with _in_flight_lock:
             _in_flight_investigations.discard(flight_key)
+
+
+@router.post("/{finding_id}/stream")
+async def stream_investigate_finding(
+    finding_id: str,
+    force_refresh: bool = Query(
+        False, description="Explicitly request a fresh investigation, bypassing cached reports"
+    ),
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_current_auth),
+):
+    """
+    Streaming Deep Track investigation for a specific finding.
+    Streams evidence collection, reasoning stages, citation audit, and final grounded report over SSE.
+    """
+    finding = db.query(SecurityFinding).filter(
+        SecurityFinding.finding_id == finding_id
+    ).first()
+
+    if not finding:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Security finding '{finding_id}' not found.",
+        )
+
+    if finding.tenant_id != auth.tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Cannot investigate finding across tenant boundaries.",
+        )
+
+    async def event_generator():
+        # Check existing cached report if not force_refresh
+        if not force_refresh:
+            existing_report = (
+                db.query(InvestigationReport)
+                .filter(
+                    InvestigationReport.finding_id == finding_id,
+                    InvestigationReport.tenant_id == auth.tenant_id,
+                )
+                .order_by(InvestigationReport.created_at.desc())
+                .first()
+            )
+            if existing_report:
+                rep_obj = InvestigationFinding(
+                    investigation_id=existing_report.investigation_id,
+                    finding_id=existing_report.finding_id,
+                    tenant_id=existing_report.tenant_id,
+                    verdict=existing_report.verdict,
+                    summary=existing_report.summary,
+                    hypotheses=[Hypothesis(**h) for h in (existing_report.hypotheses or [])],
+                    candidate_rules=[CandidateDetectorRule(**r) for r in (existing_report.candidate_rules or [])],
+                    recommended_mitigations=existing_report.recommended_mitigations or [],
+                    investigator_provider=existing_report.investigator_provider,
+                    investigator_model=existing_report.investigator_model,
+                    completed_at=existing_report.created_at,
+                )
+                yield f"data: {json.dumps({'stage': 'cache_hit', 'detail': f'Reused cached report {existing_report.investigation_id}', 'report': rep_obj.model_dump()}, default=str)}\n\n"
+                yield f"data: {json.dumps({'stage': 'complete', 'verdict': rep_obj.verdict, 'report': rep_obj.model_dump()}, default=str)}\n\n"
+                return
+
+        flight_key = f"{auth.tenant_id}:{finding_id}"
+        async with _in_flight_lock:
+            if flight_key in _in_flight_investigations:
+                yield f"data: {json.dumps({'stage': 'error', 'detail': 'Investigation already in progress for this finding. Please wait.'})}\n\n"
+                return
+            _in_flight_investigations.add(flight_key)
+
+        try:
+            yield f"data: {json.dumps({'stage': 'evidence_collection', 'detail': f'Assembling multi-service evidence context for finding {finding_id}...'})}\n\n"
+            await asyncio.sleep(0.01)
+
+            collector = EvidenceCollector(db)
+            context = collector.assemble_context(finding_id)
+            if not context:
+                yield f"data: {json.dumps({'stage': 'error', 'detail': f'Could not assemble evidence context for finding {finding_id}'})}\n\n"
+                return
+
+            yield f"data: {json.dumps({'stage': 'evidence_ready', 'events_count': len(context.timeline_events), 'services': context.services, 'detail': f'Assembled {len(context.timeline_events)} timeline events across services: {context.services}'})}\n\n"
+
+            investigator = get_investigator()
+            model_name = getattr(investigator, 'model_name', 'muse-spark-1.3')
+            provider_name = getattr(investigator, 'provider_name', 'meta')
+
+            yield f"data: {json.dumps({'stage': 'inference_dispatched', 'provider': provider_name, 'model': model_name, 'detail': f'Dispatched context to {provider_name} ({model_name})...'})}\n\n"
+
+            report = None
+            async for chunk in investigator.stream_investigate(context):
+                if chunk.get("stage") == "model_completed":
+                    report = chunk.get("report")
+                yield f"data: {json.dumps(chunk, default=str)}\n\n"
+
+            if not report:
+                report = await investigator.investigate(context)
+
+            yield f"data: {json.dumps({'stage': 'citation_audit', 'detail': 'Auditing mathematical evidence grounding against PostgreSQL ground truth...'})}\n\n"
+
+            auditor = InvestigationQualityAuditor()
+            audit_report = auditor.audit(context, report)
+            if audit_report.hallucinated_event_ids or audit_report.citation_fidelity_errors:
+                yield f"data: {json.dumps({'stage': 'audit_failed', 'detail': 'Report failed evidence grounding audit', 'hallucinated': audit_report.hallucinated_event_ids})}\n\n"
+                return
+
+            yield f"data: {json.dumps({'stage': 'audit_passed', 'detail': f'Citation audit passed: 0 hallucinated events, {len(report.hypotheses)} verified hypotheses.'})}\n\n"
+
+            db_report = InvestigationReport(
+                investigation_id=report.investigation_id,
+                finding_id=report.finding_id,
+                tenant_id=report.tenant_id,
+                verdict=report.verdict,
+                summary=report.summary,
+                hypotheses=[h.model_dump() for h in report.hypotheses],
+                candidate_rules=[r.model_dump() for r in report.candidate_rules],
+                recommended_mitigations=report.recommended_mitigations,
+                investigator_provider=report.investigator_provider,
+                investigator_model=report.investigator_model,
+            )
+            db.add(db_report)
+            db.commit()
+
+            ops_bus.publish(
+                component="deep-track",
+                event_type="investigation.stream_completed",
+                level="success",
+                message=f"Deep Track stream completed for finding {finding_id}: verdict='{report.verdict}'",
+                tenant_id=auth.tenant_id,
+                finding_id=finding_id,
+                investigation_id=report.investigation_id,
+            )
+
+            yield f"data: {json.dumps({'stage': 'complete', 'verdict': report.verdict, 'report': report.model_dump()}, default=str)}\n\n"
+        finally:
+            async with _in_flight_lock:
+                _in_flight_investigations.discard(flight_key)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.get("", response_model=List[InvestigationFinding])

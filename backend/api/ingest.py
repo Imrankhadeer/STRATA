@@ -143,6 +143,11 @@ def evaluate_and_persist_findings(
                 detector_id=finding.detector_id,
                 severity=finding.severity,
             )
+            try:
+                from backend.incidents.correlator import IncidentCorrelator
+                IncidentCorrelator(db).correlate_finding(db_finding)
+            except Exception as inc_err:
+                logger.warning("Incident auto-correlation error: %s", inc_err)
         except IntegrityError:
             db.rollback()
         except Exception as e:
@@ -196,6 +201,11 @@ def evaluate_and_persist_findings(
                     detector_id=finding.detector_id,
                     severity=finding.severity,
                 )
+                try:
+                    from backend.incidents.correlator import IncidentCorrelator
+                    IncidentCorrelator(db).correlate_finding(db_finding)
+                except Exception as inc_err:
+                    logger.warning("Incident auto-correlation error: %s", inc_err)
             except IntegrityError:
                 db.rollback()
             except Exception as e:

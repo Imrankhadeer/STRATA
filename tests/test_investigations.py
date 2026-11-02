@@ -12,6 +12,7 @@ Covers:
 
 import pytest
 import json
+import datetime
 from unittest.mock import patch, MagicMock, AsyncMock
 import httpx
 
@@ -25,6 +26,7 @@ from backend.investigation.adapters import (
     MockInvestigator,
     MetaModelInvestigator,
     OpenAICompatibleInvestigator,
+    MuseInvestigator,
     _clean_json_content,
 )
 from backend.investigation.factory import get_investigator
@@ -43,6 +45,7 @@ def populated_scenario(client, db_session):
     run_synthetic_scenario(sdk)
 
     finding = db_session.query(SecurityFinding).filter(
+        SecurityFinding.tenant_id == TEST_TENANT_ID,
         SecurityFinding.detector_id == "detector.cross_service.exfiltration"
     ).first()
     assert finding is not None
@@ -197,11 +200,11 @@ async def test_meta_model_investigator_graceful_fallback(populated_scenario, db_
     )
 
     with patch("httpx.AsyncClient.post", side_effect=httpx.ConnectTimeout("Connection to Meta API timed out")):
-        # Must NOT raise exception
+        # Must NOT raise exception or crash; gracefully returns error finding
         report = await investigator.investigate(context)
         assert report is not None
-        assert report.verdict == "confirmed_threat"
-        assert "fallback" in report.summary.lower()
+        assert report.verdict == "inconclusive"
+        assert "timeout" in report.summary.lower()
 
 
 def test_investigator_factory():
@@ -213,6 +216,10 @@ def test_investigator_factory():
 
     openai_inv = get_investigator("openai_compatible")
     assert isinstance(openai_inv, OpenAICompatibleInvestigator)
+
+    muse_inv = get_investigator("muse")
+    assert isinstance(muse_inv, MuseInvestigator)
+    assert muse_inv.provider_name == "muse"
 
 
 def test_investigation_api_endpoints_and_persistence(populated_scenario, client, auth_headers, db_session):
@@ -292,4 +299,151 @@ def test_tenant_boundary_isolation_on_investigations(populated_scenario, client,
         headers=beta_headers,
     )
     assert not_found_res.status_code == 404
+
+
+def test_query_out_of_scope_rejection(client, db_session):
+    """Verifies that non-security/trivia prompts are rejected with out-of-scope notice without active alerts."""
+    auth_headers = {"Authorization": f"Bearer {RAW_TEST_API_KEY}"}
+
+    trivia_res = client.post(
+        "/api/v1/investigations/query",
+        json={"query": "What is the capital of France?"},
+        headers=auth_headers,
+    )
+    assert trivia_res.status_code == 200
+    data = trivia_res.json()
+    assert data["verdict"] == "inconclusive"
+    assert "Query Out of Scope" in data["summary"]
+    assert data["investigator_provider"] == "cyber-engine-gateway"
+    assert data["hypotheses"] == []
+    assert data["candidate_rules"] == []
+
+    # Check finding status in database
+    finding = db_session.query(SecurityFinding).filter(
+        SecurityFinding.finding_id == data["finding_id"]
+    ).first()
+    assert finding is not None
+    assert finding.status == "resolved"
+    assert finding.severity == "info"
+
+
+def test_query_operational_status_on_idle_database(client, db_session):
+    """Verifies that operational queries on an idle database return likely_benign with truthful explanation."""
+    auth_headers = {"Authorization": f"Bearer {RAW_TEST_API_KEY}"}
+
+    res = client.post(
+        "/api/v1/investigations/query",
+        json={"query": "Is this database receiving any events? if no why is that?"},
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["verdict"] in ("likely_benign", "inconclusive")
+    assert "not receiving" in data["summary"].lower() or "idle" in data["summary"].lower()
+    # Ensure no hallucinated data harvesting threat
+    assert "Direct Database Data Harvesting" not in [h["title"] for h in data["hypotheses"]]
+
+    finding = db_session.query(SecurityFinding).filter(
+        SecurityFinding.finding_id == data["finding_id"]
+    ).first()
+    assert finding is not None
+    assert finding.status == "resolved"
+    assert finding.severity == "info"
+
+
+def test_scope_checker_unit_tests():
+    """Unit tests for scope and relevancy filter."""
+    from backend.investigation.scope import is_query_in_scope
+
+    # In-scope operational and security queries
+    in_scope_queries = [
+        "Is this database receiving any events? if no why is that?",
+        "Check for brute force authentication attempts on login service",
+        "Investigate trace 8f0ef82b for anomalous latency",
+        "Why is worker-service dropping events?",
+        "Analyze high volume SELECT queries on payments db",
+        "Check ingestion pipeline status",
+    ]
+    for q in in_scope_queries:
+        ok, reason = is_query_in_scope(q)
+        assert ok is True, f"Expected '{q}' to be in scope, rejected: {reason}"
+
+    # Out-of-scope queries (trivia, entertainment, math, casual greetings)
+    out_of_scope_queries = [
+        "What is the capital of France?",
+        "Tell me a joke",
+        "Who won the cricket world cup?",
+        "How do I make chocolate cake?",
+        "Hello",
+        "Write me a poem about flowers",
+        "What is 2+2?",
+    ]
+    for q in out_of_scope_queries:
+        ok, reason = is_query_in_scope(q)
+        assert ok is False, f"Expected '{q}' to be rejected as out of scope"
+        assert len(reason) > 0
+
+
+def test_stream_query_investigator(client, db_session):
+    """Verifies that POST /api/v1/investigations/query/stream returns SSE stages and final report."""
+    auth_headers = {"Authorization": f"Bearer {RAW_TEST_API_KEY}"}
+    res = client.post(
+        "/api/v1/investigations/query/stream",
+        json={"query": "Investigate anomalous latency and error rates on worker-service"},
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+    assert "text/event-stream" in res.headers.get("content-type", "")
+
+    # Parse SSE stream
+    stages = []
+    lines = res.text.split("\n\n")
+    for block in lines:
+        block = block.strip()
+        if block.startswith("data: "):
+            parsed = json.loads(block[6:])
+            stages.append(parsed.get("stage"))
+
+    assert "scope_verification" in stages
+    assert "evidence_collection" in stages
+    assert "complete" in stages
+
+
+def test_stream_investigate_finding(client, db_session):
+    """Verifies that POST /api/v1/investigations/{finding_id}/stream returns SSE stages."""
+    auth_headers = {"Authorization": f"Bearer {RAW_TEST_API_KEY}"}
+    # Create test finding
+    finding = SecurityFinding(
+        finding_id="finding-stream-test-01",
+        tenant_id="tenant-alpha",
+        detector_id="detector.test",
+        detector_version="1.0.0",
+        title="Test Infiltration Attempt",
+        severity="high",
+        confidence="high",
+        description="Stream test finding",
+        evidence={"trace_id": "trc_stream_01"},
+        status="open",
+        created_at=datetime.datetime.now(datetime.timezone.utc),
+    )
+    db_session.add(finding)
+    db_session.commit()
+
+    res = client.post(
+        f"/api/v1/investigations/{finding.finding_id}/stream",
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+    assert "text/event-stream" in res.headers.get("content-type", "")
+
+    stages = []
+    for block in res.text.split("\n\n"):
+        block = block.strip()
+        if block.startswith("data: "):
+            parsed = json.loads(block[6:])
+            stages.append(parsed.get("stage"))
+
+    assert "evidence_collection" in stages
+    assert "complete" in stages
+
 

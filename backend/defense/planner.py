@@ -295,7 +295,7 @@ class ResponsePlanner:
         det = (finding.detector_id or "").lower()
         ev = finding.evidence or {}
 
-        client_ip = ev.get("client_ip") or ev.get("source_ip") or finding.source_resource if hasattr(finding, "source_resource") else None
+        client_ip = ev.get("client_ip") or ev.get("source_ip") or (getattr(finding, "source_resource", None))
         if not client_ip and isinstance(ev, dict):
             # Inspect first nested event attribute if present
             for k in ("ip", "client_ip", "remote_addr"):

@@ -283,6 +283,6 @@ def test_root_serves_landing_page(client):
 def test_console_serves_interactive_console(client):
     res = client.get("/console")
     assert res.status_code == 200
-    assert "Interactive Security Console" in res.text
-    assert "FAST TRACK: DETERMINISTIC" in res.text
-    assert "DEEP TRACK: META AI" in res.text
+    assert "TERNLINE CONTROL ROOM" in res.text
+    assert "Fast Track" in res.text
+    assert "Deep Track" in res.text

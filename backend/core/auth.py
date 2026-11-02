@@ -26,12 +26,20 @@ class Permission:
     INVESTIGATIONS_READ = "investigations:read"
     INVESTIGATIONS_WRITE = "investigations:write"
     DEFENSE_ACTIONS_READ = "defense:actions:read"
+    DEFENSE_ACTIONS_PROPOSE = "defense:actions:propose"
     DEFENSE_ACTIONS_APPROVE = "defense:actions:approve"
     DEFENSE_ACTIONS_REJECT = "defense:actions:reject"
+    DEFENSE_ACTIONS_EXECUTE = "defense:actions:execute"
+    DEFENSE_ACTIONS_ROLLBACK = "defense:actions:rollback"
     DEFENSE_POLICY_READ = "defense:policy:read"
     DEFENSE_POLICY_WRITE = "defense:policy:write"
     KEYS_READ = "keys:read"
     KEYS_WRITE = "keys:write"
+    INCIDENTS_READ = "incidents:read"
+    INCIDENTS_WRITE = "incidents:write"
+    INCIDENTS_CONTAIN = "incidents:contain"
+    THREAT_INTEL_READ = "threat_intel:read"
+    THREAT_INTEL_WRITE = "threat_intel:write"
     ADMIN = "admin"
 
 
@@ -41,12 +49,20 @@ ALL_PERMISSIONS: Set[str] = {
     Permission.INVESTIGATIONS_READ,
     Permission.INVESTIGATIONS_WRITE,
     Permission.DEFENSE_ACTIONS_READ,
+    Permission.DEFENSE_ACTIONS_PROPOSE,
     Permission.DEFENSE_ACTIONS_APPROVE,
     Permission.DEFENSE_ACTIONS_REJECT,
+    Permission.DEFENSE_ACTIONS_EXECUTE,
+    Permission.DEFENSE_ACTIONS_ROLLBACK,
     Permission.DEFENSE_POLICY_READ,
     Permission.DEFENSE_POLICY_WRITE,
     Permission.KEYS_READ,
     Permission.KEYS_WRITE,
+    Permission.INCIDENTS_READ,
+    Permission.INCIDENTS_WRITE,
+    Permission.INCIDENTS_CONTAIN,
+    Permission.THREAT_INTEL_READ,
+    Permission.THREAT_INTEL_WRITE,
     Permission.ADMIN,
 }
 
