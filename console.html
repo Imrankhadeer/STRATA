@@ -139,10 +139,15 @@
     <div class="crumb" id="crumb">Operations / Overview</div>
     <div class="spacer"></div>
     <input class="topsearch" id="globalSearch" placeholder="Search loaded records…">
-    <span class="pill" id="connectionPill">BACKEND NOT CONNECTED</span>
+    <button class="pill" id="connectionPill" data-page="settings" style="cursor:pointer;background:transparent;border:1px solid var(--line);font-family:inherit;">BACKEND NOT CONNECTED</button>
     <button class="btn small" id="streamToggleBtn" data-action="toggle-stream" style="font-size:10px">⌁ Connect SSE</button>
     <button class="btn small" id="refreshBtn">↻ Refresh</button>
     <a class="btn small ghost" href="/documentation" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">Docs ↗</a>
+    <button class="btn small primary" id="authBtn" onclick="openAuthModal('login')" style="font-weight:700;">Sign In</button>
+    <div id="userChip" class="hide" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:11px;">
+      <span style="color:var(--lime)">●</span> <span id="userChipEmail">Operator</span>
+      <button class="btn small ghost" onclick="signOutOperator()" style="padding:1px 4px;font-size:10px;margin-left:4px;" title="Sign Out">✕</button>
+    </div>
     <button class="btn small ghost" data-page="settings">Settings</button>
   </header>
   <div id="liveStreamBanner" class="callout hide" style="margin:16px 26px 0;border-color:var(--lime);background:#122116">
@@ -173,8 +178,15 @@ const defaultBaseUrl = (function() {
     if (window.ENV_BACKEND_URL) return window.ENV_BACKEND_URL;
     const lsBackend = localStorage.getItem('ternline_backend_url');
     if (lsBackend) return lsBackend;
-    if (window.location && window.location.origin && window.location.origin.startsWith('http')) {
-      return window.location.origin;
+    // Cloud hosting check: On Vercel, do NOT query current static origin as backend
+    if (window.location && window.location.hostname) {
+      const h = window.location.hostname.toLowerCase();
+      if (h.endsWith('vercel.app') || h.endsWith('.app')) {
+        return '';
+      }
+      if (window.location.port === '8000') {
+        return window.location.origin;
+      }
     }
   }
   return 'http://localhost:8000';
@@ -610,7 +622,7 @@ async function triggerDeepInvestigation(findingId) {
     const resp = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${bearerToken || 'ce_live_test_api_key_secret_12345'}`
+        'Authorization': `Bearer ${bearerToken}`
       }
     });
 
@@ -1764,7 +1776,238 @@ function settings() {
 }
 
 // Live SSE Operations Stream Connection
-async function toggleLiveStream() {
+
+let currentUserEmail = '';
+
+function updateAuthUI() {
+  const btn = $('#authBtn');
+  const userChip = $('#userChip');
+  if (bearerToken) {
+    if (btn) btn.classList.add('hide');
+    if (userChip) {
+      userChip.classList.remove('hide');
+      const emailEl = $('#userChipEmail');
+      if (emailEl) emailEl.textContent = currentUserEmail || currentTenant || 'Operator';
+    }
+  } else {
+    if (btn) btn.classList.remove('hide');
+    if (userChip) userChip.classList.add('hide');
+  }
+}
+
+function openAuthModal(initialTab = 'login') {
+  const inner = `
+    <div style="max-width:440px;margin:auto;">
+      <div style="display:flex;border-bottom:1px solid var(--line);margin-bottom:18px;">
+        <button class="tab ${initialTab === 'login' ? 'active' : ''}" type="button" id="tabLoginBtn" onclick="switchAuthTab('login')" style="flex:1;text-align:center;padding:10px;">Sign In</button>
+        <button class="tab ${initialTab === 'register' ? 'active' : ''}" type="button" id="tabRegisterBtn" onclick="switchAuthTab('register')" style="flex:1;text-align:center;padding:10px;">Register Account</button>
+        <button class="tab ${initialTab === 'key' ? 'active' : ''}" type="button" id="tabKeyBtn" onclick="switchAuthTab('key')" style="flex:1;text-align:center;padding:10px;">Direct API Key</button>
+      </div>
+
+      <!-- Tab 1: Login Form -->
+      <form id="authLoginForm" class="${initialTab === 'login' ? '' : 'hide'}" onsubmit="handleAuthLogin(event)">
+        <div class="field">
+          <label>Operator Email</label>
+          <input class="control" type="email" id="loginEmail" required placeholder="operator@yourdomain.com" style="width:100%">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input class="control" type="password" id="loginPassword" required placeholder="••••••••••••" style="width:100%">
+        </div>
+        <div id="loginMsg" class="tiny" style="margin-bottom:12px;color:var(--amber)"></div>
+        <div class="between" style="margin-top:16px;">
+          <button class="btn primary" type="submit" id="loginSubmitBtn">Sign In to Console</button>
+          <button class="btn ghost" type="button" data-action="close-modal">Cancel</button>
+        </div>
+      </form>
+
+      <!-- Tab 2: Register Form -->
+      <form id="authRegisterForm" class="${initialTab === 'register' ? '' : 'hide'}" onsubmit="handleAuthRegister(event)">
+        <div class="field">
+          <label>Work Email</label>
+          <input class="control" type="email" id="regEmail" required placeholder="operator@yourcompany.com" style="width:100%">
+        </div>
+        <div class="field">
+          <label>Password (8+ chars, upper, lower, number/special)</label>
+          <input class="control" type="password" id="regPassword" required placeholder="Create a strong password" style="width:100%">
+        </div>
+        <div class="field">
+          <label>Full Name</label>
+          <input class="control" type="text" id="regFullName" placeholder="Security Analyst" style="width:100%">
+        </div>
+        <div class="field">
+          <label>Workspace / Tenant Name (Optional)</label>
+          <input class="control" type="text" id="regTenantName" placeholder="Primary SOC Workspace" style="width:100%">
+        </div>
+        <div id="regMsg" class="tiny" style="margin-bottom:12px;color:var(--green)"></div>
+        <div class="between" style="margin-top:16px;">
+          <button class="btn primary" type="submit" id="regSubmitBtn">Create Account</button>
+          <button class="btn ghost" type="button" data-action="close-modal">Cancel</button>
+        </div>
+      </form>
+
+      <!-- Tab 3: Direct API Key -->
+      <form id="authKeyForm" class="${initialTab === 'key' ? '' : 'hide'}" onsubmit="handleAuthDirectKey(event)">
+        <div class="field">
+          <label>API Key / Admin Token</label>
+          <input class="control" type="password" id="directApiKey" required placeholder="ce_live_prod_..." style="width:100%">
+          <small class="dim">For automated service integrations or root administration.</small>
+        </div>
+        <div class="between" style="margin-top:16px;">
+          <button class="btn primary" type="submit">Connect with Key</button>
+          <button class="btn ghost" type="button" data-action="close-modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  `;
+  openModal('Ternline Console Authentication', inner);
+}
+
+function switchAuthTab(tab) {
+  const lf = $('#authLoginForm');
+  const rf = $('#authRegisterForm');
+  const kf = $('#authKeyForm');
+  const tb1 = $('#tabLoginBtn');
+  const tb2 = $('#tabRegisterBtn');
+  const tb3 = $('#tabKeyBtn');
+
+  if (lf) lf.classList.toggle('hide', tab !== 'login');
+  if (rf) rf.classList.toggle('hide', tab !== 'register');
+  if (kf) kf.classList.toggle('hide', tab !== 'key');
+
+  if (tb1) tb1.classList.toggle('active', tab === 'login');
+  if (tb2) tb2.classList.toggle('active', tab === 'register');
+  if (tb3) tb3.classList.toggle('active', tab === 'key');
+}
+
+async function handleAuthLogin(e) {
+  e.preventDefault();
+  const email = $('#loginEmail')?.value.trim();
+  const password = $('#loginPassword')?.value;
+  const msgEl = $('#loginMsg');
+  const btn = $('#loginSubmitBtn');
+
+  if (!email || !password) return;
+  if (btn) btn.disabled = true;
+  if (msgEl) msgEl.textContent = 'Authenticating...';
+
+  try {
+    const res = await request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+
+    if (res && res.access_token) {
+      bearerToken = res.access_token;
+      currentTenant = res.user?.tenant_name || res.user?.tenant_id || 'Primary Workspace';
+      currentUserEmail = res.user?.email || email;
+
+      sessionStorage.setItem('ternline_auth_token', bearerToken);
+      sessionStorage.setItem('ternline_auth_tenant', currentTenant);
+      sessionStorage.setItem('ternline_auth_email', currentUserEmail);
+
+      updateAuthUI();
+      closeModal();
+      toast(`Signed in successfully as ${currentUserEmail}`);
+      setConnection(true);
+      toggleLiveStream(true);
+      refresh();
+    }
+  } catch (err) {
+    if (msgEl) msgEl.textContent = 'Login failed: ' + err.message;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleAuthRegister(e) {
+  e.preventDefault();
+  const email = $('#regEmail')?.value.trim();
+  const password = $('#regPassword')?.value;
+  const fullName = $('#regFullName')?.value.trim();
+  const tenantName = $('#regTenantName')?.value.trim();
+  const msgEl = $('#regMsg');
+  const btn = $('#regSubmitBtn');
+
+  if (!email || !password) return;
+  if (btn) btn.disabled = true;
+  if (msgEl) msgEl.textContent = 'Registering account and dispatching verification email...';
+
+  try {
+    const res = await request('/api/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        password,
+        full_name: fullName || null,
+        tenant_name: tenantName || null
+      })
+    });
+
+    if (msgEl) {
+      msgEl.style.color = 'var(--green)';
+      msgEl.textContent = res.message || 'Account created! Please check your email to verify and activate your account.';
+    }
+  } catch (err) {
+    if (msgEl) {
+      msgEl.style.color = 'var(--amber)';
+      msgEl.textContent = 'Registration failed: ' + err.message;
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function handleAuthDirectKey(e) {
+  e.preventDefault();
+  const key = $('#directApiKey')?.value.trim();
+  if (!key) return;
+
+  bearerToken = key;
+  sessionStorage.setItem('ternline_auth_token', bearerToken);
+  sessionStorage.setItem('ternline_auth_tenant', 'API Key Operator');
+  sessionStorage.setItem('ternline_auth_email', 'Service Key');
+
+  updateAuthUI();
+  closeModal();
+  toast('Connected with direct API Key.');
+  setConnection(true);
+  toggleLiveStream(true);
+  refresh();
+}
+
+function signOutOperator() {
+  bearerToken = '';
+  currentUserEmail = '';
+  currentTenant = 'Unauthenticated';
+  sessionStorage.removeItem('ternline_auth_token');
+  sessionStorage.removeItem('ternline_auth_tenant');
+  sessionStorage.removeItem('ternline_auth_email');
+  updateAuthUI();
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+    sseConnected = false;
+    updateStreamUI(false);
+  }
+  setConnection(false, 'SESSION SIGNED OUT');
+  toast('Signed out successfully.');
+  refresh();
+}
+
+async function toggleLiveStream(forceConnect = false) {
+  if (sseConnected && eventSource && !forceConnect) {
+    eventSource.close();
+    eventSource = null;
+    sseConnected = false;
+    updateStreamUI(false);
+    toast('Live SSE stream paused.');
+    return;
+  }
+
+  if (sseConnected && eventSource && forceConnect) {
+    return; // Already streaming
+  }
   if (sseConnected && eventSource) {
     eventSource.close();
     eventSource = null;
@@ -1952,9 +2195,27 @@ function render() {
 
 // Session management: restore saved bearer token and tenant
 async function bootstrapSession() {
+  // Check sessionStorage for active operator session
+  if (!bearerToken && typeof sessionStorage !== 'undefined') {
+    const savedToken = sessionStorage.getItem('ternline_auth_token');
+    const savedTenant = sessionStorage.getItem('ternline_auth_tenant');
+    const savedEmail = sessionStorage.getItem('ternline_auth_email');
+    if (savedToken) {
+      bearerToken = savedToken;
+      currentTenant = savedTenant || 'Authenticated';
+      currentUserEmail = savedEmail || '';
+    }
+  }
+
+  updateAuthUI();
+
   if (bearerToken) {
     const td = $('#tenantDisplay');
     if (td && currentTenant) td.textContent = currentTenant;
+    // Auto-connect SSE stream when authenticated
+    if (!sseConnected) {
+      toggleLiveStream(true);
+    }
     return true;
   }
   return false;
@@ -2305,7 +2566,7 @@ async function executeDeepSearch() {
     const resp = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${bearerToken || 'ce_live_test_api_key_secret_12345'}`,
+        'Authorization': `Bearer ${bearerToken}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ query: q })
@@ -2673,11 +2934,13 @@ async function checkEmailVerificationFlow() {
 render();
 initSidebarTooltips();
 checkEmailVerificationFlow();
-if (config.baseUrl) {
+if (config.baseUrl && config.baseUrl.trim() !== '') {
   testConnection().then(async () => {
     await bootstrapSession();
     refresh();
   });
+} else {
+  setConnection(false, 'SET BACKEND URL');
 }
 })();
 </script>
