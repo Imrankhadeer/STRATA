@@ -422,7 +422,6 @@
 <div id="drawerBack" class="drawerback hide"><div class="drawer" id="drawerContent"></div></div>
 <div id="modalBack" class="modalback hide"><div class="modal" id="modalContent"></div></div>
 <script>
-(() => {
 'use strict';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -2918,6 +2917,47 @@ function render() {
 let currentAppFilter = null;
 let _lastRegEmail = '';
 
+
+function switchSdkTab(tab) {
+  const tabs = ['python', 'node', 'curl', 'go', 'otel'];
+  tabs.forEach(t => {
+    const pane = document.getElementById('sdkPane' + t.charAt(0).toUpperCase() + t.slice(1));
+    const btn = document.getElementById('tabSdk' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (pane) pane.classList.toggle('hide', t !== tab);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+}
+
+function validateRegPassword(pw) {
+  const bar = document.querySelector('#passwordStrengthBar i');
+  const fb = document.getElementById('passwordFeedback');
+  if (!bar || !fb) return;
+
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[a-z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  if (score <= 2) {
+    bar.style.width = '30%';
+    bar.style.background = 'var(--red)';
+    fb.style.color = 'var(--red)';
+    fb.textContent = 'Weak: Min 8 chars with mixed case, numbers, and symbols required';
+  } else if (score <= 4) {
+    bar.style.width = '70%';
+    bar.style.background = 'var(--amber)';
+    fb.style.color = 'var(--amber)';
+    fb.textContent = 'Moderate: Add special characters & numbers';
+  } else {
+    bar.style.width = '100%';
+    bar.style.background = 'var(--lime)';
+    fb.style.color = 'var(--lime)';
+    fb.textContent = 'Strong password criteria met';
+  }
+}
+
 function switchSettingsTab(tab) {
   window._settingsActiveTab = tab;
   render();
@@ -2954,16 +2994,36 @@ function switchGateTab(tab) {
   });
 }
 
+
+function showGateMessage(el, text, isError = true) {
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.color = isError ? '#ff7b72' : '#75d6a3';
+  el.style.background = isError ? 'rgba(255,123,114,0.12)' : 'rgba(117,214,163,0.12)';
+  el.style.border = isError ? '1px solid rgba(255,123,114,0.35)' : '1px solid rgba(117,214,163,0.35)';
+  el.style.padding = '8px 12px';
+  el.style.borderRadius = '6px';
+  el.style.fontSize = '11.5px';
+  el.style.fontWeight = '500';
+  el.style.marginTop = '6px';
+  el.style.marginBottom = '12px';
+  el.textContent = text;
+}
+
 async function handleGateLogin(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
   const email = $('#gateLoginEmail')?.value.trim();
   const password = $('#gateLoginPassword')?.value;
   const msg = $('#gateLoginMsg');
   const btn = $('#gateLoginBtn');
 
-  if (!email || !password) return;
+  if (!email || !password) {
+    showGateMessage(msg, 'Please enter both your work email and password.', true);
+    return;
+  }
+
   if (btn) btn.disabled = true;
-  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Authenticating operator credentials…'; }
+  showGateMessage(msg, 'Authenticating operator credentials…', false);
 
   try {
     const res = await fetch(apiUrl('/api/v1/auth/login'), {
@@ -2978,10 +3038,10 @@ async function handleGateLogin(e) {
         _lastRegEmail = email;
         switchGateTab('verify');
         const vMsg = $('#gateVerifyMsg');
-        if (vMsg) { vMsg.style.color = 'var(--amber)'; vMsg.textContent = 'Account pending verification. Enter the token from your email.'; }
+        showGateMessage(vMsg, 'Account email verification required. Check your inbox for the token.', false);
         return;
       }
-      throw new Error(data.detail || `Authentication failed (${res.status})`);
+      throw new Error(data.detail || `Authentication failed (HTTP ${res.status})`);
     }
 
     bearerToken = data.access_token;
@@ -2994,16 +3054,20 @@ async function handleGateLogin(e) {
     sessionStorage.setItem('ternline_auth_email', currentUserEmail);
     sessionStorage.setItem('ternline_auth_role', currentUserRole);
 
+    showGateMessage(msg, 'Authentication successful! Loading Control Room…', false);
     enterControlRoom();
   } catch (err) {
-    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message; }
+    const errText = err.name === 'TypeError' || err.message.includes('fetch')
+      ? 'Network error: Cannot reach authentication server. Verify backend connectivity.'
+      : err.message;
+    showGateMessage(msg, errText, true);
   } finally {
     if (btn) btn.disabled = false;
   }
 }
 
 async function handleGateRegister(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
   const name = $('#gateRegName')?.value.trim();
   const email = $('#gateRegEmail')?.value.trim();
   const tenant = $('#gateRegTenant')?.value.trim();
@@ -3011,9 +3075,18 @@ async function handleGateRegister(e) {
   const msg = $('#gateRegMsg');
   const btn = $('#gateRegBtn');
 
-  if (!email || !password) return;
+  if (!email || !password) {
+    showGateMessage(msg, 'Please enter your work email and strong password.', true);
+    return;
+  }
+
+  if (password.length < 8) {
+    showGateMessage(msg, 'Password must be at least 8 characters long.', true);
+    return;
+  }
+
   if (btn) btn.disabled = true;
-  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Deploying workspace & generating verification token…'; }
+  showGateMessage(msg, 'Deploying workspace & generating verification token…', false);
 
   try {
     const res = await fetch(apiUrl('/api/v1/auth/register'), {
@@ -3029,18 +3102,15 @@ async function handleGateRegister(e) {
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(data.detail || `Registration failed (${res.status})`);
+      throw new Error(data.detail || `Registration failed (HTTP ${res.status})`);
     }
 
     _lastRegEmail = email;
     switchGateTab('verify');
     const vMsg = $('#gateVerifyMsg');
-    if (vMsg) {
-      vMsg.style.color = 'var(--lime)';
-      vMsg.textContent = 'Workspace registered! Verification email dispatched via AWS SES. Paste the token below.';
-    }
+    showGateMessage(vMsg, 'Workspace registered! Verification email dispatched via AWS SES. Paste the token below.', false);
   } catch (err) {
-    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message; }
+    showGateMessage(msg, err.message, true);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -3052,9 +3122,13 @@ async function handleGateVerify(e) {
   const msg = $('#gateVerifyMsg');
   const btn = $('#gateVerifyBtn');
 
-  if (!token) return;
+  if (!token) {
+    showGateMessage(msg, 'Please paste your 32-character verification token from the email.', true);
+    return;
+  }
+
   if (btn) btn.disabled = true;
-  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Verifying cryptographic token…'; }
+  showGateMessage(msg, 'Verifying cryptographic token…', false);
 
   try {
     const res = await fetch(apiUrl('/api/v1/auth/verify-email'), {
@@ -3065,7 +3139,7 @@ async function handleGateVerify(e) {
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(data.detail || `Verification failed (${res.status})`);
+      throw new Error(data.detail || `Verification failed (HTTP ${res.status})`);
     }
 
     bearerToken = data.access_token;
@@ -3081,7 +3155,7 @@ async function handleGateVerify(e) {
     toast('Email verified successfully! Workspace activated.');
     enterControlRoom();
   } catch (err) {
-    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message; }
+    showGateMessage(msg, err.message, true);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -4585,10 +4659,51 @@ async function checkEmailVerificationFlow() {
   }
 }
 
+
+// Explicit Global Window Exports for HTML Inline Event Handlers
+window.switchGateTab = switchGateTab;
+window.handleGateLogin = handleGateLogin;
+window.handleGateRegister = handleGateRegister;
+window.handleGateVerify = handleGateVerify;
+window.handleResendVerification = handleResendVerification;
+window.handleGateForgot = handleGateForgot;
+window.handleGateReset = handleGateReset;
+window.handleGateKey = handleGateKey;
+window.handleSwitchWorkspace = handleSwitchWorkspace;
+window.openCreateWorkspaceModal = openCreateWorkspaceModal;
+window.handleCreateWorkspaceSubmit = handleCreateWorkspaceSubmit;
+window.handleSelectAppFilter = handleSelectAppFilter;
+window.handleSelectIntegrationApp = handleSelectIntegrationApp;
+window.openRegisterAppModal = openRegisterAppModal;
+window.handleRegisterAppSubmit = handleRegisterAppSubmit;
+window.openInviteMemberModal = openInviteMemberModal;
+window.handleInviteMemberSubmit = handleInviteMemberSubmit;
+window.handleUpdateMemberRole = handleUpdateMemberRole;
+window.handleRemoveMember = handleRemoveMember;
+window.handleSaveWorkspaceName = handleSaveWorkspaceName;
+window.triggerTelemetrySelfTest = triggerTelemetrySelfTest;
+window.viewAppIntegration = viewAppIntegration;
+window.switchSettingsTab = switchSettingsTab;
+window.switchSdkTab = switchSdkTab;
+window.validateRegPassword = validateRegPassword;
+window.closeModal = typeof closeModal !== 'undefined' ? closeModal : () => { $('#modalBack')?.classList.add('hide'); };
+window.modal = typeof modal !== 'undefined' ? modal : () => {};
+window.toast = typeof toast !== 'undefined' ? toast : (m) => alert(m);
+window.setPage = setPage;
+window.refresh = refresh;
+window.signOutOperator = signOutOperator;
+window.openChangePasswordModal = typeof openChangePasswordModal !== 'undefined' ? openChangePasswordModal : () => {};
+window.handleChangePassword = typeof handleChangePassword !== 'undefined' ? handleChangePassword : () => {};
+window.handleSaveDefensePolicy = typeof handleSaveDefensePolicy !== 'undefined' ? handleSaveDefensePolicy : () => {};
+window.switchAuthTab = typeof switchAuthTab !== 'undefined' ? switchAuthTab : () => {};
+window.handleAuthLogin = typeof handleAuthLogin !== 'undefined' ? handleAuthLogin : () => {};
+window.handleAuthRegister = typeof handleAuthRegister !== 'undefined' ? handleAuthRegister : () => {};
+window.handleAuthDirectKey = typeof handleAuthDirectKey !== 'undefined' ? handleAuthDirectKey : () => {};
+window.handleProvisionKey = typeof handleProvisionKey !== 'undefined' ? handleProvisionKey : () => {};
+
 // Initial Mount - Strictly gate unauthenticated users
 initSidebarTooltips();
 bootstrapSession();
-})();
 </script>
 </body>
 </html>
