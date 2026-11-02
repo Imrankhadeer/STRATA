@@ -189,8 +189,12 @@ class EmailDeliveryService:
             except Exception as e:
                 logger.error("SMTP dispatch failed for %s: %s", to_email, e)
 
-        # 3. Development / Mock fallback
-        logger.info("[MOCK EMAIL DISPATCH] Sent to %s: Subject='%s'", to_email, subject)
+        # 3. Development / Mock fallback (Prohibited in production)
+        if settings.ENVIRONMENT == "production":
+            logger.error("Production email dispatch failure: Neither AWS SES nor SMTP succeeded for %s", to_email)
+            return False
+
+        logger.info("[DEV MOCK EMAIL DISPATCH] Sent to %s: Subject='%s'", to_email, subject)
         return True
 
 

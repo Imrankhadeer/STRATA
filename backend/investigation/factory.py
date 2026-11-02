@@ -43,6 +43,8 @@ def get_investigator(provider_override: Optional[str] = None) -> BaseInvestigato
         )
 
     elif provider == "mock":
+        if settings.ENVIRONMENT == "production":
+            raise RuntimeError("Mock investigator is strictly prohibited in production. Configure 'muse', 'meta', or 'openai_compatible'.")
         return MockInvestigator()
 
     # Default to Muse AI provider
