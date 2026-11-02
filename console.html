@@ -329,6 +329,11 @@
       <span>Strict Tenant Isolation</span>
       <span>Enterprise RBAC</span>
     </div>
+
+    <div style="margin-top:12px;text-align:center;font-size:10.5px;color:var(--dim);">
+      <span>Engine Endpoint: <code id="gateTargetApiHost" style="color:var(--lime);font-size:10.5px;"></code></span>
+      <button type="button" class="btn small ghost" onclick="promptChangeBackendUrl()" style="margin-left:6px;padding:1px 6px;font-size:9.5px;color:var(--lime);border-color:rgba(183,243,107,0.25);">Change</button>
+    </div>
   </div>
 </div>
 
@@ -430,33 +435,32 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 
 // Centralized Connection Configuration
 const storeKey = 'ternline-connection-config-v2';
-const PRODUCTION_BACKEND_URL = 'https://ternline-cyber-engine.onrender.com';
-if (typeof window !== 'undefined' && !window.ENV_BACKEND_URL) {
-  window.ENV_BACKEND_URL = PRODUCTION_BACKEND_URL;
-}
+
 const defaultBaseUrl = (function() {
   if (typeof window !== 'undefined') {
-    if (window.ENV_BACKEND_URL) return window.ENV_BACKEND_URL;
+    // 1. User configured backend host via prompt / localStorage
     try {
       const lsBackend = localStorage.getItem('ternline_backend_url');
-      if (lsBackend) return lsBackend;
+      if (lsBackend && lsBackend.trim()) return lsBackend.trim().replace(/\/$/, '');
     } catch (_) {}
-    // Cloud hosting: Vercel static frontend must talk to Render backend, never to itself
+
+    // 2. Window ENV override (if explicitly provided and not default)
+    if (window.ENV_BACKEND_URL && window.ENV_BACKEND_URL !== 'https://ternline-cyber-engine.onrender.com') {
+      return String(window.ENV_BACKEND_URL).trim().replace(/\/$/, '');
+    }
+
+    // 3. Direct deployment (e.g. EC2:8000, self-hosted VM, or local)
     if (window.location && window.location.hostname) {
       const h = window.location.hostname.toLowerCase();
-      if (h.endsWith('vercel.app') || h.endsWith('.app') || h.endsWith('onrender.com')) {
-        return PRODUCTION_BACKEND_URL;
-      }
-      if (window.location.port === '8000') {
+      if (window.location.port === '8000' || (!h.endsWith('vercel.app') && !h.endsWith('.app'))) {
         return window.location.origin;
       }
       if (h === 'localhost' || h === '127.0.0.1') {
         return 'http://localhost:8000';
       }
-      return PRODUCTION_BACKEND_URL;
     }
   }
-  return PRODUCTION_BACKEND_URL;
+  return '';
 })();
 
 const defaults = {
@@ -485,12 +489,95 @@ let config = { ...defaults };
 try {
   const saved = JSON.parse(localStorage.getItem(storeKey) || '{}');
   config = { ...config, ...saved };
-  // One-time migration: drop stale empty-string base and empty routes saved by older console builds
-  if (!String(config.baseUrl || '').trim()) config.baseUrl = defaultBaseUrl;
+  // Migration: Drop stale render url or empty base url
+  if (!String(config.baseUrl || '').trim() || config.baseUrl.includes('onrender.com')) {
+    config.baseUrl = defaultBaseUrl || (typeof window !== 'undefined' && window.location ? window.location.origin : '');
+  }
   for (const k of ['coverage', 'hunting', 'integrations']) {
     if (!String(config[k] || '').trim()) config[k] = defaults[k];
   }
 } catch (_) {}
+
+function updateGateHostDisplay() {
+  const el = document.getElementById('gateTargetApiHost');
+  if (el) {
+    const host = config.baseUrl || defaultBaseUrl || (typeof window !== 'undefined' && window.location ? window.location.origin : 'http://localhost:8000');
+    el.textContent = host;
+  }
+}
+
+function promptChangeBackendUrl() {
+  const current = config.baseUrl || defaultBaseUrl || (typeof window !== 'undefined' && window.location ? window.location.origin : 'http://localhost:8000');
+  const next = window.prompt('Enter your Ternline Engine API Base URL (e.g. http://YOUR-EC2-PUBLIC-IP:8000 or https://api.yourdomain.com):', current);
+  if (next && next.trim()) {
+    const clean = next.trim().replace(/\/$/, '');
+    try {
+      localStorage.setItem('ternline_backend_url', clean);
+      const saved = JSON.parse(localStorage.getItem(storeKey) || '{}');
+      saved.baseUrl = clean;
+      localStorage.setItem(storeKey, JSON.stringify(saved));
+    } catch (_) {}
+    config.baseUrl = clean;
+    updateGateHostDisplay();
+    alert('Engine API URL updated to: ' + clean + '\nReloading console to apply…');
+    window.location.reload();
+  }
+}
+window.promptChangeBackendUrl = promptChangeBackendUrl;
+window.updateGateHostDisplay = updateGateHostDisplay;
+
+// Early bulletproof binding for Login Gate Tabs & Messages
+function switchGateTab(tab) {
+  const forms = {
+    login: document.getElementById('gateFormLogin'),
+    register: document.getElementById('gateFormRegister'),
+    verify: document.getElementById('gateFormVerify'),
+    forgot: document.getElementById('gateFormForgot'),
+    reset: document.getElementById('gateFormReset'),
+    key: document.getElementById('gateFormKey')
+  };
+
+  const tabs = {
+    login: document.getElementById('gateTabLogin'),
+    register: document.getElementById('gateTabRegister'),
+    key: document.getElementById('gateTabKey')
+  };
+
+  Object.keys(forms).forEach(k => {
+    if (forms[k]) {
+      if (k === tab) forms[k].classList.remove('hide');
+      else forms[k].classList.add('hide');
+    }
+  });
+
+  if (tabs.login) tabs.login.classList.toggle('active', tab === 'login');
+  if (tabs.register) tabs.register.classList.toggle('active', tab === 'register');
+  if (tabs.key) tabs.key.classList.toggle('active', tab === 'key');
+
+  const msgs = ['gateLoginMsg', 'gateRegMsg', 'gateVerifyMsg', 'gateForgotMsg', 'gateResetMsg', 'gateKeyMsg'];
+  msgs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = ''; el.style.display = 'none'; }
+  });
+}
+window.switchGateTab = switchGateTab;
+
+function showGateMessage(el, text, isError = true) {
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.color = isError ? '#ff7b72' : '#75d6a3';
+  el.style.background = isError ? 'rgba(255,123,114,0.12)' : 'rgba(117,214,163,0.12)';
+  el.style.border = isError ? '1px solid rgba(255,123,114,0.35)' : '1px solid rgba(117,214,163,0.35)';
+  el.style.padding = '10px 14px';
+  el.style.borderRadius = '8px';
+  el.style.fontSize = '12px';
+  el.style.fontWeight = '500';
+  el.style.marginTop = '8px';
+  el.style.marginBottom = '14px';
+  el.style.lineHeight = '1.45';
+  el.innerHTML = text;
+}
+window.showGateMessage = showGateMessage;
 
 // Security Rule: Bearer token is stored strictly in JavaScript session memory (never in localStorage/sessionStorage)
 let bearerToken = '';
@@ -558,8 +645,10 @@ function endpoint(k) {
 }
 
 function apiUrl(path) {
-  const base = String(config.baseUrl || defaultBaseUrl).trim().replace(/\/$/, '');
-  if (!base) base = window.location.origin;
+  let base = String(config.baseUrl || defaultBaseUrl || '').trim().replace(/\/$/, '');
+  if (!base) {
+    base = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'http://localhost:8000';
+  }
   if (!path) throw new Error('This API route is not configured.');
   if (/^https?:\/\//i.test(path)) return path;
   return base + '/' + path.replace(/^\//, '');
@@ -3057,9 +3146,18 @@ async function handleGateLogin(e) {
     showGateMessage(msg, 'Authentication successful! Loading Control Room…', false);
     enterControlRoom();
   } catch (err) {
-    const errText = err.name === 'TypeError' || err.message.includes('fetch')
-      ? 'Network error: Cannot reach authentication server. Verify backend connectivity.'
-      : err.message;
+    let errText = err.message || 'Authentication failed';
+    const isNetwork = err.name === 'TypeError' || err.message.includes('fetch') || err.message.includes('NetworkError') || err.message.includes('Failed to fetch');
+    if (isNetwork) {
+      const targetUrl = apiUrl('/api/v1/auth/login');
+      const isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
+      const targetIsHttp = targetUrl.startsWith('http:');
+      if (isHttps && targetIsHttp) {
+        errText = `<b>Mixed Content Blocked:</b> This console is loaded over HTTPS (<code>${window.location.origin}</code>), but your target engine is HTTP (<code>${targetUrl}</code>). Web browsers block insecure HTTP requests from HTTPS sites.<br><br>👉 <b>Fix:</b> Open the console directly on your EC2 instance: <a href="${targetUrl.replace(/\/api\/v1\/auth\/login$/, '/console')}" style="color:var(--lime);text-decoration:underline;font-weight:700;">${targetUrl.replace(/\/api\/v1\/auth\/login$/, '/console')}</a>, or attach an HTTPS domain to your backend.`;
+      } else {
+        errText = `<b>Cannot connect to backend:</b> Unable to reach <code>${targetUrl}</code>.<br>Please verify that your EC2 backend container is running and port 8000 is open in your AWS EC2 Security Group. <button type="button" class="btn small ghost" onclick="promptChangeBackendUrl()" style="margin-left:6px;padding:2px 8px;font-size:10px;color:var(--lime);">Configure Host</button>`;
+      }
+    }
     showGateMessage(msg, errText, true);
   } finally {
     if (btn) btn.disabled = false;
@@ -3316,6 +3414,7 @@ function showLoginGate() {
   const app = $('#appShell');
   if (gate) gate.classList.remove('hide');
   if (app) app.classList.add('hide');
+  updateGateHostDisplay();
 }
 
 async function loadWorkspacesAndApps() {
