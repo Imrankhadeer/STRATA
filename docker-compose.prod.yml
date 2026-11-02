@@ -52,6 +52,8 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
+    env_file:
+      - .env.production
     environment:
       - ENVIRONMENT=production
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -71,6 +73,8 @@ services:
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-noreply@ternline.io}
+      - INITIAL_ADMIN_API_KEY=${INITIAL_ADMIN_API_KEY:-}
+      - INITIAL_TENANT_ID=${INITIAL_TENANT_ID:-tenant-alpha}
       - INVESTIGATOR_PROVIDER=${INVESTIGATOR_PROVIDER:-muse}
       - INVESTIGATOR_BASE_URL=${INVESTIGATOR_BASE_URL:-https://api.meta.ai/v1}
       - INVESTIGATOR_MODEL=${INVESTIGATOR_MODEL:-muse-spark-1.3}
