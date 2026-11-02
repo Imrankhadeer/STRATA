@@ -197,3 +197,4 @@ def test_password_forgot_and_reset_flow():
 
     ok_login = client.post("/api/v1/auth/login", json={"email": email, "password": new_pw})
     assert ok_login.status_code == 200
+

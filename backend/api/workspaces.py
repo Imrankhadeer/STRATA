@@ -437,3 +437,4 @@ def update_current_workspace_name(
     tenant.name = req.name.strip()
     db.commit()
     return {"success": True, "name": tenant.name}
+

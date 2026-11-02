@@ -35,3 +35,4 @@ class CreateAppResponse(BaseModel):
     api_key: str
     key_prefix: str
     message: str = "Application registered and ingestion API key provisioned."
+

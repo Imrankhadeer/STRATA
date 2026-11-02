@@ -2162,11 +2162,11 @@ import (
 type Event struct {
     AppID      string                 \`json:"app_id"\`
     ServiceID  string                 \`json:"service_id"\`
-    EventType  string                 `json:"event_type"`
-    Severity   string                 `json:"severity"`
-    TraceID    string                 `json:"trace_id"`
-    Timestamp  string                 `json:"timestamp"`
-    Attributes map[string]interface{} `json:"attributes"`
+    EventType  string                 \`json:"event_type"\`
+    Severity   string                 \`json:"severity"\`
+    TraceID    string                 \`json:"trace_id"\`
+    Timestamp  string                 \`json:"timestamp"\`
+    Attributes map[string]interface{} \`json:"attributes"\`
 }
 
 func EmitEvent(eventType, severity, traceID string, attrs map[string]interface{}) error {

@@ -298,3 +298,4 @@ def delete_application(
     )
 
     return {"success": True, "message": f"Application '{app_id}' deactivated and API keys revoked."}
+

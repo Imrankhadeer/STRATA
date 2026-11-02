@@ -206,6 +206,7 @@
       </div>
       <button class="mobile-toggle" id="mobileMenuBtn" aria-label="Toggle navigation">☰</button>
       <nav class="nav-links">
+        <a href="#connect-application" style="color: var(--accent); font-weight: 700;">Connect App</a>
         <a href="#tutorial" style="color: var(--accent); font-weight: 700;">★ 3-Min Tutorial</a>
         <a href="#quickstart">Quickstart</a>
         <a href="#rules">Rules Engine</a>
@@ -228,6 +229,7 @@
       <div class="sidebar-section" style="border: 1px solid rgba(183,243,107,.25); border-radius: 8px; padding: 10px; background: rgba(183,243,107,.03);">
         <div class="sidebar-title" style="color: var(--accent);">★ Start Here</div>
         <ul class="sidebar-nav">
+          <li><a href="#connect-application" style="color: var(--accent); font-weight: 650;">Connect Your Application</a></li>
           <li><a href="#tutorial" style="color: var(--accent); font-weight: 650;">3-Minute Hands-On Tutorial</a></li>
           <li><a href="#mental-model">Ternline in 30 Seconds</a></li>
           <li><a href="#tutorial-step1">1. Launch the Engine</a></li>
@@ -576,6 +578,245 @@ done</code></pre>
             <h3 style="margin-left: 10px;">AI Forensic Investigation & Hypothesis Synthesis</h3>
           </div>
           <p>Operates strictly out-of-band. Triggered manually by operators or automatically for critical findings. Gathers distributed trace context across services via <code>EvidenceCollector</code>, audits generated citations against PostgreSQL database records using <code>InvestigationQualityAuditor</code>, and proposes candidate declarative detection rules for human review.</p>
+        </div>
+      </section>
+
+            <!-- Connect Your Application to Ternline -->
+      <section id="connect-application" style="border-bottom: 2px solid var(--line); padding-bottom: 36px; margin-bottom: 36px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span class="tag tag-green">INTEGRATION GUIDE</span>
+          <span class="tag tag-blue">DEVELOPER ONBOARDING</span>
+        </div>
+        <h2 style="margin-top: 8px; border-top: none; padding-top: 0;">Connect Your Application to Ternline</h2>
+        <p class="lead" style="margin-bottom: 20px;">Send security events from your application to Ternline in a few minutes. Ternline works with independent applications and services. You can integrate it with FastAPI, Django, Flask, Express, NestJS, Go, Java, or any system capable of sending HTTP requests.</p>
+
+        <!-- How It Works Summary -->
+        <div class="card-grid" style="margin: 20px 0 28px;">
+          <div class="feature-card" style="border-top: 3px solid var(--accent);">
+            <h4><span>1️⃣</span> Register Application</h4>
+            <p>Create an application in Ternline, assign an environment (Production, Staging, Dev), and generate a cryptographically hashed API key.</p>
+          </div>
+          <div class="feature-card" style="border-top: 3px solid var(--blue);">
+            <h4><span>2️⃣</span> Install & Configure SDK</h4>
+            <p>Install <code>cyber-engine-sdk</code> or use the REST API. Set <code>TERNLINE_ENDPOINT</code> and <code>TERNLINE_API_KEY</code> environment variables.</p>
+          </div>
+          <div class="feature-card" style="border-top: 3px solid var(--purple);">
+            <h4><span>3️⃣</span> Stream Telemetry & Protect</h4>
+            <p>Emit security events on authentication, authorization, or sensitive operations. Fast Track evaluates events in &lt;1ms for real-time defense.</p>
+          </div>
+        </div>
+
+        <!-- Step 1: Create an Application -->
+        <div class="step-card" id="connect-step1" style="border-left: 3px solid var(--accent);">
+          <div class="step-header">
+            <span class="step-badge">1</span>
+            <h3>Create an Application</h3>
+          </div>
+          <ol style="color: #aab7c4; font-size: 14.5px; padding-left: 20px; line-height: 1.7;">
+            <li>Sign in to the <a href="/console" target="_blank"><strong>Ternline Control Room</strong></a> (or hosted deployment at <a href="https://ternline.vercel.app/console" target="_blank">https://ternline.vercel.app/console</a>).</li>
+            <li>Select your workspace using the workspace selector dropdown in the top navigation bar.</li>
+            <li>Navigate to <strong>Applications & SDK</strong> (or open <strong>Platform Settings → Applications & Keys</strong>).</li>
+            <li>Click <strong>Add Application</strong> (or <strong>+ Register Application</strong>).</li>
+            <li>Enter your application name and select its environment:</li>
+          </ol>
+
+          <table style="max-width: 600px; margin: 14px 0;">
+            <thead>
+              <tr><th>Setting</th><th>Example Value</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>Application name</code></td><td><code>Checkout API</code></td><td>Human-readable microservice or system title</td></tr>
+              <tr><td><code>Environment</code></td><td><code>Production</code></td><td>Tier classification (Production, Staging, Development)</td></tr>
+              <tr><td><code>Application ID</code></td><td><code>checkout-api</code></td><td>Unique slug identifier bound to ingestion scope</td></tr>
+            </tbody>
+          </table>
+
+          <p>After creating the application, open its integration settings to view and copy its provisioned API key.</p>
+
+          <div class="callout warn">
+            <p><strong>Keep your API key secret:</strong> Copy it when it is displayed. Store it in an environment variable or secrets manager (AWS Secrets Manager, HashiCorp Vault, Doppler). Never commit it to GitHub or expose it in frontend JavaScript.</p>
+          </div>
+        </div>
+
+        <!-- Step 2: Install the SDK -->
+        <div class="step-card" id="connect-step2" style="border-left: 3px solid var(--blue);">
+          <div class="step-header">
+            <span class="step-badge" style="background: rgba(120,183,255,.15); color: var(--blue);">2</span>
+            <h3>Install the SDK</h3>
+          </div>
+          <p>For Python applications (FastAPI, Django, Flask, Celery):</p>
+          <div class="code-container">
+            <button class="copy-btn">Copy</button>
+            <pre><code>pip install cyber-engine-sdk</code></pre>
+          </div>
+          <p>For Node.js / TypeScript, Go, Java, or other runtimes, use the supported SDK or the standard HTTP REST API (<code>POST /v1/events</code>).</p>
+        </div>
+
+        <!-- Step 3: Configure Your Application -->
+        <div class="step-card" id="connect-step3" style="border-left: 3px solid var(--accent);">
+          <div class="step-header">
+            <span class="step-badge">3</span>
+            <h3>Configure Your Application</h3>
+          </div>
+          <p>Set the following environment variables in your deployment environment or <code>.env</code> file:</p>
+          <div class="code-container">
+            <button class="copy-btn">Copy</button>
+            <pre><code>TERNLINE_ENDPOINT=https://ternline-cyber-engine.onrender.com
+TERNLINE_API_KEY=YOUR_TERNLINE_API_KEY</code></pre>
+          </div>
+          <p class="tiny muted">Use the actual API endpoint provided by your Ternline deployment (e.g. your AWS EC2 host or Render domain). Do not hardcode credentials in your source code.</p>
+
+          <h4 style="margin: 18px 0 8px; color: var(--ink);">Python Integration</h4>
+          <p>Initialize the client once when your application starts:</p>
+          <div class="code-container">
+            <button class="copy-btn">Copy</button>
+            <pre><code>import os
+from cyber_engine import CyberEngine
+
+ternline = CyberEngine(
+    api_key=os.environ["TERNLINE_API_KEY"],
+    app="YOUR_APPLICATION_ID",
+    endpoint=os.environ["TERNLINE_ENDPOINT"],
+)</code></pre>
+          </div>
+          <p class="tiny muted">The application ID must match the application associated with your API key.</p>
+        </div>
+
+        <!-- Step 4: Send Your First Security Event -->
+        <div class="step-card" id="connect-step4" style="border-left: 3px solid var(--amber);">
+          <div class="step-header">
+            <span class="step-badge" style="background: rgba(247,162,59,.15); color: var(--amber);">4</span>
+            <h3>Send Your First Security Event</h3>
+          </div>
+          <p>Add telemetry to important parts of your application, such as authentication, authorization, sensitive data access, and administrative actions.</p>
+          <p><strong>Example: Recording a failed login attempt:</strong></p>
+          <div class="code-container">
+            <button class="copy-btn">Copy</button>
+            <pre><code>ternline.emit(
+    event_type="auth.login.failed",
+    service="auth-service",
+    severity="medium",
+    details={
+        "client_ip": "203.0.113.10",
+        "reason": "invalid_password",
+    },
+)</code></pre>
+          </div>
+          <p class="tiny muted">This is an illustrative example. Use the SDK's actual supported method signature and event fields for your installed version. Avoid sending passwords, access tokens, session cookies, or other sensitive information.</p>
+
+          <h4 style="margin: 20px 0 8px; color: var(--ink);">What Should You Monitor?</h4>
+          <table>
+            <thead>
+              <tr><th>Category</th><th>Example Event Type</th><th>Recommended Security Trigger</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Authentication</strong></td><td><code>auth.login.failed</code></td><td>Repeated failed logins, MFA exhaustion, password brute force</td></tr>
+              <tr><td><strong>Authorization</strong></td><td><code>authz.access.denied</code></td><td>Forbidden object access (IDOR / BOLA attempts), unauthorized role escalation</td></tr>
+              <tr><td><strong>Account Security</strong></td><td><code>account.privilege.changed</code></td><td>Admin rights grant, API key creation, MFA reset, email change</td></tr>
+              <tr><td><strong>Data Access</strong></td><td><code>data.sensitive.accessed</code></td><td>PII queries, payment ledger reads, credential access</td></tr>
+              <tr><td><strong>Data Transfer</strong></td><td><code>data.bulk.exported</code></td><td>Unusual bulk exports, massive record queries, exfiltration spikes</td></tr>
+              <tr><td><strong>API Activity</strong></td><td><code>api.request.rejected</code></td><td>Repeated 401/403/429 rejected requests, WAF signature triggers</td></tr>
+            </tbody>
+          </table>
+          <p class="tiny muted">Start with security-relevant events. You do not need to send every application log to Ternline.</p>
+        </div>
+
+        <!-- Step 5: Verify Your Connection -->
+        <div class="step-card" id="connect-step5" style="border-left: 3px solid var(--blue);">
+          <div class="step-header">
+            <span class="step-badge" style="background: rgba(120,183,255,.15); color: var(--blue);">5</span>
+            <h3>Verify Your Connection</h3>
+          </div>
+          <ol style="color: #aab7c4; font-size: 14.5px; padding-left: 20px; line-height: 1.7;">
+            <li>Start your application.</li>
+            <li>Trigger an action that emits a security event (e.g. attempt an invalid login or make an API request).</li>
+            <li>Open the <strong>Ternline Control Room</strong>.</li>
+            <li>Select your application from the topbar filter.</li>
+            <li>Open <strong>Event Explorer</strong> in the sidebar.</li>
+            <li>Confirm that the event appears with its service ID, event type, and attributes.</li>
+          </ol>
+
+          <div class="callout info">
+            <p><strong>Verification Standard:</strong> A successful connection should be based on actual telemetry received by Ternline, not simply the existence of an API key.</p>
+          </div>
+
+          <p><strong>If your event does not appear, check:</strong></p>
+          <ul>
+            <li><strong>The API endpoint:</strong> Ensure <code>TERNLINE_ENDPOINT</code> matches your active engine host without trailing slashes.</li>
+            <li><strong>The application API key:</strong> Ensure the <code>Authorization: Bearer YOUR_TERNLINE_API_KEY</code> header is correctly transmitted.</li>
+            <li><strong>The application ID:</strong> Ensure <code>app_id</code> in the payload matches the application scope of the API key.</li>
+            <li><strong>Network connectivity:</strong> Verify firewall, VPC egress, or proxy rules allow HTTPS requests to the Ternline backend.</li>
+            <li><strong>The event payload:</strong> Ensure all required fields (<code>app_id</code>, <code>service_id</code>, <code>event_type</code>) are present and conform to alphanumeric patterns.</li>
+            <li><strong>The ingestion response:</strong> Check the HTTP status code (HTTP <code>202 Accepted</code> indicates success; HTTP <code>422</code> indicates validation failure).</li>
+          </ul>
+        </div>
+
+        <!-- Step 6: Use Ternline Across Multiple Services -->
+        <div class="step-card" id="connect-step6" style="border-left: 3px solid var(--accent);">
+          <div class="step-header">
+            <span class="step-badge">6</span>
+            <h3>Use Ternline Across Multiple Services</h3>
+          </div>
+          <p>If your application architecture uses multiple microservices, instrument each service independently:</p>
+          <div class="code-container">
+            <pre><code>Workspace: Acme
+│
+├── Checkout API
+│   └── checkout-api
+│
+├── Authentication Service
+│   └── auth-service
+│
+└── Billing Worker
+    └── billing-worker</code></pre>
+          </div>
+          <p>Use the same workspace and appropriate application identity for related services. Propagate a shared trace ID across service boundaries when you want Ternline to correlate events from the same request or operation:</p>
+          <div class="code-container">
+            <button class="copy-btn">Copy</button>
+            <pre><code># Incoming HTTP header forwarded across downstream RPC/microservices
+X-Trace-ID: tr-89102-abc</code></pre>
+          </div>
+          <p>Each service should emit its own events with the shared trace ID. Ternline can then correlate related telemetry across services (such as tracking an initial authentication failure that leads to a database exfiltration attempt across microservices).</p>
+        </div>
+
+        <!-- Step 7: Need More Control? -->
+        <div class="step-card" id="connect-step7" style="border-left: 3px solid var(--purple);">
+          <div class="step-header">
+            <span class="step-badge" style="background: rgba(210,168,255,.15); color: var(--purple);">7</span>
+            <h3>Need More Control?</h3>
+          </div>
+          <p>Continue exploring the full Ternline security intelligence architecture:</p>
+          <div class="card-grid">
+            <div class="feature-card">
+              <h4><a href="#sdk-python">SDK Reference ↗</a></h4>
+              <p>Client initialization, buffered async queueing, retries, PII scrubbing, and supported methods.</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="#wire-schema">Event Schema ↗</a></h4>
+              <p>Required fields, optional contextual attributes, event types, severity levels, and validation rules.</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="#api-reference">REST API Catalog ↗</a></h4>
+              <p>Authentication, telemetry endpoints, query parameters, request bodies, and JSON response formats.</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="#rules">Detection Rules ↗</a></h4>
+              <p>Authoring declarative detection rules, sliding windows, threshold conditions, and replay validation.</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="#deep-track">Deep Track AI ↗</a></h4>
+              <p>Investigate findings with Meta Muse Spark 1.3, audit database citations, and review hypotheses.</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="#active-defense">Active Defense ↗</a></h4>
+              <p>Configure protection modes (Observe, Assisted, Enforced), automated IP quarantines, and WAF webhooks.</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="#troubleshooting">Troubleshooting ↗</a></h4>
+              <p>Diagnose authentication errors, rate limiting, ingestion rejections, and connectivity issues.</p>
+            </div>
+          </div>
+          <p class="tiny muted">You can connect additional applications at any time from the <strong>Applications & SDK</strong> section of your workspace. You are connected when Ternline has successfully received and accepted your application's telemetry.</p>
         </div>
       </section>
 
