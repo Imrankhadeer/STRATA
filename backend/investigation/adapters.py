@@ -680,7 +680,7 @@ class OpenAICompatibleInvestigator(BaseInvestigator):
         model: str = "llama3.1",
         timeout: float = 30.0,
     ):
-        self.api_key = api_key or "sk-local-placeholder"
+        self.api_key = api_key or ""
         self.base_url = base_url.rstrip("/")
         self.model_name = model
         self.timeout = timeout
