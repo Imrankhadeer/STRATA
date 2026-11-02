@@ -30,6 +30,8 @@ from backend.api.defense import router as defense_router
 from backend.api.incidents import router as incidents_router
 from backend.api.threat_intel import router as threat_intel_router
 from backend.api.auth import router as auth_router
+from backend.api.workspaces import router as workspaces_router
+from backend.api.apps import router as apps_router
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -108,6 +110,8 @@ app.include_router(defense_router)
 app.include_router(incidents_router)
 app.include_router(threat_intel_router)
 app.include_router(auth_router)
+app.include_router(workspaces_router)
+app.include_router(apps_router)
 
 
 @app.on_event("startup")
@@ -247,6 +251,7 @@ async def root():
 @app.get("/ui", include_in_schema=False)
 @app.get("/app", include_in_schema=False)
 @app.get("/verify-email", include_in_schema=False)
+@app.get("/reset-password", include_in_schema=False)
 async def control_room():
     """
     Serves the production Ternline Control Room.

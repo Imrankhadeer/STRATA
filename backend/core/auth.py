@@ -43,6 +43,8 @@ class Permission:
     ADMIN = "admin"
 
 
+
+
 ALL_PERMISSIONS: Set[str] = {
     Permission.EVENTS_INGEST,
     Permission.FINDINGS_READ,
@@ -65,6 +67,52 @@ ALL_PERMISSIONS: Set[str] = {
     Permission.THREAT_INTEL_WRITE,
     Permission.ADMIN,
 }
+
+class Role:
+    OWNER = "owner"
+    ADMIN = "admin"
+    DEVELOPER = "developer"
+    ANALYST = "analyst"
+    VIEWER = "viewer"
+
+
+ROLE_PERMISSIONS = {
+    Role.OWNER: list(ALL_PERMISSIONS),
+    Role.ADMIN: list(ALL_PERMISSIONS),
+    Role.DEVELOPER: [
+        Permission.EVENTS_INGEST,
+        Permission.KEYS_READ,
+        Permission.KEYS_WRITE,
+        Permission.FINDINGS_READ,
+        Permission.INCIDENTS_READ,
+        Permission.DEFENSE_ACTIONS_READ,
+        Permission.INVESTIGATIONS_READ,
+        Permission.THREAT_INTEL_READ,
+    ],
+    Role.ANALYST: [
+        Permission.FINDINGS_READ,
+        Permission.INCIDENTS_READ,
+        Permission.INCIDENTS_WRITE,
+        Permission.INCIDENTS_CONTAIN,
+        Permission.INVESTIGATIONS_READ,
+        Permission.INVESTIGATIONS_WRITE,
+        Permission.DEFENSE_ACTIONS_READ,
+        Permission.DEFENSE_ACTIONS_PROPOSE,
+        Permission.THREAT_INTEL_READ,
+        Permission.THREAT_INTEL_WRITE,
+    ],
+    Role.VIEWER: [
+        Permission.FINDINGS_READ,
+        Permission.INCIDENTS_READ,
+        Permission.DEFENSE_ACTIONS_READ,
+        Permission.INVESTIGATIONS_READ,
+        Permission.THREAT_INTEL_READ,
+    ],
+}
+
+
+def get_role_permissions(role: str) -> List[str]:
+    return ROLE_PERMISSIONS.get(role.lower(), ROLE_PERMISSIONS[Role.VIEWER])
 
 
 def hash_api_key(raw_key: str) -> str:
@@ -90,6 +138,7 @@ def create_operator_token(
     expires_in_seconds: int = 3600,
     is_human: bool = True,
     app_id: str = "operator-console",
+    role: str = "owner",
 ) -> str:
     """
     Issues a cryptographically signed JWT representing a verified operator session.
@@ -101,7 +150,8 @@ def create_operator_token(
         "tenant_id": tenant_id.strip(),
         "app_id": app_id,
         "is_human": is_human,
-        "scopes": scopes if scopes is not None else [Permission.ADMIN],
+        "role": role,
+        "scopes": scopes if scopes is not None else get_role_permissions(role),
         "iss": JWT_ISSUER,
         "aud": JWT_AUDIENCE,
         "iat": int(now.timestamp()),
@@ -159,6 +209,7 @@ class AuthContext:
         is_human: bool = False,
         permissions: Optional[Set[str]] = None,
         auth_type: str = "api_key",
+        role: str = "viewer",
     ):
         self.tenant_id = tenant_id
         self.app_id = app_id
@@ -167,6 +218,7 @@ class AuthContext:
         self.is_human = is_human
         self.permissions = permissions or set()
         self.auth_type = auth_type
+        self.role = role
 
     def has_permission(self, permission: str) -> bool:
         if Permission.ADMIN in self.permissions or "*" in self.permissions:
@@ -215,6 +267,7 @@ def get_current_auth(
             is_human=bool(payload.get("is_human", False)),
             permissions=perms,
             auth_type="jwt",
+            role=payload.get("role", "owner" if Permission.ADMIN in perms else "viewer"),
         )
 
     # 2. API Key Authentication (Authorization: Bearer <raw_api_key>)

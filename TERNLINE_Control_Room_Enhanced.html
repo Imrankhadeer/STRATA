@@ -121,6 +121,70 @@
   margin-bottom: 20px;
 }
 
+
+/* Multi-Workspace & Application Topbar Styling */
+.topbar-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+.topbar-select {
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 11px;
+  cursor: pointer;
+  outline: none;
+  max-width: 170px;
+}
+.topbar-select option {
+  background: var(--panel);
+  color: var(--text);
+}
+.role-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: inline-block;
+}
+.role-badge.owner { background: rgba(197,243,107,0.2); color: var(--lime); border: 1px solid rgba(197,243,107,0.4); }
+.role-badge.admin { background: rgba(120,183,255,0.2); color: var(--blue); border: 1px solid rgba(120,183,255,0.4); }
+.role-badge.developer { background: rgba(193,162,255,0.2); color: var(--purple); border: 1px solid rgba(193,162,255,0.4); }
+.role-badge.analyst { background: rgba(243,193,110,0.2); color: var(--amber); border: 1px solid rgba(243,193,110,0.4); }
+.role-badge.viewer { background: rgba(154,171,160,0.2); color: var(--muted); border: 1px solid rgba(154,171,160,0.4); }
+
+.settings-nav {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+.settings-nav-btn {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-weight: 650;
+  font-size: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.settings-nav-btn.active {
+  color: var(--lime);
+  border-bottom-color: var(--lime);
+}
+
 </style><body>
 <div id="sidebarTooltip" class="sidebar-tooltip hide"></div>
 
@@ -135,84 +199,135 @@
       </div>
     </div>
 
-
-
-    <!-- Auth Mode Tabs -->
-    <div style="display:flex;border-bottom:1px solid var(--line);margin-bottom:16px;">
-      <button class="tab active" id="gateTabLogin" type="button" onclick="switchGateTab('login')" style="flex:1;text-align:center;padding:10px;">Operator Sign In</button>
-      <button class="tab" id="gateTabRegister" type="button" onclick="switchGateTab('register')" style="flex:1;text-align:center;padding:10px;">Register Workspace</button>
-      <button class="tab" id="gateTabKey" type="button" onclick="switchGateTab('key')" style="flex:1;text-align:center;padding:10px;">Direct API Key</button>
+    <!-- Auth Mode Navigation Tabs -->
+    <div style="display:flex;border-bottom:1px solid var(--line);margin-bottom:18px;">
+      <button class="tab active" id="gateTabLogin" type="button" onclick="switchGateTab('login')" style="flex:1;text-align:center;padding:10px;font-weight:700;">Sign In</button>
+      <button class="tab" id="gateTabRegister" type="button" onclick="switchGateTab('register')" style="flex:1;text-align:center;padding:10px;font-weight:700;">Create Workspace</button>
+      <button class="tab" id="gateTabKey" type="button" onclick="switchGateTab('key')" style="flex:1;text-align:center;padding:10px;font-weight:700;">API Key</button>
     </div>
 
-    <!-- Tab 1: Operator Sign In -->
+    <!-- Screen 1: Sign In -->
     <form id="gateFormLogin" onsubmit="handleGateLogin(event)">
       <div class="field">
-        <label>Operator Email</label>
+        <label>Operator Work Email</label>
         <input class="control" type="email" id="gateLoginEmail" required placeholder="operator@defense.soc" style="width:100%">
       </div>
       <div class="field">
-        <label>Password</label>
+        <div class="between" style="margin-bottom:5px;">
+          <label style="margin:0;">Password</label>
+          <a href="javascript:void(0)" onclick="switchGateTab('forgot')" style="font-size:11px;color:var(--muted);text-decoration:none;">Forgot password?</a>
+        </div>
         <input class="control" type="password" id="gateLoginPassword" required placeholder="••••••••••••" style="width:100%">
       </div>
       <div id="gateLoginMsg" class="tiny" style="margin-bottom:12px;"></div>
       <button class="btn primary" type="submit" id="gateLoginBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Sign In to Console</button>
+      
+      <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--muted);">
+        Don't have a workspace? <a href="javascript:void(0)" onclick="switchGateTab('register')" style="font-weight:700;">Create Workspace</a>
+      </div>
     </form>
 
-    <!-- Tab 2: Register Workspace -->
+    <!-- Screen 2: Register Workspace -->
     <form id="gateFormRegister" class="hide" onsubmit="handleGateRegister(event)">
+      <div class="field">
+        <label>Operator Full Name</label>
+        <input class="control" type="text" id="gateRegName" required placeholder="Alex Morgan" style="width:100%">
+      </div>
       <div class="field">
         <label>Operator Work Email</label>
         <input class="control" type="email" id="gateRegEmail" required placeholder="operator@company.com" style="width:100%">
       </div>
       <div class="field">
+        <label>Organization / Workspace Name</label>
+        <input class="control" type="text" id="gateRegTenant" required placeholder="Acme Cyber Defense" style="width:100%">
+      </div>
+      <div class="field">
         <label>Strong Password (min 8 chars, mixed case, numbers, symbol)</label>
         <input class="control" type="password" id="gateRegPassword" required placeholder="••••••••••••" style="width:100%">
       </div>
-      <div class="field">
-        <label>Full Name</label>
-        <input class="control" type="text" id="gateRegName" placeholder="Alex Morgan" style="width:100%">
-      </div>
-      <div class="field">
-        <label>Workspace / Tenant Name</label>
-        <input class="control" type="text" id="gateRegTenant" placeholder="Acme Cyber Defense" style="width:100%">
-      </div>
       <div id="gateRegMsg" class="tiny" style="margin-bottom:12px;"></div>
-      <button class="btn primary" type="submit" id="gateRegBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Register & Verify via AWS SES</button>
+      <button class="btn primary" type="submit" id="gateRegBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Create Workspace & Verify Email</button>
+      
+      <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--muted);">
+        Already have an account? <a href="javascript:void(0)" onclick="switchGateTab('login')" style="font-weight:700;">Sign In</a>
+      </div>
     </form>
 
-    <!-- Tab 3: Direct API Key -->
+    <!-- Screen 3: Verify Email -->
+    <form id="gateFormVerify" class="hide" onsubmit="handleGateVerify(event)">
+      <div class="callout" style="margin-bottom:14px;border-color:var(--lime);background:#122116;">
+        <b>Email Verification Code</b>
+        <div class="tiny muted" style="margin-top:3px;">Check your email inbox for your verification code dispatched via AWS SES.</div>
+      </div>
+      <div class="field">
+        <label>Verification Token / Code</label>
+        <input class="control" type="text" id="gateVerifyToken" required placeholder="Paste verification token here..." style="width:100%;font-family:monospace;">
+      </div>
+      <div id="gateVerifyMsg" class="tiny" style="margin-bottom:12px;"></div>
+      <button class="btn primary" type="submit" id="gateVerifyBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Verify Email & Enter Console</button>
+      
+      <div class="row between" style="margin-top:16px;font-size:11px;">
+        <button class="btn ghost small" type="button" onclick="handleResendVerification()" style="color:var(--muted);">Resend Verification Email</button>
+        <a href="javascript:void(0)" onclick="switchGateTab('login')" style="color:var(--lime);">Back to Sign In</a>
+      </div>
+    </form>
+
+    <!-- Screen 4: Forgot Password -->
+    <form id="gateFormForgot" class="hide" onsubmit="handleGateForgot(event)">
+      <div class="field">
+        <label>Operator Email</label>
+        <input class="control" type="email" id="gateForgotEmail" required placeholder="operator@company.com" style="width:100%">
+        <small class="dim">We will dispatch password reset instructions if an account is registered.</small>
+      </div>
+      <div id="gateForgotMsg" class="tiny" style="margin-bottom:12px;"></div>
+      <button class="btn primary" type="submit" id="gateForgotBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Send Password Reset Link</button>
+      
+      <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--muted);">
+        Remembered your password? <a href="javascript:void(0)" onclick="switchGateTab('login')" style="font-weight:700;">Back to Sign In</a>
+      </div>
+    </form>
+
+    <!-- Screen 5: Reset Password -->
+    <form id="gateFormReset" class="hide" onsubmit="handleGateReset(event)">
+      <div class="field">
+        <label>Reset Token</label>
+        <input class="control" type="text" id="gateResetToken" required placeholder="Token from password reset email" style="width:100%;font-family:monospace;">
+      </div>
+      <div class="field">
+        <label>New Strong Password</label>
+        <input class="control" type="password" id="gateResetPassword" required placeholder="••••••••••••" style="width:100%">
+      </div>
+      <div class="field">
+        <label>Confirm New Password</label>
+        <input class="control" type="password" id="gateResetConfirm" required placeholder="••••••••••••" style="width:100%">
+      </div>
+      <div id="gateResetMsg" class="tiny" style="margin-bottom:12px;"></div>
+      <button class="btn primary" type="submit" id="gateResetBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Set New Password & Sign In</button>
+      
+      <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--muted);">
+        <a href="javascript:void(0)" onclick="switchGateTab('login')" style="font-weight:700;">Back to Sign In</a>
+      </div>
+    </form>
+
+    <!-- Screen 6: Direct API Key -->
     <form id="gateFormKey" class="hide" onsubmit="handleGateKey(event)">
       <div class="field">
-        <label>Master / Ingestion API Key</label>
-        <input class="control" type="password" id="gateDirectKey" required placeholder="ce_live_..." style="width:100%">
-        <small class="dim">Direct authentication with pre-seeded or provisioned tenant key.</small>
+        <label>Ingestion / Tenant API Key</label>
+        <input class="control" type="password" id="gateDirectKey" required placeholder="ce_live_..." style="width:100%;font-family:monospace;">
+        <small class="dim">Machine or developer authentication using a provisioned tenant key.</small>
       </div>
       <div id="gateKeyMsg" class="tiny" style="margin-bottom:12px;"></div>
       <button class="btn primary" type="submit" id="gateKeyBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Connect with API Key</button>
+      
+      <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--muted);">
+        Human operator? <a href="javascript:void(0)" onclick="switchGateTab('login')" style="font-weight:700;">Operator Sign In</a>
+      </div>
     </form>
 
-        <!-- Self-Hosted / Custom Engine Toggle (Collapsible) -->
-    <div style="margin-top:18px;text-align:center;">
-      <button class="btn ghost small" type="button" onclick="$('#gateHostCollapse').classList.toggle('hide')" style="color:var(--muted);font-size:10px;padding:4px 8px;">
-        ⚙ Engine Host Configuration (Self-Hosted / AWS EC2)
-      </button>
-      <div id="gateHostCollapse" class="hide" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;text-align:left;">
-        <div class="between" style="margin-bottom:4px;">
-          <label style="font-size:9px;text-transform:uppercase;color:var(--muted);font-weight:700;">Target Engine API Host</label>
-          <span id="gateBackendStatus" style="font-size:10px;font-weight:700;color:var(--muted);">Probing...</span>
-        </div>
-        <div class="row" style="gap:6px;">
-          <input class="control" id="gateBackendUrl" placeholder="http://localhost:8000" onchange="updateGateBackend(this.value)" style="flex:1;font-size:11px;">
-          <button class="btn small" type="button" onclick="probeGateBackend()">Ping</button>
-        </div>
-        <div class="tiny dim" style="margin-top:3px;">Only configure if pointing console to a separate backend port or custom AWS domain.</div>
-      </div>
-    </div>
-
     <div class="row between" style="margin-top:22px;border-top:1px solid var(--line);padding-top:14px;font-size:11px;color:var(--muted);">
-      <span>PostgreSQL 16 Relational Engine</span>
-      <span>Redis 7+ Distributed State</span>
-      <span>Zero Synthetic Fallbacks</span>
+      <span>PostgreSQL 16 Multi-Tenant</span>
+      <span>Strict Tenant Isolation</span>
+      <span>Enterprise RBAC</span>
     </div>
   </div>
 </div>
@@ -246,7 +361,7 @@
    <button class="nav" data-page="defense"><span class="ico">⛨</span>Active Defense<span class="nav-badge hide" id="badge-defense">0</span></button>
    <button class="nav" data-page="integrations"><span class="ico">⇄</span>Connect Application<span class="nav-badge" style="background:rgba(197,243,107,.15);color:var(--lime);">SDK</span></button>
    <button class="nav" data-page="governance"><span class="ico">⚖</span>AI Governance</button>
-   <button class="nav" data-page="settings"><span class="ico">⚙</span>Backend & Settings</button>
+   <button class="nav" data-page="settings"><span class="ico">⚙</span>Platform Settings</button>
   </div>
   <div class="sidefoot">
     <div class="row"><span class="dot" id="sideDot" style="background:var(--amber)"></span><b id="sideStatus" style="color:var(--amber)">Not connected</b></div>
@@ -254,23 +369,43 @@
   </div>
  </aside>
  <main class="main">
-  <header class="topbar">
+    <header class="topbar">
     <button class="btn mobilemenu" id="menuBtn">☰</button>
     <div class="crumb" id="crumb">Operations / Overview</div>
     <div class="spacer"></div>
+
+    <!-- Workspace Context Switcher Dropdown -->
+    <div class="topbar-select-wrap" id="workspaceSelectorWrap" title="Switch Security Workspace">
+      <span style="color:var(--lime);font-size:12px;">🏢</span>
+      <select id="workspaceSelector" class="topbar-select" onchange="handleSwitchWorkspace(this.value)">
+        <option value="">Loading Workspaces...</option>
+      </select>
+      <button class="btn small ghost" type="button" onclick="openCreateWorkspaceModal()" title="Create New Workspace" style="padding:1px 5px;font-size:10px;color:var(--lime);">+ New</button>
+    </div>
+
+    <!-- Application Scope Filter Dropdown -->
+    <div class="topbar-select-wrap" id="appFilterWrap" title="Filter by Application">
+      <span style="color:var(--blue);font-size:12px;">📱</span>
+      <select id="appFilterSelector" class="topbar-select" onchange="handleSelectAppFilter(this.value)">
+        <option value="">All Applications</option>
+      </select>
+    </div>
+
     <input class="topsearch" id="globalSearch" placeholder="Search telemetry, findings, rules…">
-    <span class="pill good" id="streamLiveIndicator" style="display:inline-flex;align-items:center;gap:6px;font-size:10px;padding:4px 9px;">
-      <span class="dot" style="width:6px;height:6px;background:var(--lime);"></span>
-      <span id="streamIndicatorText">Live Stream Active</span>
-    </span>
-    <button class="btn small" id="refreshBtn" title="Refresh state">↻ Refresh</button>
+
+    <button class="btn small" id="refreshBtn" title="Refresh state" onclick="refresh()">↻ Refresh</button>
     <a class="btn small ghost" href="/documentation" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">Docs ↗</a>
     <button class="btn small primary" onclick="setPage('integrations')" style="display:inline-flex;align-items:center;gap:4px;font-weight:700;">⚡ Connect App</button>
+    
+    <!-- User Profile & Sign Out Dropdown -->
     <div id="userChip" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:11px;">
-      <span style="color:var(--lime)">👤</span> <span id="userChipEmail">Operator</span>
+      <span style="color:var(--lime)">👤</span>
+      <span id="userChipEmail">Operator</span>
+      <span id="userChipRole" class="role-badge owner" style="margin-left:2px;">OWNER</span>
       <button class="btn small ghost" onclick="signOutOperator()" style="padding:1px 5px;font-size:10px;margin-left:4px;color:var(--muted);" title="Sign Out">Sign Out</button>
     </div>
-    <button class="btn small ghost" data-page="settings">Settings</button>
+    
+    <button class="btn small ghost" onclick="setPage('settings')" title="Workspace & Security Settings">⚙ Settings</button>
   </header>
   <div id="liveStreamBanner" class="callout hide" style="margin:16px 26px 0;border-color:var(--lime);background:#122116">
     <div class="between">
@@ -296,23 +431,33 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 
 // Centralized Connection Configuration
 const storeKey = 'ternline-connection-config-v2';
+const PRODUCTION_BACKEND_URL = 'https://ternline-cyber-engine.onrender.com';
+if (typeof window !== 'undefined' && !window.ENV_BACKEND_URL) {
+  window.ENV_BACKEND_URL = PRODUCTION_BACKEND_URL;
+}
 const defaultBaseUrl = (function() {
   if (typeof window !== 'undefined') {
     if (window.ENV_BACKEND_URL) return window.ENV_BACKEND_URL;
-    const lsBackend = localStorage.getItem('ternline_backend_url');
-    if (lsBackend) return lsBackend;
-    // Cloud hosting check: On Vercel, do NOT query current static origin as backend
+    try {
+      const lsBackend = localStorage.getItem('ternline_backend_url');
+      if (lsBackend) return lsBackend;
+    } catch (_) {}
+    // Cloud hosting: Vercel static frontend must talk to Render backend, never to itself
     if (window.location && window.location.hostname) {
       const h = window.location.hostname.toLowerCase();
-      if (h.endsWith('vercel.app') || h.endsWith('.app')) {
-        return '';
+      if (h.endsWith('vercel.app') || h.endsWith('.app') || h.endsWith('onrender.com')) {
+        return PRODUCTION_BACKEND_URL;
       }
       if (window.location.port === '8000') {
         return window.location.origin;
       }
+      if (h === 'localhost' || h === '127.0.0.1') {
+        return 'http://localhost:8000';
+      }
+      return PRODUCTION_BACKEND_URL;
     }
   }
-  return 'http://localhost:8000';
+  return PRODUCTION_BACKEND_URL;
 })();
 
 const defaults = {
@@ -329,18 +474,23 @@ const defaults = {
   recentAudit: '/api/v1/ops/events/recent',
   threatIntel: '/api/v1/threat-intelligence',
   assets: '/api/v1/keys',
-  coverage: '',
-  hunting: '',
+  coverage: '/api/v1/threat-intelligence/mitre-coverage',
+  hunting: '/api/v1/events/search',
   activeDefense: '/api/v1/defense/actions',
   defensePolicy: '/api/v1/defense/policy',
   defenseAudit: '/api/v1/defense/audit',
-  integrations: ''
+  integrations: '/api/v1/apps'
 };
 
 let config = { ...defaults };
 try {
   const saved = JSON.parse(localStorage.getItem(storeKey) || '{}');
   config = { ...config, ...saved };
+  // One-time migration: drop stale empty-string base and empty routes saved by older console builds
+  if (!String(config.baseUrl || '').trim()) config.baseUrl = defaultBaseUrl;
+  for (const k of ['coverage', 'hunting', 'integrations']) {
+    if (!String(config[k] || '').trim()) config[k] = defaults[k];
+  }
 } catch (_) {}
 
 // Security Rule: Bearer token is stored strictly in JavaScript session memory (never in localStorage/sessionStorage)
@@ -373,7 +523,7 @@ const titles = {
   defense: 'Response / Active Defense',
   integrations: 'Platform / Connect Application & SDK',
   governance: 'Trust / AI Governance',
-  settings: 'Platform / Backend & Settings'
+  settings: 'Platform / Workspace & Security Settings'
 };
 
 const readPages = {
@@ -410,7 +560,7 @@ function endpoint(k) {
 
 function apiUrl(path) {
   const base = String(config.baseUrl || defaultBaseUrl).trim().replace(/\/$/, '');
-  if (!base) throw new Error('Backend base URL is not configured. Open Backend & Settings.');
+  if (!base) base = window.location.origin;
   if (!path) throw new Error('This API route is not configured.');
   if (/^https?:\/\//i.test(path)) return path;
   return base + '/' + path.replace(/^\//, '');
@@ -480,7 +630,7 @@ async function request(path, { method = 'GET', body = null, timeoutMs = 12000 } 
   if (!res.ok) {
     if (res.status === 401) {
       setConnection(false, 'Unauthenticated');
-      throw new Error('HTTP 401 Unauthorized: Valid Bearer token required. Configure your API key in Backend & Settings.');
+      throw new Error('HTTP 401 Unauthorized: Session token expired. Please sign in again.');
     }
     const detail = data?.detail || data?.message || res.statusText || `HTTP ${res.status}`;
     throw new Error(`HTTP ${res.status}: ${detail}`);
@@ -1824,53 +1974,68 @@ function assets() {
 }
 
 function integrations() {
-  const keys = Array.isArray(cache.apiKeys) ? cache.apiKeys : (cache.assets || []);
-  const activeKey = keys.find(k => k.is_active !== false) || keys[0];
-  const sampleKey = activeKey ? activeKey.key_prefix : (bearerToken || 'ce_live_your_app_key_secret');
-  const engineUrl = config.baseUrl || defaultBaseUrl || 'https://api.ternline.security';
-  const recentEvents = Array.isArray(cache.events) ? cache.events : [];
-  
-  // Discover apps from recent events or keys
-  const connectedApps = new Map();
-  keys.forEach(k => {
-    if (k.app_id) connectedApps.set(k.app_id, { app_id: k.app_id, key: k.key_prefix, lastSeen: k.created_at, status: 'Provisioned' });
-  });
-  recentEvents.forEach(e => {
-    const aid = e.app_id || e.service_id || 'default-service';
-    connectedApps.set(aid, { app_id: aid, key: sampleKey, lastSeen: e.timestamp, status: 'Live Ingesting' });
-  });
-  const appsList = Array.from(connectedApps.values());
+  const apps = Array.isArray(cache.apps) ? cache.apps : [];
+  const selectedAppId = currentAppFilter || (apps.length > 0 ? apps[0].app_id : 'payments-api');
+  const selectedApp = apps.find(a => a.app_id === selectedAppId) || apps[0] || {
+    app_id: 'payments-api',
+    name: 'Primary Ingest Service',
+    environment: 'production',
+    status: 'awaiting_telemetry'
+  };
 
-  return head('Connect Application & Telemetry Ingestion', 'Instrument any microservice, backend API, container, or edge gateway to stream runtime security events into Ternline.', '')
+  const keys = Array.isArray(cache.apiKeys) ? cache.apiKeys : [];
+  const activeKey = keys.find(k => k.app_id === selectedApp.app_id) || keys[0];
+  const sampleKey = activeKey ? activeKey.key_prefix : (bearerToken || 'ce_live_your_ingestion_api_key');
+  const engineUrl = config.baseUrl || defaultBaseUrl || window.location.origin;
+
+  return head('Connect Applications & Telemetry Ingestion', 'Instrument your backend microservices, serverless functions, API gateways, and edge workers to stream runtime security telemetry into Ternline.', '')
     + `<div class="grid" style="gap:20px;">
 
-      <!-- Card 1: Ingestion Pipeline Overview -->
+      <!-- Card 1: Registered Applications & Credential Scope -->
       <div class="panel pad">
         <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
           <div>
-            <b style="font-size:14px;color:var(--lime);">1. Application Ingestion Credentials & Target Endpoint</b>
-            <p class="tiny muted" style="margin:2px 0 0;">Independent microservices authenticate via Bearer token to emit structured security telemetry.</p>
+            <b style="font-size:14px;color:var(--lime);">1. Target Application & Telemetry Credentials</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Each application receives a dedicated ingestion scope and cryptographically hashed API key.</p>
           </div>
-          <button class="btn primary small" type="button" onclick="openProvisionKeyModal()">+ Provision New Application Key</button>
+          <button class="btn primary small" type="button" onclick="openRegisterAppModal()">+ Register New Application</button>
         </div>
 
-        <div class="grid g2" style="margin-bottom:10px;">
+        <div class="grid g3" style="margin-bottom:14px;">
+          <div class="field">
+            <label>Selected Application</label>
+            <select class="control" id="integAppSelect" onchange="handleSelectIntegrationApp(this.value)" style="width:100%;">
+              ${apps.length === 0 ? `<option value="payments-api">payments-api (Demo Default)</option>` : apps.map(a => `<option value="${esc(a.app_id)}" ${a.app_id === selectedApp.app_id ? 'selected' : ''}>${esc(a.name || a.app_id)} [${esc(a.environment || 'prod')}]</option>`).join('')}
+            </select>
+          </div>
           <div class="field">
             <label>Live Ingestion API Endpoint (POST)</label>
-            <div class="row" style="gap:8px;">
-              <input class="control" readonly value="${esc(engineUrl)}/v1/events" style="flex:1;font-family:monospace;font-size:12px;">
-              <button class="btn small" type="button" onclick="navigator.clipboard.writeText('${esc(engineUrl)}/v1/events');toast('Copied ingestion endpoint URL!');">Copy</button>
+            <div class="row" style="gap:6px;">
+              <input class="control" readonly value="${esc(engineUrl)}/v1/events" style="flex:1;font-family:monospace;font-size:11px;">
+              <button class="btn small" type="button" onclick="navigator.clipboard.writeText('${esc(engineUrl)}/v1/events');toast('Copied Ingestion Endpoint URL!');">Copy</button>
             </div>
-            <small class="dim">Fast Track ingestion gateway with deterministic sub-millisecond evaluation.</small>
           </div>
           <div class="field">
-            <label>Active Tenant API Key</label>
-            <div class="row" style="gap:8px;">
-              <input class="control" readonly value="${esc(sampleKey)}" style="flex:1;font-family:monospace;font-size:12px;">
-              <button class="btn small" type="button" onclick="navigator.clipboard.writeText('${esc(sampleKey)}');toast('Copied API Key!');">Copy</button>
+            <label>Ingestion API Key (Scoped to ${esc(selectedApp.app_id)})</label>
+            <div class="row" style="gap:6px;">
+              <input class="control" readonly value="${esc(sampleKey)}" style="flex:1;font-family:monospace;font-size:11px;">
+              <button class="btn small" type="button" onclick="navigator.clipboard.writeText('${esc(sampleKey)}');toast('Copied Ingestion API Key!');">Copy</button>
             </div>
-            <small class="dim">Scoped to tenant <b>${esc(currentTenant || 'Primary Workspace')}</b>. Never exposes database credentials.</small>
           </div>
+        </div>
+
+        <!-- Live Connection Verification Box -->
+        <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:6px;">
+          <div class="between">
+            <div class="row" style="gap:10px;">
+              <span class="pill ${selectedApp.status === 'live' ? 'good' : 'warn'}">
+                ● ${selectedApp.status === 'live' ? 'LIVE INGESTING' : 'AWAITING TELEMETRY'}
+              </span>
+              <span class="tiny muted">Application: <b>${esc(selectedApp.app_id)}</b> (${esc(selectedApp.name || selectedApp.app_id)})</span>
+            </div>
+            <button class="btn small primary" type="button" id="btnTestTelemetry" onclick="triggerTelemetrySelfTest('${esc(selectedApp.app_id)}')">⚡ Test Live Telemetry Connection</button>
+          </div>
+          <div id="telemetryTestResult" class="tiny" style="margin-top:8px;font-family:monospace;display:none;"></div>
         </div>
       </div>
 
@@ -1878,8 +2043,8 @@ function integrations() {
       <div class="panel pad">
         <div class="between" style="margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px;">
           <div>
-            <b style="font-size:14px;color:var(--lime);">2. Choose Your Technology Stack</b>
-            <p class="tiny muted" style="margin:2px 0 0;">Copy and paste the client initialization snippet directly into your independent application.</p>
+            <b style="font-size:14px;color:var(--lime);">2. Integration Guide & Client SDKs</b>
+            <p class="tiny muted" style="margin:2px 0 0;">Copy and paste the client initialization snippet directly into your microservice codebase.</p>
           </div>
         </div>
 
@@ -1888,7 +2053,7 @@ function integrations() {
           <button class="tab" id="tabSdkNode" type="button" onclick="switchSdkTab('node')">Node.js / TypeScript</button>
           <button class="tab" id="tabSdkCurl" type="button" onclick="switchSdkTab('curl')">cURL / REST API</button>
           <button class="tab" id="tabSdkGo" type="button" onclick="switchSdkTab('go')">Go (Golang)</button>
-          <button class="tab" id="tabSdkOtel" type="button" onclick="switchSdkTab('otel')">OpenTelemetry / WAF Proxy</button>
+          <button class="tab" id="tabSdkOtel" type="button" onclick="switchSdkTab('otel')">OpenTelemetry Exporter</button>
         </div>
 
         <!-- Tab 1: Python -->
@@ -1903,15 +2068,15 @@ from cyber_engine import CyberEngine, Event
 # 2. Initialize Ternline Ingest Client in your service startup
 engine = CyberEngine(
     api_key="${esc(sampleKey)}",
-    app="payments-api",                  # Your independent application ID
-    endpoint="${esc(engineUrl)}",        # Target Ternline engine host
-    buffered=True                        # High-throughput non-blocking background queue
+    app="${esc(selectedApp.app_id)}",
+    endpoint="${esc(engineUrl)}",
+    buffered=True
 )
 
 # 3. Emit security telemetry on sensitive, authentication, or anomalous execution
 engine.emit(
     event_type="auth.login.failed",
-    service="auth-service",
+    service="${esc(selectedApp.app_id)}",
     severity="medium",
     trace_id="req-9b82c4-118",
     details={
@@ -1930,33 +2095,27 @@ engine.emit(
         <div id="sdkPaneNode" class="hide">
           <div class="codebox" style="margin:0;font-size:11px;background:#0b130e;border-color:#2a3d2e;">
 // Send telemetry to Ternline from Express, Fastify, Next.js, or NestJS
-export async function emitTernlineEvent(event: {
-  eventType: string;
-  service: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  traceId: string;
-  details: Record<string, any>;
-}) {
-  const endpoint = "${esc(engineUrl)}/v1/events";
-  const apiKey = "${esc(sampleKey)}";
-
-  await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      events: [{
-        event_type: event.eventType,
-        service_name: event.service,
-        severity: event.severity,
-        trace_id: event.traceId,
+export async function emitTernlineEvent(event) {
+  try {
+    await fetch('${esc(engineUrl)}/v1/events', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${esc(sampleKey)}'
+      },
+      body: JSON.stringify({
+        app_id: '${esc(selectedApp.app_id)}',
+        service_id: '${esc(selectedApp.app_id)}',
+        event_type: event.eventType || 'api.request',
+        severity: event.severity || 'info',
+        trace_id: event.traceId || crypto.randomUUID(),
         timestamp: new Date().toISOString(),
-        attributes: event.details
-      }]
-    })
-  });
+        attributes: event.attributes || {}
+      })
+    });
+  } catch (err) {
+    console.warn('Ternline telemetry error:', err);
+  }
 }
           </div>
           <div class="row" style="margin-top:10px;justify-content:flex-end;">
@@ -1971,24 +2130,20 @@ curl -X POST "${esc(engineUrl)}/v1/events" \
   -H "Authorization: Bearer ${esc(sampleKey)}" \
   -H "Content-Type: application/json" \
   -d '{
-    "events": [
-      {
-        "event_type": "api.access.denied",
-        "service_name": "payments-api",
-        "severity": "medium",
-        "trace_id": "tr-9812-78",
-        "timestamp": "' + new Date().toISOString() + '",
-        "attributes": {
-          "endpoint": "/v1/charges",
-          "status_code": 403,
-          "client_ip": "198.51.100.44"
-        }
-      }
-    ]
+    "app_id": "${esc(selectedApp.app_id)}",
+    "service_id": "${esc(selectedApp.app_id)}",
+    "event_type": "security.heartbeat",
+    "severity": "info",
+    "trace_id": "test-trace-001",
+    "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'",
+    "attributes": {
+      "status": "healthy",
+      "version": "1.0.0"
+    }
   }'
           </div>
           <div class="row" style="margin-top:10px;justify-content:flex-end;">
-            <button class="btn small" type="button" onclick="navigator.clipboard.writeText(document.querySelector('#sdkPaneCurl .codebox').textContent.trim());toast('Copied cURL snippet!');">Copy cURL Command</button>
+            <button class="btn small" type="button" onclick="navigator.clipboard.writeText(document.querySelector('#sdkPaneCurl .codebox').textContent.trim());toast('Copied cURL command!');">Copy cURL Command</button>
           </div>
         </div>
 
@@ -2004,29 +2159,32 @@ import (
     "time"
 )
 
-type EventPayload struct {
-    Events []map[string]interface{} `json:"events"`
+type Event struct {
+    AppID      string                 \`json:"app_id"\`
+    ServiceID  string                 \`json:"service_id"\`
+    EventType  string                 \`json:"event_type"\`
+    Severity   string                 \`json:"severity"\`
+    TraceID    string                 \`json:"trace_id"\`
+    Timestamp  string                 \`json:"timestamp"\`
+    Attributes map[string]interface{} \`json:"attributes"\`
 }
 
-func EmitSecurityEvent(eventType, service, severity, traceID string, details map[string]interface{}) error {
-    payload := EventPayload{
-        Events: []map[string]interface{}{
-            {
-                "event_type":   eventType,
-                "service_name": service,
-                "severity":     severity,
-                "trace_id":     traceID,
-                "timestamp":    time.Now().UTC().Format(time.RFC3339),
-                "attributes":   details,
-            },
-        },
+func EmitEvent(eventType, severity, traceID string, attrs map[string]interface{}) error {
+    ev := Event{
+        AppID:      "${esc(selectedApp.app_id)}",
+        ServiceID:  "${esc(selectedApp.app_id)}",
+        EventType:  eventType,
+        Severity:   severity,
+        TraceID:    traceID,
+        Timestamp:  time.Now().UTC().Format(time.RFC3339),
+        Attributes: attrs,
     }
-    body, _ := json.Marshal(payload)
+    body, _ := json.Marshal(ev)
     req, _ := http.NewRequest("POST", "${esc(engineUrl)}/v1/events", bytes.NewBuffer(body))
     req.Header.Set("Authorization", "Bearer ${esc(sampleKey)}")
     req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{Timeout: 5 * time.Second}
+    
+    client := &http.Client{Timeout: 2 * time.Second}
     _, err := client.Do(req)
     return err
 }
@@ -2036,15 +2194,17 @@ func EmitSecurityEvent(eventType, service, severity, traceID string, details map
           </div>
         </div>
 
-        <!-- Tab 5: OpenTelemetry & Reverse Proxy -->
+        <!-- Tab 5: OpenTelemetry -->
         <div id="sdkPaneOtel" class="hide">
           <div class="codebox" style="margin:0;font-size:11px;background:#0b130e;border-color:#2a3d2e;">
-# OpenTelemetry Collector (otel-collector-config.yaml)
+# OpenTelemetry Collector or Daemon Configuration (otel-collector-config.yaml)
 exporters:
   otlphttp/ternline:
-    endpoint: "${esc(engineUrl)}/v1/events"
+    endpoint: "${esc(engineUrl)}"
     headers:
       Authorization: "Bearer ${esc(sampleKey)}"
+      X-Tenant-ID: "${esc(currentTenant || 'Primary Workspace')}"
+      X-Application-ID: "${esc(selectedApp.app_id)}"
 
 service:
   pipelines:
@@ -2054,186 +2214,16 @@ service:
       exporters: [otlphttp/ternline]
           </div>
           <div class="row" style="margin-top:10px;justify-content:flex-end;">
-            <button class="btn small" type="button" onclick="navigator.clipboard.writeText(document.querySelector('#sdkPaneOtel .codebox').textContent.trim());toast('Copied OTel config!');">Copy OTel Config</button>
+            <button class="btn small" type="button" onclick="navigator.clipboard.writeText(document.querySelector('#sdkPaneOtel .codebox').textContent.trim());toast('Copied OTel configuration!');">Copy OTel Config</button>
           </div>
         </div>
-      </div>
-
-      <!-- Card 3: Interactive Ingestion Verifier (Test Pipeline) -->
-      <div class="panel pad">
-        <div class="between" style="margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px;">
-          <div>
-            <b style="font-size:14px;color:var(--lime);">3. Interactive Ingestion Pipe Simulator</b>
-            <p class="tiny muted" style="margin:2px 0 0;">Dispatch a live, validated test event directly from this console to confirm your ingestion pipeline.</p>
-          </div>
-          <span class="pill good">FAST-TRACK &lt;1MS</span>
-        </div>
-
-        <form id="simTestEventForm" onsubmit="dispatchTestEvent(event)">
-          <div class="grid g4" style="margin-bottom:12px;">
-            <div class="field">
-              <label>Application ID</label>
-              <input class="control" id="simAppId" value="customer-backend" required style="width:100%;">
-            </div>
-            <div class="field">
-              <label>Service Name</label>
-              <input class="control" id="simService" value="auth-service" required style="width:100%;">
-            </div>
-            <div class="field">
-              <label>Event Type</label>
-              <select class="control" id="simEventType" style="width:100%;">
-                <option value="auth.login.failed">auth.login.failed (Brute force signal)</option>
-                <option value="api.egress.burst">api.egress.burst (Data exfiltration signal)</option>
-                <option value="credential.token.invalid">credential.token.invalid (Tampering signal)</option>
-                <option value="permission.escalation.attempt">permission.escalation.attempt (Privilege escalation)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Severity</label>
-              <select class="control" id="simSeverity" style="width:100%;">
-                <option value="medium">MEDIUM</option>
-                <option value="high">HIGH</option>
-                <option value="critical">CRITICAL</option>
-                <option value="low">LOW</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row between" style="align-items:flex-start;">
-            <button class="btn primary" type="submit" id="simSubmitBtn">Dispatch Verified Telemetry Event</button>
-            <div class="row" style="gap:8px;">
-              <button class="btn small" type="button" onclick="setPage('events')">View Event Explorer ↗</button>
-              <button class="btn small" type="button" onclick="setPage('correlation')">View Correlation Engine ↗</button>
-            </div>
-          </div>
-          <div id="simOutput" class="codebox" style="margin-top:10px;font-size:11px;min-height:36px;">Ready to dispatch test telemetry event.</div>
-        </form>
-      </div>
-
-      <!-- Card 4: Discovered Applications Table -->
-      <div class="panel pad">
-        <div class="between" style="margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px;">
-          <div>
-            <b style="font-size:14px;color:var(--lime);">4. Connected Independent Applications</b>
-            <p class="tiny muted" style="margin:2px 0 0;">Applications actively provisioned or currently streaming security telemetry into this tenant workspace.</p>
-          </div>
-          <span class="pill info">${appsList.length} CONNECTED APPS</span>
-        </div>
-
-        ${appsList.length ? `
-          <div style="overflow-x:auto;">
-            <table class="tbl" style="width:100%;font-size:12px;">
-              <thead>
-                <tr>
-                  <th>Application ID</th>
-                  <th>Key Prefix</th>
-                  <th>Last Telemetry Seen</th>
-                  <th>Status</th>
-                  <th style="text-align:right;">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${appsList.map(a => `
-                  <tr>
-                    <td><b>${esc(a.app_id)}</b></td>
-                    <td><code>${esc(a.key)}</code></td>
-                    <td class="muted">${formatLocalTime(a.lastSeen)}</td>
-                    <td><span class="pill good tiny">● LIVE INGESTING</span></td>
-                    <td style="text-align:right;">
-                      <button class="btn small" type="button" onclick="setPage('events')">Inspect Telemetry</button>
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        ` : `
-          <div class="empty" style="padding:20px;">
-            <p class="muted">No independent applications connected yet. Use the code snippets above to connect your first service.</p>
-          </div>
-        `}
       </div>
 
     </div>`;
 }
 
-function switchSdkTab(lang) {
-  const tabs = ['python', 'node', 'curl', 'go', 'otel'];
-  tabs.forEach(t => {
-    const pane = document.getElementById('sdkPane' + t.charAt(0).toUpperCase() + t.slice(1));
-    const tabBtn = document.getElementById('tabSdk' + t.charAt(0).toUpperCase() + t.slice(1));
-    if (pane) pane.classList.toggle('hide', t !== lang);
-    if (tabBtn) tabBtn.classList.toggle('active', t === lang);
-  });
-}
-
-async function dispatchTestEvent(e) {
-  if (e) e.preventDefault();
-  const appId = $('#simAppId')?.value.trim() || 'customer-backend';
-  const service = $('#simService')?.value.trim() || 'auth-service';
-  const eventType = $('#simEventType')?.value || 'auth.login.failed';
-  const severity = $('#simSeverity')?.value || 'medium';
-  const btn = $('#simSubmitBtn');
-  const out = $('#simOutput');
-
-  if (btn) btn.disabled = true;
-  if (out) out.textContent = 'Sending telemetry to POST /v1/events...';
-
-  const testPayload = {
-    events: [
-      {
-        event_type: eventType,
-        service_name: service,
-        severity: severity,
-        trace_id: 'test-trace-' + Math.random().toString(36).slice(2, 9),
-        timestamp: new Date().toISOString(),
-        attributes: {
-          app_id: appId,
-          source_ip: '198.51.100.77',
-          user_agent: 'Ternline-Integration-Test/1.0',
-          test_simulation: true
-        }
-      }
-    ]
-  };
-
-  try {
-    const res = await request('/v1/events', {
-      method: 'POST',
-      body: JSON.stringify(testPayload)
-    });
-    if (out) {
-      out.style.color = 'var(--lime)';
-      out.textContent = `✓ Accepted (HTTP 202): ${JSON.stringify(res, null, 2)}`;
-    }
-    toast('Test event successfully ingested into engine!');
-    refresh();
-  } catch (err) {
-    if (out) {
-      out.style.color = 'var(--red)';
-      out.textContent = `✕ Ingestion failed: ${err.message}`;
-    }
-    toast('Ingestion error: ' + err.message);
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-function governance() {
-  return head('AI Governance', 'Auditability, citation verification, and model provenance.', '')
-    + `<div class="panel pad">
-        <b>Deep Track Evidence Grounding Rules</b>
-        <ul class="muted tiny" style="margin:10px 0;padding-left:18px;line-height:1.8">
-          <li>Every material claim in an investigation report MUST cite valid stored event IDs.</li>
-          <li>All citations are deterministically audited by <code>InvestigationQualityAuditor</code> before persistence.</li>
-          <li>Hypotheses MUST separate observed facts from inferred threat theories.</li>
-          <li>Candidate detector rules generated by LLMs are strictly PROPOSALS until passed through replay validation.</li>
-        </ul>
-      </div>`;
-}
-
-// I. Platform & Workspace Settings
 function settings() {
+  const currentTab = window._settingsActiveTab || 'workspace';
   const policy = cache.defensePolicy || {
     default_mode: 'observe',
     allowed_autonomous_actions: [],
@@ -2245,238 +2235,266 @@ function settings() {
   const autoIp = allowed.includes('temporary_ip_block');
   const autoRate = allowed.includes('temporary_rate_limit');
 
-  const keys = Array.isArray(cache.apiKeys) ? cache.apiKeys : (cache.assets || []);
-  const health = cache.health || {};
-  const overview = cache.overview || {};
-  const profile = cache.userProfile || {};
-  const user = profile.user || {};
+  const members = Array.isArray(cache.workspaceMembers) ? cache.workspaceMembers : [];
+  const apps = Array.isArray(cache.apps) ? cache.apps : [];
+  const keys = Array.isArray(cache.apiKeys) ? cache.apiKeys : [];
+  const user = (cache.userProfile && cache.userProfile.user) || {};
+  const userRole = (user.role || 'owner').toLowerCase();
+  const canAdmin = ['owner', 'admin'].includes(userRole);
 
-  return head('Platform & Workspace Settings', 'Enterprise defense posture, perimeter gateway integration, ingestion API keys, and engine telemetry.', '')
-    + `<div class="grid" style="gap:20px;">
+  const workspaces = Array.isArray(cache.workspaces) ? cache.workspaces : [];
+  const currentWs = workspaces.find(w => w.id === currentTenant) || {
+    id: currentTenant || 'tenant-alpha',
+    name: currentTenant || 'Primary Workspace',
+    role: userRole
+  };
 
-      <!-- Card 1: Active Defense Posture -->
-      <div class="panel pad">
-        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
-          <div>
-            <b style="font-size:14px;color:var(--lime);">Active Defense & Containment Posture</b>
-            <p class="tiny muted" style="margin:2px 0 0;">Defines tenant autonomous execution boundaries and dual-custody approval requirements.</p>
-          </div>
-          <span class="pill ${mode === 'enforced' ? 'good' : (mode === 'assisted' ? 'warn' : 'info')}">
-            MODE: ${mode.toUpperCase()}
-          </span>
-        </div>
-
-        <form id="defensePolicyForm" onsubmit="handleSaveDefensePolicy(event)">
-          <div class="grid g2" style="margin-bottom:14px;">
-            <div class="field">
-              <label>Tenant Protection Mode</label>
-              <select class="control" id="policyMode" style="width:100%;">
-                <option value="observe" ${mode === 'observe' ? 'selected' : ''}>OBSERVE — Continuous Telemetry & Threat Correlation (Zero autonomous perimeter execution)</option>
-                <option value="assisted" ${mode === 'assisted' ? 'selected' : ''}>ASSISTED — Containment Proposals Generated (Human operator cryptographic sign-off required)</option>
-                <option value="enforced" ${mode === 'enforced' ? 'selected' : ''}>ENFORCED — Autonomous Perimeter Containment Active (&lt;1ms edge dispatch on verified critical attacks)</option>
-              </select>
-            </div>
-            <div class="grid g2">
-              <div class="field">
-                <label>Max Autonomous Actions / Hour</label>
-                <input class="control" type="number" id="policyMaxActions" min="1" max="100" value="${esc(policy.max_autonomous_actions_per_hour || 10)}" style="width:100%;">
-              </div>
-              <div class="field">
-                <label>Quarantine TTL (Seconds)</label>
-                <input class="control" type="number" id="policyTtl" min="60" max="86400" value="${esc(policy.max_autonomous_ttl_seconds || 3600)}" style="width:100%;">
-              </div>
-            </div>
-          </div>
-
-          <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:16px;">
-            <b style="font-size:12px;display:block;margin-bottom:10px;">Automated Containment Policies</b>
-            <div class="grid g3">
-              <label class="checkbox">
-                <input type="checkbox" id="policyAutoIp" ${autoIp ? 'checked' : ''}>
-                <span><b>Perimeter IP Quarantine</b><br><small class="muted">Block confirmed attacker IP at edge firewall when finding severity is CRITICAL</small></span>
-              </label>
-              <label class="checkbox">
-                <input type="checkbox" id="policyAutoRate" ${autoRate ? 'checked' : ''}>
-                <span><b>Perimeter Rate Limiting</b><br><small class="muted">Enforce aggressive per-minute throttling on high-frequency anomalous bursts</small></span>
-              </label>
-              <label class="checkbox">
-                <input type="checkbox" id="policyDualCustody" checked disabled>
-                <span><b>Dual-Custody Enforcement</b><br><small class="muted">Destructive actions (key revocation, service isolation) mandate two analyst signatures</small></span>
-              </label>
-            </div>
-          </div>
-
-          <div class="row between">
-            <button class="btn primary" type="submit" id="savePolicyBtn">Update Defense Posture</button>
-            <span id="policySaveMsg" class="tiny" style="color:var(--lime);"></span>
-          </div>
-        </form>
+  return head('Platform & Workspace Settings', 'Manage your organization, team members, applications, and security posture.', '')
+    + `<div class="settings-nav">
+        <button class="settings-nav-btn ${currentTab === 'workspace' ? 'active' : ''}" type="button" onclick="switchSettingsTab('workspace')">🏢 Workspace Profile</button>
+        <button class="settings-nav-btn ${currentTab === 'members' ? 'active' : ''}" type="button" onclick="switchSettingsTab('members')">👥 Team Members & RBAC (${members.length})</button>
+        <button class="settings-nav-btn ${currentTab === 'apps' ? 'active' : ''}" type="button" onclick="switchSettingsTab('apps')">📱 Applications & Keys (${apps.length})</button>
+        <button class="settings-nav-btn ${currentTab === 'defense' ? 'active' : ''}" type="button" onclick="switchSettingsTab('defense')">🛡 Active Defense Posture</button>
+        <button class="settings-nav-btn ${currentTab === 'account' ? 'active' : ''}" type="button" onclick="switchSettingsTab('account')">👤 My Account</button>
       </div>
 
-      <!-- Card 2: Edge Gateway & Perimeter Integrations -->
-      <div class="panel pad">
-        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
-          <div>
-            <b style="font-size:14px;color:var(--lime);">Edge Gateway & Perimeter Integrations</b>
-            <p class="tiny muted" style="margin:2px 0 0;">Outward webhook mitigation pipe targeting Kong API Gateway, Cloudflare Workers, AWS WAF, or Envoy.</p>
-          </div>
-          <span class="pill good">HMAC-SHA256 SIGNED</span>
-        </div>
+      <div class="grid" style="gap:20px;">
 
-        <div class="grid g2" style="margin-bottom:14px;">
-          <div class="field">
-            <label>Perimeter Mitigation Webhook URL</label>
-            <input class="control" id="webhookUrlInput" placeholder="https://gateway.internal.net/webhooks/ternline-containment" value="${esc(localStorage.getItem('ternline_webhook_url') || '')}" style="width:100%;">
-            <small class="dim">Receives cryptographic containment payloads (IP blocks, credential revocations, rate limits).</small>
-          </div>
-          <div class="field">
-            <label>HMAC-SHA256 Webhook Secret</label>
-            <div class="row" style="gap:8px;">
-              <input class="control" type="password" id="webhookSecretInput" value="${esc(localStorage.getItem('ternline_webhook_secret') || 'whsec_7f9b2a8c1e4d3f5a6b0c9e8d7a6b5c4d')}" style="flex:1;">
-              <button class="btn small" type="button" onclick="toggleSecretVisibility('webhookSecretInput')">Show/Hide</button>
+      <!-- Tab 1: Workspace Profile -->
+      <div id="settingsTabWorkspace" class="${currentTab === 'workspace' ? '' : 'hide'}">
+        <div class="panel pad">
+          <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+            <div>
+              <b style="font-size:14px;color:var(--lime);">Workspace Identity & Boundary</b>
+              <p class="tiny muted" style="margin:2px 0 0;">Defines the isolated multi-tenant boundary for telemetry, findings, and policies.</p>
             </div>
-            <small class="dim">Sent in the <code>X-Ternline-Signature-256</code> request header for edge validation.</small>
+            <span class="role-badge ${esc(currentWs.role || 'owner')}">${esc((currentWs.role || 'owner').toUpperCase())}</span>
           </div>
-        </div>
 
-        <div class="row between">
-          <div class="row" style="gap:8px;">
-            <button class="btn" type="button" onclick="saveWebhookSettings()">Save Integration Settings</button>
-            <button class="btn ghost" type="button" onclick="testWebhookDispatch()">Dispatch Test Ping</button>
-          </div>
-          <span id="webhookSaveMsg" class="tiny" style="color:var(--lime);"></span>
+          <form onsubmit="handleSaveWorkspaceName(event)">
+            <div class="grid g2" style="margin-bottom:14px;">
+              <div class="field">
+                <label>Workspace Name</label>
+                <input class="control" id="wsEditName" required value="${esc(currentWs.name || 'Primary Workspace')}" ${canAdmin ? '' : 'disabled'} style="width:100%;">
+                <small class="dim">Human-readable organization or team name.</small>
+              </div>
+              <div class="field">
+                <label>Tenant ID (Immutable Boundary)</label>
+                <div class="row" style="gap:6px;">
+                  <input class="control" readonly value="${esc(currentWs.id)}" style="flex:1;font-family:monospace;font-size:11px;">
+                  <button class="btn small" type="button" onclick="navigator.clipboard.writeText('${esc(currentWs.id)}');toast('Copied Workspace Tenant ID!');">Copy</button>
+                </div>
+                <small class="dim">Used for internal database partitioning and distributed correlation.</small>
+              </div>
+            </div>
+
+            ${canAdmin ? `
+            <div class="row between">
+              <button class="btn primary" type="submit" id="saveWsNameBtn">Save Workspace Name</button>
+              <button class="btn ghost" type="button" onclick="openCreateWorkspaceModal()">+ Create Another Workspace</button>
+            </div>
+            ` : `<div class="tiny muted">You have ${esc(userRole.toUpperCase())} access to this workspace. Contact an Owner or Admin to rename.</div>`}
+          </form>
         </div>
       </div>
 
-      <!-- Card 3: Ingestion API Keys Management -->
-      <div class="panel pad">
-        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
-          <div>
-            <b style="font-size:14px;color:var(--lime);">Microservice API Keys & Ingestion Credentials</b>
-            <p class="tiny muted" style="margin:2px 0 0;">Cryptographically hashed API keys issued to client microservices for high-throughput event ingestion.</p>
+      <!-- Tab 2: Team Members & RBAC -->
+      <div id="settingsTabMembers" class="${currentTab === 'members' ? '' : 'hide'}">
+        <div class="panel pad">
+          <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+            <div>
+              <b style="font-size:14px;color:var(--lime);">Team Members & Access Control</b>
+              <p class="tiny muted" style="margin:2px 0 0;">Role-based access control strictly enforced by the backend on every API request.</p>
+            </div>
+            ${canAdmin ? `<button class="btn primary small" type="button" onclick="openInviteMemberModal()">+ Invite Member</button>` : ''}
           </div>
-          <button class="btn primary small" type="button" onclick="openProvisionKeyModal()">+ Provision Ingestion Key</button>
-        </div>
 
-        ${keys && keys.length ? `
-          <div style="overflow-x:auto;">
-            <table class="tbl" style="width:100%;font-size:12px;">
+          <div class="tablewrap">
+            <table>
               <thead>
                 <tr>
-                  <th>Application ID</th>
-                  <th>Key Prefix</th>
-                  <th>Scopes</th>
-                  <th>Created</th>
-                  <th>Status</th>
+                  <th>Member Email / Name</th>
+                  <th>Assigned Role</th>
+                  <th>Joined Date</th>
+                  ${canAdmin ? `<th style="text-align:right;">Actions</th>` : ''}
+                </tr>
+              </thead>
+              <tbody>
+                ${members.length === 0 ? `<tr><td colspan="4" class="empty">No team members registered.</td></tr>` : members.map(m => `
+                  <tr>
+                    <td>
+                      <b>${esc(m.user_email || m.email || 'Member')}</b>
+                      ${m.user_name ? `<br><small class="muted">${esc(m.user_name)}</small>` : ''}
+                    </td>
+                    <td>
+                      ${canAdmin && m.user_id !== user.id ? `
+                        <select class="control" style="padding:3px 6px;font-size:11px;" onchange="handleUpdateMemberRole('${esc(m.user_id)}', this.value)">
+                          <option value="owner" ${m.role === 'owner' ? 'selected' : ''}>Owner</option>
+                          <option value="admin" ${m.role === 'admin' ? 'selected' : ''}>Admin</option>
+                          <option value="developer" ${m.role === 'developer' ? 'selected' : ''}>Developer</option>
+                          <option value="analyst" ${m.role === 'analyst' ? 'selected' : ''}>Analyst</option>
+                          <option value="viewer" ${m.role === 'viewer' ? 'selected' : ''}>Viewer</option>
+                        </select>
+                      ` : `<span class="role-badge ${esc(m.role || 'viewer')}">${esc((m.role || 'viewer').toUpperCase())}</span>`}
+                    </td>
+                    <td><span class="tiny muted">${formatLocalTime(m.created_at)}</span></td>
+                    ${canAdmin ? `
+                    <td style="text-align:right;">
+                      ${m.user_id !== user.id ? `
+                        <button class="btn danger small" type="button" onclick="handleRemoveMember('${esc(m.user_id)}')">Remove</button>
+                      ` : `<span class="tiny muted">You</span>`}
+                    </td>
+                    ` : ''}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Applications & Keys -->
+      <div id="settingsTabApps" class="${currentTab === 'apps' ? '' : 'hide'}">
+        <div class="panel pad">
+          <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+            <div>
+              <b style="font-size:14px;color:var(--lime);">Registered Applications & Services</b>
+              <p class="tiny muted" style="margin:2px 0 0;">Applications sending telemetry into this workspace.</p>
+            </div>
+            ${canAdmin ? `<button class="btn primary small" type="button" onclick="openRegisterAppModal()">+ Register Application</button>` : ''}
+          </div>
+
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Application ID & Name</th>
+                  <th>Environment</th>
+                  <th>Telemetry Status</th>
+                  <th>Ingested Events</th>
+                  <th>Last Seen</th>
                   <th style="text-align:right;">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                ${keys.map(k => `
+                ${apps.length === 0 ? `<tr><td colspan="6" class="empty">No applications registered yet. Click "+ Register Application" to connect your first service.</td></tr>` : apps.map(a => `
                   <tr>
-                    <td><b>${esc(k.app_id || 'unknown')}</b></td>
-                    <td><code>${esc(k.key_prefix || 'ce_live_...')}</code></td>
-                    <td>${(k.scopes || ['events:ingest']).map(s => `<span class="pill tiny muted">${esc(s)}</span>`).join(' ')}</td>
-                    <td class="muted">${formatLocalTime(k.created_at)}</td>
-                    <td><span class="pill ${k.is_active !== false ? 'good' : 'bad'}">${k.is_active !== false ? 'ACTIVE' : 'REVOKED'}</span></td>
+                    <td>
+                      <b>${esc(a.name || a.app_id)}</b>
+                      <br><small class="mono dim">${esc(a.app_id)}</small>
+                    </td>
+                    <td><span class="pill tiny ${a.environment === 'production' ? 'bad' : 'info'}">${esc(a.environment || 'production')}</span></td>
+                    <td>
+                      <span class="pill ${a.status === 'live' ? 'good' : 'warn'}">
+                        ● ${a.status === 'live' ? 'LIVE INGESTING' : 'AWAITING TELEMETRY'}
+                      </span>
+                    </td>
+                    <td><b>${a.event_count || 0}</b></td>
+                    <td><span class="tiny muted">${a.last_event_at ? formatLocalTime(a.last_event_at) : 'Never'}</span></td>
                     <td style="text-align:right;">
-                      ${k.is_active !== false ? `
-                        <button class="btn small danger" type="button" onclick="revokeApiKey('${esc(k.key_id)}')">Revoke</button>
-                      ` : '<span class="tiny muted">Revoked</span>'}
+                      <button class="btn small" type="button" onclick="viewAppIntegration('${esc(a.app_id)}')">Integration Snippet</button>
                     </td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
           </div>
-        ` : `
-          <div class="empty" style="padding:24px;">
-            <p class="muted">No microservice API keys provisioned yet for this tenant.</p>
-            <button class="btn small primary" type="button" onclick="openProvisionKeyModal()">Provision First Key</button>
-          </div>
-        `}
-      </div>
-
-      <!-- Card 4: Engine Infrastructure & Diagnostics -->
-      <div class="panel pad">
-        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
-          <div>
-            <b style="font-size:14px;color:var(--lime);">Engine Infrastructure & Telemetry Diagnostics</b>
-            <p class="tiny muted" style="margin:2px 0 0;">Verify connection health and inspect production dual-engine operational components.</p>
-          </div>
-          <span class="pill good">ENGINE CONNECTED</span>
-        </div>
-
-        <div class="grid g2" style="margin-bottom:16px;">
-          <div class="field">
-            <label>AWS Backend Engine API Base URL</label>
-            <div class="row" style="gap:8px;">
-              <input class="control" id="settingsBaseUrl" value="${esc(config.baseUrl || defaultBaseUrl)}" placeholder="http://localhost:8000" style="flex:1;">
-              <button class="btn primary" type="button" onclick="saveEngineUrl()">Update URL</button>
-              <button class="btn" type="button" onclick="testConnection()">Probe Diagnostics</button>
-            </div>
-            <small class="dim">AWS EC2 backend URL or local API gateway. Stored in client session configuration.</small>
-          </div>
-          <div class="field">
-            <label>Live Probe Output</label>
-            <div id="connectionTest" class="codebox" style="margin:0;max-height:80px;overflow:auto;font-size:11px;">
-              Status: ${esc(health.status || 'healthy')} | DB: ${esc(health.database || 'connected')} | Redis: ${esc(health.redis || 'connected')}
-            </div>
-          </div>
-        </div>
-
-        <div class="grid g4">
-          <div class="panel pad" style="background:var(--panel2);">
-            <div class="tiny muted uppercase">Relational Database</div>
-            <b style="font-size:13px;color:var(--lime);display:block;margin:4px 0 2px;">PostgreSQL 16+</b>
-            <span class="pill good tiny">POOL ACTIVE</span>
-          </div>
-          <div class="panel pad" style="background:var(--panel2);">
-            <div class="tiny muted uppercase">Correlation Engine</div>
-            <b style="font-size:13px;color:var(--blue);display:block;margin:4px 0 2px;">Redis 7+ Lua Store</b>
-            <span class="pill info tiny">SLIDING WINDOWS ACTIVE</span>
-          </div>
-          <div class="panel pad" style="background:var(--panel2);">
-            <div class="tiny muted uppercase">Deep Track Investigator</div>
-            <b style="font-size:13px;color:var(--purple);display:block;margin:4px 0 2px;">Meta Muse Spark 1.3</b>
-            <span class="pill purple tiny">AI PROVENANCE ACTIVE</span>
-          </div>
-          <div class="panel pad" style="background:var(--panel2);">
-            <div class="tiny muted uppercase">Email Delivery</div>
-            <b style="font-size:13px;color:var(--green);display:block;margin:4px 0 2px;">AWS Mail Manager / SES</b>
-            <span class="pill good tiny">SMTP LIVE</span>
-          </div>
         </div>
       </div>
 
-      <!-- Card 5: Operator Identity & Security -->
-      <div class="panel pad">
-        <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
-          <div>
-            <b style="font-size:14px;color:var(--lime);">Operator Identity & Account Security</b>
-            <p class="tiny muted" style="margin:2px 0 0;">Manage authenticated analyst profile, rotate credentials, and terminate active sessions.</p>
+      <!-- Tab 4: Active Defense Posture -->
+      <div id="settingsTabDefense" class="${currentTab === 'defense' ? '' : 'hide'}">
+        <div class="panel pad">
+          <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+            <div>
+              <b style="font-size:14px;color:var(--lime);">Active Defense & Autonomous Containment</b>
+              <p class="tiny muted" style="margin:2px 0 0;">Defines tenant autonomous execution boundaries and dual-custody approval requirements.</p>
+            </div>
+            <span class="pill ${mode === 'enforced' ? 'good' : (mode === 'assisted' ? 'warn' : 'info')}">
+              MODE: ${mode.toUpperCase()}
+            </span>
           </div>
-          <span class="pill good">AUTHENTICATED OPERATOR</span>
-        </div>
 
-        <div class="grid g3" style="margin-bottom:16px;">
-          <div class="field">
-            <label>Signed In Operator</label>
-            <div style="font-weight:700;font-size:13px;margin-top:4px;">${esc(currentUserEmail || user.email || 'operator@defense.soc')}</div>
-          </div>
-          <div class="field">
-            <label>Tenant Workspace</label>
-            <div style="font-weight:700;font-size:13px;margin-top:4px;color:var(--lime);">${esc(currentTenant || user.tenant_id || 'Primary Workspace')}</div>
-          </div>
-          <div class="field">
-            <label>Assigned RBAC Role</label>
-            <div style="font-weight:700;font-size:13px;margin-top:4px;">${esc((user.role || 'Enterprise Admin').toUpperCase())}</div>
-          </div>
-        </div>
+          <form id="defensePolicyForm" onsubmit="handleSaveDefensePolicy(event)">
+            <div class="grid g2" style="margin-bottom:14px;">
+              <div class="field">
+                <label>Tenant Protection Mode</label>
+                <select class="control" id="policyMode" style="width:100%;" ${canAdmin ? '' : 'disabled'}>
+                  <option value="observe" ${mode === 'observe' ? 'selected' : ''}>OBSERVE — Continuous Telemetry & Threat Correlation (Zero autonomous perimeter execution)</option>
+                  <option value="assisted" ${mode === 'assisted' ? 'selected' : ''}>ASSISTED — Containment Proposals Generated (Human operator sign-off required)</option>
+                  <option value="enforced" ${mode === 'enforced' ? 'selected' : ''}>ENFORCED — Autonomous Perimeter Containment Active (&lt;1ms edge dispatch on verified critical attacks)</option>
+                </select>
+              </div>
+              <div class="grid g2">
+                <div class="field">
+                  <label>Max Actions / Hour</label>
+                  <input class="control" type="number" id="policyMaxActions" min="1" max="100" value="${esc(policy.max_autonomous_actions_per_hour || 10)}" ${canAdmin ? '' : 'disabled'} style="width:100%;">
+                </div>
+                <div class="field">
+                  <label>Quarantine TTL (Seconds)</label>
+                  <input class="control" type="number" id="policyTtl" min="60" max="86400" value="${esc(policy.max_autonomous_ttl_seconds || 3600)}" ${canAdmin ? '' : 'disabled'} style="width:100%;">
+                </div>
+              </div>
+            </div>
 
-        <div class="row between" style="border-top:1px solid var(--line);padding-top:14px;">
-          <button class="btn" type="button" onclick="openChangePasswordModal()">Rotate Password</button>
-          <button class="btn danger" type="button" onclick="signOutOperator()">Sign Out of All Sessions</button>
+            <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:16px;">
+              <b style="font-size:12px;display:block;margin-bottom:10px;">Automated Containment Policies</b>
+              <div class="grid g3">
+                <label class="checkbox">
+                  <input type="checkbox" id="policyAutoIp" ${autoIp ? 'checked' : ''} ${canAdmin ? '' : 'disabled'}>
+                  <span><b>Perimeter IP Quarantine</b><br><small class="muted">Block confirmed attacker IP at edge firewall when finding severity is CRITICAL</small></span>
+                </label>
+                <label class="checkbox">
+                  <input type="checkbox" id="policyAutoRate" ${autoRate ? 'checked' : ''} ${canAdmin ? '' : 'disabled'}>
+                  <span><b>Perimeter Rate Limiting</b><br><small class="muted">Enforce aggressive per-minute throttling on high-frequency anomalous bursts</small></span>
+                </label>
+                <label class="checkbox">
+                  <input type="checkbox" id="policyDualCustody" checked disabled>
+                  <span><b>Dual-Custody Enforcement</b><br><small class="muted">Destructive actions (key revocation, service isolation) mandate two analyst signatures</small></span>
+                </label>
+              </div>
+            </div>
+
+            ${canAdmin ? `
+            <div class="row between">
+              <button class="btn primary" type="submit" id="savePolicyBtn">Update Defense Posture</button>
+              <span id="policySaveMsg" class="tiny" style="color:var(--lime);"></span>
+            </div>
+            ` : ''}
+          </form>
+        </div>
+      </div>
+
+      <!-- Tab 5: My Account -->
+      <div id="settingsTabAccount" class="${currentTab === 'account' ? '' : 'hide'}">
+        <div class="panel pad">
+          <div class="between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px;">
+            <div>
+              <b style="font-size:14px;color:var(--lime);">Operator Identity & Account Security</b>
+              <p class="tiny muted" style="margin:2px 0 0;">Manage your personal operator credentials and security sessions.</p>
+            </div>
+            <span class="role-badge ${esc(userRole)}">${esc(userRole.toUpperCase())}</span>
+          </div>
+
+          <div class="grid g3" style="margin-bottom:16px;">
+            <div class="field">
+              <label>Operator Email</label>
+              <div style="font-weight:700;font-size:13px;margin-top:4px;">${esc(currentUserEmail || user.email || 'operator@defense.soc')}</div>
+            </div>
+            <div class="field">
+              <label>Current Workspace</label>
+              <div style="font-weight:700;font-size:13px;margin-top:4px;color:var(--lime);">${esc(currentWs.name || 'Primary Workspace')}</div>
+            </div>
+            <div class="field">
+              <label>Full Name</label>
+              <div style="font-weight:700;font-size:13px;margin-top:4px;">${esc(user.full_name || 'Operator')}</div>
+            </div>
+          </div>
+
+          <div class="row between" style="border-top:1px solid var(--line);padding-top:14px;">
+            <button class="btn" type="button" onclick="openChangePasswordModal()">Rotate Password</button>
+            <button class="btn danger" type="button" onclick="signOutOperator()">Sign Out of All Sessions</button>
+          </div>
         </div>
       </div>
 
@@ -2895,51 +2913,45 @@ function render() {
 }
 
 
-// ===== Login Gate Management =====
+// ===== Multi-Tenant Workspace, RBAC, and Authentication System =====
+
+let currentAppFilter = null;
+let _lastRegEmail = '';
+
+function switchSettingsTab(tab) {
+  window._settingsActiveTab = tab;
+  render();
+}
+
 function switchGateTab(tab) {
-  const fLog = $('#gateFormLogin');
-  const fReg = $('#gateFormRegister');
-  const fKey = $('#gateFormKey');
-  const tLog = $('#gateTabLogin');
-  const tReg = $('#gateTabRegister');
-  const tKey = $('#gateTabKey');
+  const forms = {
+    login: $('#gateFormLogin'),
+    register: $('#gateFormRegister'),
+    verify: $('#gateFormVerify'),
+    forgot: $('#gateFormForgot'),
+    reset: $('#gateFormReset'),
+    key: $('#gateFormKey')
+  };
 
-  if (fLog) fLog.classList.toggle('hide', tab !== 'login');
-  if (fReg) fReg.classList.toggle('hide', tab !== 'register');
-  if (fKey) fKey.classList.toggle('hide', tab !== 'key');
+  const tabs = {
+    login: $('#gateTabLogin'),
+    register: $('#gateTabRegister'),
+    key: $('#gateTabKey')
+  };
 
-  if (tLog) tLog.classList.toggle('active', tab === 'login');
-  if (tReg) tReg.classList.toggle('active', tab === 'register');
-  if (tKey) tKey.classList.toggle('active', tab === 'key');
-}
+  Object.keys(forms).forEach(k => {
+    if (forms[k]) forms[k].classList.toggle('hide', k !== tab);
+  });
 
-function updateGateBackend(val) {
-  const clean = String(val || '').trim().replace(/\/$/, '');
-  if (clean) {
-    config.baseUrl = clean;
-    localStorage.setItem('ternline_backend_url', clean);
-    persist();
-    probeGateBackend();
-  }
-}
+  if (tabs.login) tabs.login.classList.toggle('active', tab === 'login');
+  if (tabs.register) tabs.register.classList.toggle('active', tab === 'register');
+  if (tabs.key) tabs.key.classList.toggle('active', tab === 'key');
 
-async function probeGateBackend() {
-  const st = $('#gateBackendStatus');
-  if (!config.baseUrl) {
-    if (st) { st.textContent = 'Awaiting URL'; st.style.color = 'var(--muted)'; }
-    return;
-  }
-  if (st) { st.textContent = 'Probing...'; st.style.color = 'var(--amber)'; }
-  try {
-    const res = await fetch(apiUrl('/api/v1/ops/health'), { signal: AbortSignal.timeout(4000) });
-    if (res.ok) {
-      if (st) { st.textContent = '● Engine Online'; st.style.color = 'var(--lime)'; }
-    } else {
-      if (st) { st.textContent = `HTTP ${res.status}`; st.style.color = 'var(--amber)'; }
-    }
-  } catch (e) {
-    if (st) { st.textContent = 'Unreachable'; st.style.color = 'var(--red)'; }
-  }
+  const msgs = ['gateLoginMsg', 'gateRegMsg', 'gateVerifyMsg', 'gateForgotMsg', 'gateResetMsg', 'gateKeyMsg'];
+  msgs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = ''; el.className = 'tiny'; }
+  });
 }
 
 async function handleGateLogin(e) {
@@ -2950,33 +2962,41 @@ async function handleGateLogin(e) {
   const btn = $('#gateLoginBtn');
 
   if (!email || !password) return;
-  if (!config.baseUrl) {
-    if (msg) msg.textContent = 'Please configure your AWS Target Engine API endpoint above.';
-    return;
-  }
-
   if (btn) btn.disabled = true;
-  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Verifying credentials...'; }
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Authenticating operator credentials…'; }
 
   try {
-    const res = await request('/api/v1/auth/login', {
+    const res = await fetch(apiUrl('/api/v1/auth/login'), {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
 
-    if (res && res.access_token) {
-      bearerToken = res.access_token;
-      currentTenant = res.user?.tenant_name || res.user?.tenant_id || 'Primary Workspace';
-      currentUserEmail = res.user?.email || email;
-
-      sessionStorage.setItem('ternline_auth_token', bearerToken);
-      sessionStorage.setItem('ternline_auth_tenant', currentTenant);
-      sessionStorage.setItem('ternline_auth_email', currentUserEmail);
-
-      enterControlRoom();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (res.status === 403 && data.detail && data.detail.toLowerCase().includes('verify')) {
+        _lastRegEmail = email;
+        switchGateTab('verify');
+        const vMsg = $('#gateVerifyMsg');
+        if (vMsg) { vMsg.style.color = 'var(--amber)'; vMsg.textContent = 'Account pending verification. Enter the token from your email.'; }
+        return;
+      }
+      throw new Error(data.detail || `Authentication failed (${res.status})`);
     }
+
+    bearerToken = data.access_token;
+    currentTenant = data.tenant_id || (data.user && data.user.tenant_id) || 'Primary Workspace';
+    currentUserEmail = (data.user && data.user.email) || email;
+    currentUserRole = data.role || (data.user && data.user.role) || 'owner';
+
+    sessionStorage.setItem('ternline_auth_token', bearerToken);
+    sessionStorage.setItem('ternline_auth_tenant', currentTenant);
+    sessionStorage.setItem('ternline_auth_email', currentUserEmail);
+    sessionStorage.setItem('ternline_auth_role', currentUserRole);
+
+    enterControlRoom();
   } catch (err) {
-    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message || 'Login failed'; }
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message; }
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -2984,34 +3004,171 @@ async function handleGateLogin(e) {
 
 async function handleGateRegister(e) {
   e.preventDefault();
+  const name = $('#gateRegName')?.value.trim();
   const email = $('#gateRegEmail')?.value.trim();
+  const tenant = $('#gateRegTenant')?.value.trim();
   const password = $('#gateRegPassword')?.value;
-  const fullName = $('#gateRegName')?.value.trim();
-  const tenantName = $('#gateRegTenant')?.value.trim();
   const msg = $('#gateRegMsg');
   const btn = $('#gateRegBtn');
 
   if (!email || !password) return;
-  if (!config.baseUrl) {
-    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Please configure your AWS Target Engine API endpoint above.'; }
+  if (btn) btn.disabled = true;
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Deploying workspace & generating verification token…'; }
+
+  try {
+    const res = await fetch(apiUrl('/api/v1/auth/register'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        tenant_name: tenant || 'Security Workspace',
+        full_name: name || undefined
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.detail || `Registration failed (${res.status})`);
+    }
+
+    _lastRegEmail = email;
+    switchGateTab('verify');
+    const vMsg = $('#gateVerifyMsg');
+    if (vMsg) {
+      vMsg.style.color = 'var(--lime)';
+      vMsg.textContent = 'Workspace registered! Verification email dispatched via AWS SES. Paste the token below.';
+    }
+  } catch (err) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleGateVerify(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const token = $('#gateVerifyToken')?.value.trim();
+  const msg = $('#gateVerifyMsg');
+  const btn = $('#gateVerifyBtn');
+
+  if (!token) return;
+  if (btn) btn.disabled = true;
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Verifying cryptographic token…'; }
+
+  try {
+    const res = await fetch(apiUrl('/api/v1/auth/verify-email'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.detail || `Verification failed (${res.status})`);
+    }
+
+    bearerToken = data.access_token;
+    currentTenant = data.tenant_id || (data.user && data.user.tenant_id) || 'Primary Workspace';
+    currentUserEmail = (data.user && data.user.email) || _lastRegEmail || 'Operator';
+    currentUserRole = data.role || (data.user && data.user.role) || 'owner';
+
+    sessionStorage.setItem('ternline_auth_token', bearerToken);
+    sessionStorage.setItem('ternline_auth_tenant', currentTenant);
+    sessionStorage.setItem('ternline_auth_email', currentUserEmail);
+    sessionStorage.setItem('ternline_auth_role', currentUserRole);
+
+    toast('Email verified successfully! Workspace activated.');
+    enterControlRoom();
+  } catch (err) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleResendVerification() {
+  const email = prompt('Enter your registered operator email to resend verification:', _lastRegEmail || '');
+  if (!email || !email.trim()) return;
+
+  try {
+    const res = await fetch(apiUrl('/api/v1/auth/resend-verification'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      toast('Verification token re-dispatched via AWS SES.');
+    } else {
+      toast('Failed to resend: ' + (data.detail || res.statusText));
+    }
+  } catch (err) {
+    toast('Error: ' + err.message);
+  }
+}
+
+async function handleGateForgot(e) {
+  e.preventDefault();
+  const email = $('#gateForgotEmail')?.value.trim();
+  const msg = $('#gateForgotMsg');
+  const btn = $('#gateForgotBtn');
+
+  if (!email) return;
+  if (btn) btn.disabled = true;
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Dispatching password reset instructions…'; }
+
+  try {
+    const res = await fetch(apiUrl('/api/v1/auth/forgot-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (msg) {
+      msg.style.color = 'var(--lime)';
+      msg.textContent = 'If an account exists, a password reset token has been dispatched to your email.';
+    }
+  } catch (err) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleGateReset(e) {
+  e.preventDefault();
+  const token = $('#gateResetToken')?.value.trim();
+  const newPassword = $('#gateResetPassword')?.value;
+  const confirmPassword = $('#gateResetConfirm')?.value;
+  const msg = $('#gateResetMsg');
+  const btn = $('#gateResetBtn');
+
+  if (!token || !newPassword) return;
+  if (newPassword !== confirmPassword) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Passwords do not match.'; }
     return;
   }
 
   if (btn) btn.disabled = true;
-  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Registering operator workspace...'; }
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Updating operator password…'; }
 
   try {
-    const res = await request('/api/v1/auth/register', {
+    const res = await fetch(apiUrl('/api/v1/auth/reset-password'), {
       method: 'POST',
-      body: JSON.stringify({ email, password, full_name: fullName || null, tenant_name: tenantName || null })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, new_password: newPassword })
     });
-
-    if (msg) {
-      msg.style.color = 'var(--lime)';
-      msg.textContent = res.message || 'Verification email dispatched via AWS SES! Click the link in your inbox to activate.';
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.detail || `Password reset failed (${res.status})`);
     }
+
+    toast('Password updated successfully. You can now sign in.');
+    switchGateTab('login');
+    const lMsg = $('#gateLoginMsg');
+    if (lMsg) { lMsg.style.color = 'var(--lime)'; lMsg.textContent = 'Password reset complete. Sign in with your new password.'; }
   } catch (err) {
-    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message || 'Registration failed'; }
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message; }
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -3024,33 +3181,38 @@ async function handleGateKey(e) {
   const btn = $('#gateKeyBtn');
 
   if (!key) return;
-  if (!config.baseUrl) {
-    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Please configure your AWS Target Engine API endpoint above.'; }
-    return;
-  }
-
   if (btn) btn.disabled = true;
-  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Testing administrative key...'; }
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Verifying API key against platform…'; }
 
   try {
+    const res = await fetch(apiUrl('/api/v1/ops/overview'), {
+      headers: { 'Authorization': `Bearer ${key}` }
+    });
+
+    if (!res.ok) {
+      throw new Error(`Invalid API Key (HTTP ${res.status})`);
+    }
+
+    const data = await res.json();
     bearerToken = key;
-    // Verify key with an auth probe
-    const testRes = await request('/api/v1/ops/overview');
-    currentTenant = 'Root Operator';
+    currentTenant = data.tenant_id || 'Primary Workspace';
     currentUserEmail = 'API Key Operator';
+    currentUserRole = 'admin';
 
     sessionStorage.setItem('ternline_auth_token', bearerToken);
     sessionStorage.setItem('ternline_auth_tenant', currentTenant);
     sessionStorage.setItem('ternline_auth_email', currentUserEmail);
+    sessionStorage.setItem('ternline_auth_role', currentUserRole);
 
     enterControlRoom();
   } catch (err) {
-    bearerToken = '';
-    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Invalid API Key: ' + err.message; }
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message; }
   } finally {
     if (btn) btn.disabled = false;
   }
 }
+
+let currentUserRole = 'owner';
 
 function enterControlRoom() {
   const gate = $('#loginGateView');
@@ -3062,10 +3224,17 @@ function enterControlRoom() {
   if (td) td.textContent = currentTenant || 'Primary Workspace';
   const ue = $('#userChipEmail');
   if (ue) ue.textContent = currentUserEmail || 'Operator';
+  const ur = $('#userChipRole');
+  if (ur) {
+    ur.textContent = (currentUserRole || 'owner').toUpperCase();
+    ur.className = `role-badge ${currentUserRole || 'owner'}`;
+  }
 
   setConnection(true);
   toggleLiveStream(true);
-  refresh();
+  loadWorkspacesAndApps().then(() => {
+    refresh();
+  });
 }
 
 function showLoginGate() {
@@ -3073,22 +3242,405 @@ function showLoginGate() {
   const app = $('#appShell');
   if (gate) gate.classList.remove('hide');
   if (app) app.classList.add('hide');
-
-  const be = $('#gateBackendUrl');
-  if (be) be.value = config.baseUrl || '';
-  probeGateBackend();
 }
 
-// Session management: restore saved bearer token and tenant
+async function loadWorkspacesAndApps() {
+  try {
+    const [wsList, appList] = await Promise.all([
+      request('/api/v1/workspaces').catch(() => []),
+      request('/api/v1/apps').catch(() => [])
+    ]);
+
+    cache.workspaces = Array.isArray(wsList) ? wsList : [];
+    cache.apps = Array.isArray(appList) ? appList : [];
+
+    updateWorkspaceSelector();
+    updateAppFilterSelector();
+  } catch (err) {
+    console.warn('Error loading workspaces or apps:', err);
+  }
+}
+
+function updateWorkspaceSelector() {
+  const sel = $('#workspaceSelector');
+  if (!sel) return;
+  const list = cache.workspaces || [];
+  if (list.length === 0) {
+    sel.innerHTML = `<option value="${esc(currentTenant)}">${esc(currentTenant || 'Primary Workspace')}</option>`;
+    return;
+  }
+  sel.innerHTML = list.map(w => `
+    <option value="${esc(w.id)}" ${w.id === currentTenant ? 'selected' : ''}>
+      ${esc(w.name || w.id)} (${esc((w.role || 'viewer').toUpperCase())})
+    </option>
+  `).join('');
+}
+
+function updateAppFilterSelector() {
+  const sel = $('#appFilterSelector');
+  if (!sel) return;
+  const list = cache.apps || [];
+  sel.innerHTML = `<option value="">All Applications (${list.length})</option>` + list.map(a => `
+    <option value="${esc(a.app_id)}" ${a.app_id === currentAppFilter ? 'selected' : ''}>
+      ${esc(a.name || a.app_id)} [${esc(a.environment || 'prod')}]
+    </option>
+  `).join('');
+}
+
+async function handleSwitchWorkspace(targetTenantId) {
+  if (!targetTenantId || targetTenantId === currentTenant) return;
+  toast('Switching workspace context…');
+
+  try {
+    const res = await request('/api/v1/workspaces/switch', {
+      method: 'POST',
+      body: JSON.stringify({ tenant_id: targetTenantId })
+    });
+
+    if (!res?.access_token) throw new Error('No access token returned for switched workspace.');
+
+    bearerToken = res.access_token;
+    currentTenant = res.tenant_id;
+    currentUserRole = res.role || 'viewer';
+
+    sessionStorage.setItem('ternline_auth_token', bearerToken);
+    sessionStorage.setItem('ternline_auth_tenant', currentTenant);
+    sessionStorage.setItem('ternline_auth_role', currentUserRole);
+
+    const td = $('#tenantDisplay');
+    if (td) td.textContent = currentTenant;
+    const ur = $('#userChipRole');
+    if (ur) {
+      ur.textContent = currentUserRole.toUpperCase();
+      ur.className = `role-badge ${currentUserRole}`;
+    }
+
+    currentAppFilter = null;
+    toast(`Active workspace switched to: ${currentTenant}`);
+    await loadWorkspacesAndApps();
+    refresh();
+  } catch (err) {
+    toast('Workspace switch failed: ' + err.message);
+    updateWorkspaceSelector();
+  }
+}
+
+function handleSelectAppFilter(appId) {
+  currentAppFilter = appId || null;
+  toast(currentAppFilter ? `Filtering view by application: ${currentAppFilter}` : 'Showing all applications in workspace.');
+  refresh();
+}
+
+function handleSelectIntegrationApp(appId) {
+  currentAppFilter = appId || null;
+  render();
+}
+
+function openCreateWorkspaceModal() {
+  modal(`
+    <div style="max-width:440px;margin:auto;">
+      <h2 style="margin:0 0 8px;">Create New Workspace</h2>
+      <p class="tiny muted" style="margin:0 0 16px;">Deploy a completely isolated security boundary with independent applications, findings, and policies.</p>
+      <form onsubmit="handleCreateWorkspaceSubmit(event)">
+        <div class="field">
+          <label>Workspace / Organization Name</label>
+          <input class="control" id="newWsName" required placeholder="e.g. Payments Infrastructure" style="width:100%;">
+        </div>
+        <div class="field">
+          <label>Environment Tier</label>
+          <select class="control" id="newWsEnv" style="width:100%;">
+            <option value="production">Production</option>
+            <option value="staging">Staging</option>
+            <option value="development">Development</option>
+          </select>
+        </div>
+        <div class="between" style="margin-top:18px;">
+          <button class="btn primary" type="submit">Create & Switch Workspace</button>
+          <button class="btn ghost" type="button" data-action="close-modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  `);
+}
+
+async function handleCreateWorkspaceSubmit(e) {
+  e.preventDefault();
+  const name = $('#newWsName')?.value.trim();
+  const env = $('#newWsEnv')?.value || 'production';
+  if (!name) return;
+
+  try {
+    const res = await request('/api/v1/workspaces', {
+      method: 'POST',
+      body: JSON.stringify({ name, environment: env })
+    });
+
+    closeModal();
+    toast(`Workspace "${res.name}" provisioned.`);
+    await handleSwitchWorkspace(res.id);
+  } catch (err) {
+    toast('Failed to create workspace: ' + err.message);
+  }
+}
+
+function openRegisterAppModal() {
+  modal(`
+    <div style="max-width:460px;margin:auto;">
+      <h2 style="margin:0 0 8px;">Register New Application</h2>
+      <p class="tiny muted" style="margin:0 0 16px;">Register an independent service or API to generate a dedicated telemetry ingestion API key.</p>
+      <form onsubmit="handleRegisterAppSubmit(event)">
+        <div class="field">
+          <label>Application ID (Unique slug)</label>
+          <input class="control" id="newAppId" required placeholder="e.g. auth-service or checkout-api" pattern="^[a-zA-Z0-9_\-\.]+$" style="width:100%;font-family:monospace;">
+          <small class="dim">Lowercase alphanumeric, hyphens, and dots only.</small>
+        </div>
+        <div class="field">
+          <label>Human-Friendly Name</label>
+          <input class="control" id="newAppName" required placeholder="e.g. Stripe Checkout Gateway" style="width:100%;">
+        </div>
+        <div class="grid g2">
+          <div class="field">
+            <label>Environment</label>
+            <select class="control" id="newAppEnv" style="width:100%;">
+              <option value="production">Production</option>
+              <option value="staging">Staging</option>
+              <option value="development">Development</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Service Description</label>
+            <input class="control" id="newAppDesc" placeholder="Optional notes" style="width:100%;">
+          </div>
+        </div>
+        <div class="between" style="margin-top:18px;">
+          <button class="btn primary" type="submit">Provision App & Ingest Key</button>
+          <button class="btn ghost" type="button" data-action="close-modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  `);
+}
+
+async function handleRegisterAppSubmit(e) {
+  e.preventDefault();
+  const appId = $('#newAppId')?.value.trim();
+  const name = $('#newAppName')?.value.trim();
+  const env = $('#newAppEnv')?.value || 'production';
+  const desc = $('#newAppDesc')?.value.trim() || undefined;
+
+  if (!appId || !name) return;
+
+  try {
+    const res = await request('/api/v1/apps', {
+      method: 'POST',
+      body: JSON.stringify({ app_id: appId, name, environment: env, description: desc })
+    });
+
+    closeModal();
+    // Show one-time key modal
+    modal(`
+      <div style="max-width:480px;margin:auto;">
+        <h2 style="margin:0 0 8px;color:var(--lime);">Application Registered!</h2>
+        <p class="tiny muted" style="margin:0 0 14px;">A cryptographically hashed ingestion key has been provisioned for <b>${esc(appId)}</b>.</p>
+        <div class="callout" style="margin-bottom:14px;border-color:var(--amber);background:#221c12;">
+          <b>STORE THIS INGESTION KEY SECURELY</b>
+          <div class="tiny dim" style="margin-top:4px;">For security, the full plaintext secret cannot be retrieved from the server again.</div>
+        </div>
+        <div class="field">
+          <label>Ingestion API Key</label>
+          <div class="row" style="gap:6px;">
+            <input class="control" readonly value="${esc(res.api_key)}" style="flex:1;font-family:monospace;font-size:12px;color:var(--lime);">
+            <button class="btn small primary" type="button" onclick="navigator.clipboard.writeText('${esc(res.api_key)}');toast('Copied API Key!');">Copy Key</button>
+          </div>
+        </div>
+        <div class="between" style="margin-top:18px;">
+          <button class="btn primary" type="button" onclick="closeModal();viewAppIntegration('${esc(appId)}');">Go to Integration Snippets</button>
+          <button class="btn ghost" type="button" data-action="close-modal">Dismiss</button>
+        </div>
+      </div>
+    `);
+
+    currentAppFilter = appId;
+    await loadWorkspacesAndApps();
+    refresh();
+  } catch (err) {
+    toast('Failed to register application: ' + err.message);
+  }
+}
+
+function viewAppIntegration(appId) {
+  currentAppFilter = appId;
+  setPage('integrations');
+}
+
+function openInviteMemberModal() {
+  modal(`
+    <div style="max-width:420px;margin:auto;">
+      <h2 style="margin:0 0 8px;">Invite Team Member</h2>
+      <p class="tiny muted" style="margin:0 0 14px;">Grant an operator access to this workspace with defined RBAC permissions.</p>
+      <form onsubmit="handleInviteMemberSubmit(event)">
+        <div class="field">
+          <label>Operator Email</label>
+          <input class="control" type="email" id="inviteEmail" required placeholder="operator@company.com" style="width:100%;">
+        </div>
+        <div class="field">
+          <label>Assigned RBAC Role</label>
+          <select class="control" id="inviteRole" style="width:100%;">
+            <option value="admin">Admin — Full policy, member, and integration management</option>
+            <option value="developer">Developer — Manage applications, rules, and integration keys</option>
+            <option value="analyst" selected>Analyst — Review findings, investigate incidents, submit feedback</option>
+            <option value="viewer">Viewer — Read-only observation of security metrics and findings</option>
+          </select>
+        </div>
+        <div class="between" style="margin-top:18px;">
+          <button class="btn primary" type="submit">Send Workspace Invite</button>
+          <button class="btn ghost" type="button" data-action="close-modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  `);
+}
+
+async function handleInviteMemberSubmit(e) {
+  e.preventDefault();
+  const email = $('#inviteEmail')?.value.trim();
+  const role = $('#inviteRole')?.value || 'analyst';
+  if (!email) return;
+
+  try {
+    await request('/api/v1/workspaces/members', {
+      method: 'POST',
+      body: JSON.stringify({ email, role })
+    });
+    closeModal();
+    toast(`Invited ${email} to workspace as ${role.toUpperCase()}.`);
+    refresh();
+  } catch (err) {
+    toast('Failed to invite member: ' + err.message);
+  }
+}
+
+async function handleUpdateMemberRole(userId, newRole) {
+  try {
+    await request(`/api/v1/workspaces/members/${encodeURIComponent(userId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role: newRole })
+    });
+    toast(`Member role updated to ${newRole.toUpperCase()}.`);
+    refresh();
+  } catch (err) {
+    toast('Role update failed: ' + err.message);
+    refresh();
+  }
+}
+
+async function handleRemoveMember(userId) {
+  if (!confirm('Are you sure you want to remove this member from the workspace?')) return;
+  try {
+    await request(`/api/v1/workspaces/members/${encodeURIComponent(userId)}`, {
+      method: 'DELETE'
+    });
+    toast('Member removed from workspace.');
+    refresh();
+  } catch (err) {
+    toast('Failed to remove member: ' + err.message);
+  }
+}
+
+async function handleSaveWorkspaceName(e) {
+  e.preventDefault();
+  const name = $('#wsEditName')?.value.trim();
+  if (!name) return;
+
+  try {
+    await request('/api/v1/workspaces/current', {
+      method: 'PUT',
+      body: JSON.stringify({ name })
+    });
+    toast('Workspace name saved successfully.');
+    await loadWorkspacesAndApps();
+    render();
+  } catch (err) {
+    toast('Failed to update workspace name: ' + err.message);
+  }
+}
+
+async function triggerTelemetrySelfTest(appId) {
+  const btn = $('#btnTestTelemetry');
+  const resEl = $('#telemetryTestResult');
+  if (btn) btn.disabled = true;
+  if (resEl) {
+    resEl.style.display = 'block';
+    resEl.style.color = 'var(--muted)';
+    resEl.textContent = 'Transmitting canonical telemetry event to Fast Track gateway…';
+  }
+
+  const t0 = performance.now();
+  try {
+    const res = await request('/v1/events', {
+      method: 'POST',
+      body: JSON.stringify({
+        app_id: appId,
+        service_id: appId,
+        event_type: 'security.self_test',
+        severity: 'info',
+        trace_id: 'selftest-' + Date.now().toString(36),
+        timestamp: new Date().toISOString(),
+        attributes: { client: 'ternline_console', test: true }
+      })
+    });
+    const latency = (performance.now() - t0).toFixed(1);
+    if (resEl) {
+      resEl.style.color = 'var(--lime)';
+      resEl.textContent = `✓ Ingestion verified in ${latency}ms! Fast Track evaluated canonical schema (status: ${res.status || 'accepted'}). Application marked LIVE.`;
+    }
+    toast('Telemetry connection verified!');
+    await loadWorkspacesAndApps();
+    render();
+  } catch (err) {
+    if (resEl) {
+      resEl.style.color = 'var(--red)';
+      resEl.textContent = `✕ Telemetry dispatch failed: ${err.message}`;
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 async function bootstrapSession() {
   if (!bearerToken && typeof sessionStorage !== 'undefined') {
     const savedToken = sessionStorage.getItem('ternline_auth_token');
     const savedTenant = sessionStorage.getItem('ternline_auth_tenant');
     const savedEmail = sessionStorage.getItem('ternline_auth_email');
+    const savedRole = sessionStorage.getItem('ternline_auth_role');
     if (savedToken) {
       bearerToken = savedToken;
       currentTenant = savedTenant || 'Primary Workspace';
       currentUserEmail = savedEmail || 'Operator';
+      currentUserRole = savedRole || 'owner';
+    }
+  }
+
+  // Handle URL deep links like /verify-email?token=... or /reset-password?token=...
+  if (typeof window !== 'undefined' && window.location) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const path = window.location.pathname;
+
+    if (token && (path.includes('verify-email') || path.includes('console') || path === '/')) {
+      showLoginGate();
+      switchGateTab('verify');
+      const vInput = $('#gateVerifyToken');
+      if (vInput) vInput.value = token;
+      // Auto verify if coming from verification email link
+      handleGateVerify();
+      return;
+    } else if (token && path.includes('reset-password')) {
+      showLoginGate();
+      switchGateTab('reset');
+      const rInput = $('#gateResetToken');
+      if (rInput) rInput.value = token;
+      return;
     }
   }
 
@@ -3100,6 +3652,7 @@ async function bootstrapSession() {
     return false;
   }
 }
+
 
 async function refresh() {
   if (loading) return;
@@ -3131,6 +3684,8 @@ initSidebarTooltips();
         try { cache.health = await request('/health'); } catch (_) {}
         try { cache.overview = await request('/api/v1/ops/overview'); } catch (_) {}
         try { cache.userProfile = await request('/api/v1/auth/me'); } catch (_) {}
+        try { cache.workspaceMembers = await request('/api/v1/workspaces/members'); } catch (_) {}
+        try { cache.apps = await request('/api/v1/apps'); } catch (_) {}
       } else if (page === 'defense') {
         try { cache.activeDefense = unwrap(await request(endpoint('activeDefense') || '/api/v1/defense/actions'), ['actions', 'items', 'data']); } catch (_) {}
         try { cache.defensePolicy = await request('/api/v1/defense/policy'); } catch (_) {}
@@ -3142,7 +3697,8 @@ initSidebarTooltips();
         const p = endpoint(k);
         if (p) {
           delete cache[k];
-          const data = await request(p);
+          const filterParam = currentAppFilter && (k === 'events' || k === 'findings') ? (p.includes('?') ? `&app_id=${encodeURIComponent(currentAppFilter)}` : `?app_id=${encodeURIComponent(currentAppFilter)}`) : '';
+          const data = await request(p + filterParam);
           if (k === 'overview') {
             cache.overview = data;
             if (data.tenant_id) {
@@ -4029,18 +4585,9 @@ async function checkEmailVerificationFlow() {
   }
 }
 
-// Initial Mount
-render();
+// Initial Mount - Strictly gate unauthenticated users
 initSidebarTooltips();
-checkEmailVerificationFlow();
-if (config.baseUrl && config.baseUrl.trim() !== '') {
-  testConnection().then(async () => {
-    await bootstrapSession();
-    refresh();
-  });
-} else {
-  setConnection(false, 'SET BACKEND URL');
-}
+bootstrapSession();
 })();
 </script>
 </body>

@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     JSON,
     Index,
+    UniqueConstraint,
     Text,
     Integer,
     text,
@@ -26,6 +27,8 @@ class Tenant(Base):
     api_keys = relationship("ApiKey", back_populates="tenant", cascade="all, delete-orphan")
     events = relationship("EventModel", back_populates="tenant", cascade="all, delete-orphan")
     users = relationship("UserModel", back_populates="tenant", cascade="all, delete-orphan")
+    applications = relationship("ApplicationModel", back_populates="tenant", cascade="all, delete-orphan")
+    members = relationship("WorkspaceMemberModel", back_populates="tenant", cascade="all, delete-orphan")
 
 
 class UserModel(Base):
@@ -51,11 +54,60 @@ class UserModel(Base):
     updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
 
     tenant = relationship("Tenant", back_populates="users")
+    workspace_memberships = relationship("WorkspaceMemberModel", back_populates="user", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("ix_users_lookup", "email", "is_active", "is_verified"),
     )
 
+
+
+
+class WorkspaceMemberModel(Base):
+    """
+    Explicit membership linking users to workspaces (tenants) with assigned RBAC roles.
+    Allows a single human user to belong to multiple independent workspaces.
+    """
+    __tablename__ = "workspace_members"
+
+    id = Column(String(64), primary_key=True)
+    tenant_id = Column(String(64), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String(32), default="viewer", nullable=False)  # owner, admin, developer, analyst, viewer
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+
+    tenant = relationship("Tenant", back_populates="members")
+    user = relationship("UserModel", back_populates="workspace_memberships")
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "user_id", name="uq_tenant_user_member"),
+        Index("ix_workspace_members_user", "user_id"),
+        Index("ix_workspace_members_tenant", "tenant_id"),
+    )
+
+
+class ApplicationModel(Base):
+    """
+    Registered client application within a workspace (tenant).
+    Tracks application metadata, environment, active status, and binds to telemetry streams.
+    """
+    __tablename__ = "applications"
+
+    id = Column(String(64), primary_key=True)  # unique app_id (e.g., payments-api)
+    tenant_id = Column(String(64), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(128), nullable=False)
+    description = Column(String(512), nullable=True)
+    environment = Column(String(32), default="production", nullable=False)  # production, staging, development
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+
+    tenant = relationship("Tenant", back_populates="applications")
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "id", name="uq_tenant_app_id"),
+        Index("ix_applications_tenant_active", "tenant_id", "is_active"),
+    )
 
 class ApiKey(Base):
     """

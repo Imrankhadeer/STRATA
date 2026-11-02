@@ -6,9 +6,11 @@ from sqlalchemy.orm import Session
 
 from backend.config import settings
 from backend.db.session import get_db
-from backend.models import Tenant, UserModel
+from backend.models import Tenant, UserModel, WorkspaceMemberModel
 from backend.core.auth import (
     Permission,
+    Role,
+    get_role_permissions,
     create_operator_token,
     get_current_auth,
     AuthContext,
@@ -31,6 +33,8 @@ from backend.schemas.auth import (
     TokenResponse,
     MessageResponse,
     ChangePasswordRequest,
+    PasswordResetRequest,
+    PasswordResetConfirmRequest,
 )
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication & User Management"])
@@ -111,13 +115,24 @@ def register_user(
         email=email,
         hashed_password=hash_password(req.password),
         full_name=req.full_name.strip() if req.full_name else None,
-        role="admin",  # Founding operator receives admin role for their workspace
+        role="admin",  # Retains admin compatibility on UserModel while WorkspaceMember holds owner
         is_active=True,
         is_verified=False,
         verification_token=token,
         verification_token_expires_at=token_exp,
     )
     db.add(new_user)
+    db.flush()
+
+    # Create workspace membership
+    initial_member = WorkspaceMemberModel(
+        id=f"wm-{uuid.uuid4().hex[:10]}",
+        tenant_id=tenant_id,
+        user_id=new_user.id,
+        role="owner",
+        created_at=datetime.datetime.now(datetime.timezone.utc),
+    )
+    db.add(initial_member)
     db.commit()
 
     # 5. Dispatch email verification
@@ -178,16 +193,13 @@ def verify_email(
     db.refresh(user)
 
     # Issue operator session JWT
-    scopes = [Permission.ADMIN] if user.role == "admin" else [
-        Permission.FINDINGS_READ,
-        Permission.INCIDENTS_READ,
-        Permission.DEFENSE_ACTIONS_READ,
-    ]
+    scopes = get_role_permissions(user.role or "owner")
     access_token = create_operator_token(
         principal=user.email,
         tenant_id=user.tenant_id,
         scopes=scopes,
         is_human=True,
+        role=user.role or "owner",
     )
 
     ops_bus.publish(
@@ -284,16 +296,13 @@ def login(
     # Success: reset failed attempts
     auth_rate_limiter.reset(rate_limit_key)
 
-    scopes = [Permission.ADMIN] if user.role == "admin" else [
-        Permission.FINDINGS_READ,
-        Permission.INCIDENTS_READ,
-        Permission.DEFENSE_ACTIONS_READ,
-    ]
+    scopes = get_role_permissions(user.role or "owner")
     access_token = create_operator_token(
         principal=user.email,
         tenant_id=user.tenant_id,
         scopes=scopes,
         is_human=True,
+        role=user.role or "owner",
     )
 
     ops_bus.publish(
@@ -379,5 +388,90 @@ def change_password(
     )
     return MessageResponse(
         message="Password successfully updated.",
+        success=True,
+    )
+
+
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+    summary="Request a password reset link sent via email",
+)
+def forgot_password(
+    req: PasswordResetRequest,
+    db: Session = Depends(get_db),
+):
+    email = req.email.strip().lower()
+    user = db.query(UserModel).filter(UserModel.email == email).first()
+
+    # Anti-enumeration safeguard: always return generic success
+    if user and user.is_active:
+        token = generate_verification_token()
+        token_exp = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+            hours=settings.PASSWORD_RESET_EXPIRE_HOURS
+        )
+        user.reset_token = token
+        user.reset_token_expires_at = token_exp
+        db.commit()
+
+        email_service.send_password_reset_email(to_email=email, token=token)
+
+    return MessageResponse(
+        message="If an account with this email exists, a password reset link has been dispatched.",
+        success=True,
+    )
+
+
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+    summary="Reset password using a valid cryptographic reset token",
+)
+def reset_password(
+    req: PasswordResetConfirmRequest,
+    db: Session = Depends(get_db),
+):
+    token = req.token.strip()
+    user = db.query(UserModel).filter(UserModel.reset_token == token).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset token.",
+        )
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    exp = user.reset_token_expires_at
+    if exp:
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=datetime.timezone.utc)
+        if exp < now:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password reset token has expired. Please request a new link.",
+            )
+
+    is_strong, err_msg = validate_password_strength(req.new_password)
+    if not is_strong:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=err_msg or "New password does not meet complexity requirements.",
+        )
+
+    user.hashed_password = hash_password(req.new_password)
+    user.reset_token = None
+    user.reset_token_expires_at = None
+    user.updated_at = now
+    db.commit()
+
+    ops_bus.publish(
+        component="auth",
+        event_type="auth.password_reset_success",
+        level="info",
+        message=f"Operator password reset: {user.email}",
+    )
+
+    return MessageResponse(
+        message="Password successfully reset. You can now sign in with your new credentials.",
         success=True,
     )

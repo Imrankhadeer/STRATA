@@ -39,7 +39,11 @@ services:
       - key: ALLOW_SIMULATION_API
         value: "false"
       - key: ALLOWED_CORS_ORIGINS
-        value: https://ternline-cyber-engine.onrender.com
+        value: https://ternline-cyber-engine.onrender.com,https://ternline.vercel.app
+      - key: CORS_ALLOW_VERCEL
+        value: "true"
+      - key: FRONTEND_URL
+        value: https://ternline.vercel.app
 
   - type: redis
     name: cyber-engine-redis

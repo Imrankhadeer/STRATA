@@ -62,6 +62,7 @@ class HistoricalSearchResponse(BaseModel):
 
 @router.get("", response_model=List[EventSchema])
 async def list_events(
+    app_id: Optional[str] = Query(None, description="Filter by application ID"),
     service_id: Optional[str] = Query(None, description="Filter by service name"),
     event_type: Optional[str] = Query(None, description="Filter by event type"),
     severity: Optional[str] = Query(None, description="Filter by severity level"),
@@ -77,6 +78,8 @@ async def list_events(
     """
     query = db.query(EventModel).filter(EventModel.tenant_id == auth.tenant_id)
 
+    if app_id:
+        query = query.filter(EventModel.app_id == app_id.strip())
     if service_id:
         query = query.filter(EventModel.service_id == service_id.strip())
     if event_type:
