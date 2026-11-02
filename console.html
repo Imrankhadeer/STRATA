@@ -138,15 +138,16 @@
     <button class="btn mobilemenu" id="menuBtn">☰</button>
     <div class="crumb" id="crumb">Operations / Overview</div>
     <div class="spacer"></div>
-    <input class="topsearch" id="globalSearch" placeholder="Search loaded records…">
-    <button class="pill" id="connectionPill" data-page="settings" style="cursor:pointer;background:transparent;border:1px solid var(--line);font-family:inherit;">BACKEND NOT CONNECTED</button>
-    <button class="btn small" id="streamToggleBtn" data-action="toggle-stream" style="font-size:10px">⌁ Connect SSE</button>
-    <button class="btn small" id="refreshBtn">↻ Refresh</button>
+    <input class="topsearch" id="globalSearch" placeholder="Search telemetry, findings, rules…">
+    <span class="pill good" id="streamLiveIndicator" style="display:inline-flex;align-items:center;gap:6px;font-size:10px;padding:4px 9px;">
+      <span class="dot" style="width:6px;height:6px;background:var(--lime);"></span>
+      <span id="streamIndicatorText">Live Stream Active</span>
+    </span>
+    <button class="btn small" id="refreshBtn" title="Refresh state">↻ Refresh</button>
     <a class="btn small ghost" href="/documentation" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">Docs ↗</a>
-    <button class="btn small primary" id="authBtn" onclick="openAuthModal('login')" style="font-weight:700;">Sign In</button>
-    <div id="userChip" class="hide" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:11px;">
-      <span style="color:var(--lime)">●</span> <span id="userChipEmail">Operator</span>
-      <button class="btn small ghost" onclick="signOutOperator()" style="padding:1px 4px;font-size:10px;margin-left:4px;" title="Sign Out">✕</button>
+    <div id="userChip" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:11px;">
+      <span style="color:var(--lime)">👤</span> <span id="userChipEmail">Operator</span>
+      <button class="btn small ghost" onclick="signOutOperator()" style="padding:1px 5px;font-size:10px;margin-left:4px;color:var(--muted);" title="Sign Out">Sign Out</button>
     </div>
     <button class="btn small ghost" data-page="settings">Settings</button>
   </header>
@@ -1983,16 +1984,13 @@ function signOutOperator() {
   sessionStorage.removeItem('ternline_auth_token');
   sessionStorage.removeItem('ternline_auth_tenant');
   sessionStorage.removeItem('ternline_auth_email');
-  updateAuthUI();
   if (eventSource) {
     eventSource.close();
     eventSource = null;
     sseConnected = false;
-    updateStreamUI(false);
   }
-  setConnection(false, 'SESSION SIGNED OUT');
   toast('Signed out successfully.');
-  refresh();
+  showLoginGate();
 }
 
 async function toggleLiveStream(forceConnect = false) {
@@ -2193,32 +2191,211 @@ function render() {
   updateSidebarBadges();
 }
 
+
+// ===== Login Gate Management =====
+function switchGateTab(tab) {
+  const fLog = $('#gateFormLogin');
+  const fReg = $('#gateFormRegister');
+  const fKey = $('#gateFormKey');
+  const tLog = $('#gateTabLogin');
+  const tReg = $('#gateTabRegister');
+  const tKey = $('#gateTabKey');
+
+  if (fLog) fLog.classList.toggle('hide', tab !== 'login');
+  if (fReg) fReg.classList.toggle('hide', tab !== 'register');
+  if (fKey) fKey.classList.toggle('hide', tab !== 'key');
+
+  if (tLog) tLog.classList.toggle('active', tab === 'login');
+  if (tReg) tReg.classList.toggle('active', tab === 'register');
+  if (tKey) tKey.classList.toggle('active', tab === 'key');
+}
+
+function updateGateBackend(val) {
+  const clean = String(val || '').trim().replace(/\/$/, '');
+  if (clean) {
+    config.baseUrl = clean;
+    localStorage.setItem('ternline_backend_url', clean);
+    persist();
+    probeGateBackend();
+  }
+}
+
+async function probeGateBackend() {
+  const st = $('#gateBackendStatus');
+  if (!config.baseUrl) {
+    if (st) { st.textContent = 'Awaiting URL'; st.style.color = 'var(--muted)'; }
+    return;
+  }
+  if (st) { st.textContent = 'Probing...'; st.style.color = 'var(--amber)'; }
+  try {
+    const res = await fetch(apiUrl('/api/v1/ops/health'), { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      if (st) { st.textContent = '● Engine Online'; st.style.color = 'var(--lime)'; }
+    } else {
+      if (st) { st.textContent = `HTTP ${res.status}`; st.style.color = 'var(--amber)'; }
+    }
+  } catch (e) {
+    if (st) { st.textContent = 'Unreachable'; st.style.color = 'var(--red)'; }
+  }
+}
+
+async function handleGateLogin(e) {
+  e.preventDefault();
+  const email = $('#gateLoginEmail')?.value.trim();
+  const password = $('#gateLoginPassword')?.value;
+  const msg = $('#gateLoginMsg');
+  const btn = $('#gateLoginBtn');
+
+  if (!email || !password) return;
+  if (!config.baseUrl) {
+    if (msg) msg.textContent = 'Please configure your AWS Target Engine API endpoint above.';
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Verifying credentials...'; }
+
+  try {
+    const res = await request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+
+    if (res && res.access_token) {
+      bearerToken = res.access_token;
+      currentTenant = res.user?.tenant_name || res.user?.tenant_id || 'Primary Workspace';
+      currentUserEmail = res.user?.email || email;
+
+      sessionStorage.setItem('ternline_auth_token', bearerToken);
+      sessionStorage.setItem('ternline_auth_tenant', currentTenant);
+      sessionStorage.setItem('ternline_auth_email', currentUserEmail);
+
+      enterControlRoom();
+    }
+  } catch (err) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message || 'Login failed'; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleGateRegister(e) {
+  e.preventDefault();
+  const email = $('#gateRegEmail')?.value.trim();
+  const password = $('#gateRegPassword')?.value;
+  const fullName = $('#gateRegName')?.value.trim();
+  const tenantName = $('#gateRegTenant')?.value.trim();
+  const msg = $('#gateRegMsg');
+  const btn = $('#gateRegBtn');
+
+  if (!email || !password) return;
+  if (!config.baseUrl) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Please configure your AWS Target Engine API endpoint above.'; }
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Registering operator workspace...'; }
+
+  try {
+    const res = await request('/api/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, full_name: fullName || null, tenant_name: tenantName || null })
+    });
+
+    if (msg) {
+      msg.style.color = 'var(--lime)';
+      msg.textContent = res.message || 'Verification email dispatched via AWS SES! Click the link in your inbox to activate.';
+    }
+  } catch (err) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = err.message || 'Registration failed'; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleGateKey(e) {
+  e.preventDefault();
+  const key = $('#gateDirectKey')?.value.trim();
+  const msg = $('#gateKeyMsg');
+  const btn = $('#gateKeyBtn');
+
+  if (!key) return;
+  if (!config.baseUrl) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Please configure your AWS Target Engine API endpoint above.'; }
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Testing administrative key...'; }
+
+  try {
+    bearerToken = key;
+    // Verify key with an auth probe
+    const testRes = await request('/api/v1/ops/overview');
+    currentTenant = 'Root Operator';
+    currentUserEmail = 'API Key Operator';
+
+    sessionStorage.setItem('ternline_auth_token', bearerToken);
+    sessionStorage.setItem('ternline_auth_tenant', currentTenant);
+    sessionStorage.setItem('ternline_auth_email', currentUserEmail);
+
+    enterControlRoom();
+  } catch (err) {
+    bearerToken = '';
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Invalid API Key: ' + err.message; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function enterControlRoom() {
+  const gate = $('#loginGateView');
+  const app = $('#appShell');
+  if (gate) gate.classList.add('hide');
+  if (app) app.classList.remove('hide');
+
+  const td = $('#tenantDisplay');
+  if (td) td.textContent = currentTenant || 'Primary Workspace';
+  const ue = $('#userChipEmail');
+  if (ue) ue.textContent = currentUserEmail || 'Operator';
+
+  setConnection(true);
+  toggleLiveStream(true);
+  refresh();
+}
+
+function showLoginGate() {
+  const gate = $('#loginGateView');
+  const app = $('#appShell');
+  if (gate) gate.classList.remove('hide');
+  if (app) app.classList.add('hide');
+
+  const be = $('#gateBackendUrl');
+  if (be) be.value = config.baseUrl || '';
+  probeGateBackend();
+}
+
 // Session management: restore saved bearer token and tenant
 async function bootstrapSession() {
-  // Check sessionStorage for active operator session
   if (!bearerToken && typeof sessionStorage !== 'undefined') {
     const savedToken = sessionStorage.getItem('ternline_auth_token');
     const savedTenant = sessionStorage.getItem('ternline_auth_tenant');
     const savedEmail = sessionStorage.getItem('ternline_auth_email');
     if (savedToken) {
       bearerToken = savedToken;
-      currentTenant = savedTenant || 'Authenticated';
-      currentUserEmail = savedEmail || '';
+      currentTenant = savedTenant || 'Primary Workspace';
+      currentUserEmail = savedEmail || 'Operator';
     }
   }
-
-  updateAuthUI();
 
   if (bearerToken) {
-    const td = $('#tenantDisplay');
-    if (td && currentTenant) td.textContent = currentTenant;
-    // Auto-connect SSE stream when authenticated
-    if (!sseConnected) {
-      toggleLiveStream(true);
-    }
+    enterControlRoom();
     return true;
+  } else {
+    showLoginGate();
+    return false;
   }
-  return false;
 }
 
 async function refresh() {
