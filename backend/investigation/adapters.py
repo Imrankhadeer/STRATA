@@ -3,7 +3,7 @@ Pluggable adapters for Deep-Investigation Path.
 
 Includes:
 - BaseInvestigator: Abstract interface
-- MockInvestigator: Deterministic offline investigator for tests and fallback
+- MockInvestigator: Deterministic offline investigator for unit tests
 - MetaModelInvestigator: Official Meta Model API adapter for Llama 3/3.1/3.3 models
 - OpenAICompatibleInvestigator: Generic adapter for Ollama, vLLM, Groq, Together, OpenAI
 """
@@ -337,7 +337,7 @@ class MetaModelInvestigator(BaseInvestigator):
     """
     Adapter targeting the official Meta Model API (Llama 3 / 3.1 / 3.3).
     Adheres to Meta's API specifications, instruction formatting, and structured JSON output.
-    Includes automated fallback to MockInvestigator on network/API failure so the engine never crashes.
+    Returns structured forensic error verdicts on upstream API errors or rate limits.
     """
     provider_name = "meta"
 
