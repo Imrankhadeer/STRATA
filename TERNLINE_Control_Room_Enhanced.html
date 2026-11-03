@@ -185,6 +185,99 @@
   border-bottom-color: var(--lime);
 }
 
+#view.content {
+  width: 100%;
+  max-width: none;
+  padding: 28px clamp(24px, 3vw, 48px) 60px;
+}
+.topbar-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.topbar-select {
+  min-width: 0;
+  max-width: 190px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 650;
+}
+.profile-menu {
+  position: relative;
+}
+.profile-trigger {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel2);
+  color: var(--lime);
+  font-size: 17px;
+}
+.profile-trigger:hover,
+.profile-trigger[aria-expanded="true"] {
+  border-color: var(--lime);
+  background: #203025;
+}
+.profile-menu-panel {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+.profile-menu-item {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-size: 12px;
+}
+.profile-menu-item:hover {
+  background: var(--panel2);
+}
+.profile-menu-item.signout {
+  color: #ff9a9a;
+}
+@media(max-width:1050px) {
+  .topbar {
+    height: auto;
+    min-height: 62px;
+    flex-wrap: wrap;
+    padding: 8px 14px;
+  }
+}
+@media(max-width:720px) {
+  #view.content {
+    padding: 20px 14px 45px;
+  }
+  .topbar-select-wrap {
+    max-width: calc(50vw - 20px);
+  }
+  .topbar-select {
+    max-width: 145px;
+  }
+}
+
 </style><body>
 <div id="sidebarTooltip" class="sidebar-tooltip hide"></div>
 
@@ -385,7 +478,6 @@
       <select id="workspaceSelector" class="topbar-select" onchange="handleSwitchWorkspace(this.value)">
         <option value="">Loading Workspaces...</option>
       </select>
-      <button class="btn small ghost" type="button" onclick="openCreateWorkspaceModal()" title="Create New Workspace" style="padding:1px 5px;font-size:10px;color:var(--lime);">+ New</button>
     </div>
 
     <!-- Application Scope Filter Dropdown -->
@@ -398,27 +490,17 @@
 
     <input class="topsearch" id="globalSearch" placeholder="Search telemetry, findings, rules…">
 
-    <button class="btn small" id="refreshBtn" title="Refresh state" onclick="refresh()">↻ Refresh</button>
-    <a class="btn small ghost" href="/documentation" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">Docs ↗</a>
-    <button class="btn small primary" onclick="setPage('integrations')" style="display:inline-flex;align-items:center;gap:4px;font-weight:700;">⚡ Connect App</button>
-    
-    <!-- User Profile & Sign Out Dropdown -->
-    <div id="userChip" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:11px;">
-      <span style="color:var(--lime)">👤</span>
-      <span id="userChipEmail">Operator</span>
-      <span id="userChipRole" class="role-badge owner" style="margin-left:2px;">OWNER</span>
-      <button class="btn small ghost" onclick="signOutOperator()" style="padding:1px 5px;font-size:10px;margin-left:4px;color:var(--muted);" title="Sign Out">Sign Out</button>
+    <button class="btn small primary hide" id="connectAppBtn" type="button" onclick="setPage('integrations')" style="display:inline-flex;align-items:center;gap:4px;font-weight:700;">⚡ Connect App</button>
+
+    <div id="userChip" class="profile-menu hide">
+      <button class="profile-trigger" id="userProfileButton" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false" aria-controls="userProfileMenu" onclick="toggleProfileMenu()" title="Profile">👤</button>
+      <div class="profile-menu-panel hide" id="userProfileMenu" role="menu" aria-labelledby="userProfileButton">
+        <button class="profile-menu-item" type="button" role="menuitem" data-page="settings">Platform Settings</button>
+        <button class="profile-menu-item" type="button" role="menuitem" onclick="closeProfileMenu();openCreateWorkspaceModal()">Create Workspace</button>
+        <button class="profile-menu-item signout" type="button" role="menuitem" onclick="closeProfileMenu();signOutOperator()">Sign Out</button>
+      </div>
     </div>
-    
-    <button class="btn small ghost" onclick="setPage('settings')" title="Workspace & Security Settings">⚙ Settings</button>
   </header>
-  <div id="liveStreamBanner" class="callout hide" style="margin:16px 26px 0;border-color:var(--lime);background:#122116">
-    <div class="between">
-      <b>Live Engine Operational Stream (SSE)</b>
-      <span class="pill good" id="streamStatusPill">LIVE CONNECTED</span>
-    </div>
-    <div id="liveStreamFeed" style="margin-top:6px;max-height:85px;overflow:auto;font-family:ui-monospace,monospace;font-size:11px"></div>
-  </div>
   <section class="content" id="view" aria-live="polite"></section>
  </main>
 </div>
@@ -813,6 +895,20 @@ function openModal(title, innerHtml) {
 function closeModal() {
   const back = $('#modalBack');
   if (back) back.classList.add('hide');
+}
+
+function toggleProfileMenu() {
+  const button = $('#userProfileButton');
+  const menu = $('#userProfileMenu');
+  if (!button || !menu) return;
+  const isOpen = button.getAttribute('aria-expanded') === 'true';
+  button.setAttribute('aria-expanded', String(!isOpen));
+  menu.classList.toggle('hide', isOpen);
+}
+
+function closeProfileMenu() {
+  $('#userProfileButton')?.setAttribute('aria-expanded', 'false');
+  $('#userProfileMenu')?.classList.add('hide');
 }
 
 // A. Overview / Dashboard
@@ -2637,11 +2733,7 @@ function updateAuthUI() {
   const userChip = $('#userChip');
   if (bearerToken) {
     if (btn) btn.classList.add('hide');
-    if (userChip) {
-      userChip.classList.remove('hide');
-      const emailEl = $('#userChipEmail');
-      if (emailEl) emailEl.textContent = currentUserEmail || currentTenant || 'Operator';
-    }
+    if (userChip) userChip.classList.remove('hide');
   } else {
     if (btn) btn.classList.remove('hide');
     if (userChip) userChip.classList.add('hide');
@@ -3438,13 +3530,6 @@ function enterControlRoom() {
 
   const td = $('#tenantDisplay');
   if (td) td.textContent = currentTenant || 'Primary Workspace';
-  const ue = $('#userChipEmail');
-  if (ue) ue.textContent = currentUserEmail || 'Operator';
-  const ur = $('#userChipRole');
-  if (ur) {
-    ur.textContent = (currentUserRole || 'owner').toUpperCase();
-    ur.className = `role-badge ${currentUserRole || 'owner'}`;
-  }
 
   setConnection(true);
   toggleLiveStream(true);
@@ -3497,6 +3582,7 @@ function updateAppFilterSelector() {
   const sel = $('#appFilterSelector');
   if (!sel) return;
   const list = cache.apps || [];
+  $('#connectAppBtn')?.classList.toggle('hide', list.length > 0);
   sel.innerHTML = `<option value="">All Applications (${list.length})</option>` + list.map(a => `
     <option value="${esc(a.app_id)}" ${a.app_id === currentAppFilter ? 'selected' : ''}>
       ${esc(a.name || a.app_id)} [${esc(a.environment || 'prod')}]
@@ -3526,11 +3612,6 @@ async function handleSwitchWorkspace(targetTenantId) {
 
     const td = $('#tenantDisplay');
     if (td) td.textContent = currentTenant;
-    const ur = $('#userChipRole');
-    if (ur) {
-      ur.textContent = currentUserRole.toUpperCase();
-      ur.className = `role-badge ${currentUserRole}`;
-    }
 
     currentAppFilter = null;
     toast(`Active workspace switched to: ${currentTenant}`);
@@ -3980,6 +4061,7 @@ function updateConnectionPill() {
 
 function setPage(p) {
   if (!titles[p]) return;
+  closeProfileMenu();
   page = p;
   $('#sidebar')?.classList.remove('open');
   if (p === 'historical') {
@@ -4351,12 +4433,19 @@ document.addEventListener('click', e => {
   }
 });
 
+document.addEventListener('click', e => {
+  if (!e.target.closest('.profile-menu')) closeProfileMenu();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeProfileMenu();
+});
+
 document.addEventListener('submit', e => {
   if (e.target && e.target.id === 'settingsForm') saveSettings(e);
   if (e.target && e.target.id === 'proposeRuleForm') submitProposeRule(e);
 });
 
-$('#refreshBtn')?.addEventListener('click', refresh);
 $('#menuBtn')?.addEventListener('click', () => $('#sidebar')?.classList.toggle('open'));
 
 $('#globalSearch')?.addEventListener('keydown', e => {
@@ -4818,6 +4907,8 @@ window.toast = typeof toast !== 'undefined' ? toast : (m) => alert(m);
 window.setPage = setPage;
 window.refresh = refresh;
 window.signOutOperator = signOutOperator;
+window.toggleProfileMenu = toggleProfileMenu;
+window.closeProfileMenu = closeProfileMenu;
 window.openChangePasswordModal = typeof openChangePasswordModal !== 'undefined' ? openChangePasswordModal : () => {};
 window.handleChangePassword = typeof handleChangePassword !== 'undefined' ? handleChangePassword : () => {};
 window.handleSaveDefensePolicy = typeof handleSaveDefensePolicy !== 'undefined' ? handleSaveDefensePolicy : () => {};
