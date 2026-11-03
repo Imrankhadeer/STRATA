@@ -498,6 +498,12 @@ try {
   }
 } catch (_) {}
 
+// Security Hygiene: Purge any legacy mock webhook secrets or keys from client localStorage
+try {
+  localStorage.removeItem('ternline_webhook_secret');
+  localStorage.removeItem('ternline_webhook_url');
+} catch (_) {}
+
 function updateGateHostDisplay() {
   const el = document.getElementById('gateTargetApiHost');
   if (el) {
@@ -4093,23 +4099,6 @@ function saveEngineUrl() {
     toast('Engine API base URL updated.');
     testConnection().then(() => refresh());
   }
-}
-
-function saveWebhookSettings() {
-  const u = $('#webhookUrlInput')?.value.trim();
-  const s = $('#webhookSecretInput')?.value.trim();
-  if (u) localStorage.setItem('ternline_webhook_url', u);
-  if (s) localStorage.setItem('ternline_webhook_secret', s);
-  const msg = $('#webhookSaveMsg');
-  if (msg) {
-    msg.textContent = '✓ Integration settings saved';
-    setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
-  }
-  toast('Perimeter integration parameters saved.');
-}
-
-function testWebhookDispatch() {
-  toast('Dispatched test ping to perimeter gateway with HMAC-SHA256 signature.');
 }
 
 function toggleSecretVisibility(id) {
