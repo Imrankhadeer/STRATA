@@ -780,7 +780,7 @@ async function request(path, { method = 'GET', body = null, timeoutMs = 12000 } 
     res = await fetch(url, {
       method,
       headers,
-      body: body !== null ? JSON.stringify(body) : undefined,
+      body: body !== null ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
       signal: controller.signal,
       mode: 'cors',
       cache: 'no-store'
