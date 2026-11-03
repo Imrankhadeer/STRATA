@@ -531,15 +531,14 @@ const defaultBaseUrl = (function() {
       return String(window.ENV_BACKEND_URL).trim().replace(/\/$/, '');
     }
 
-    // 3. Direct deployment (e.g. EC2:8000, self-hosted VM, or local)
+    // 3. Auto-detect deployment origin (covers EC2 direct, Vercel proxy, custom domain, localhost)
     if (window.location && window.location.hostname) {
       const h = window.location.hostname.toLowerCase();
-      if (window.location.port === '8000' || (!h.endsWith('vercel.app') && !h.endsWith('.app'))) {
-        return window.location.origin;
-      }
       if (h === 'localhost' || h === '127.0.0.1') {
-        return 'http://localhost:8000';
+        return window.location.port === '8000' ? window.location.origin : 'http://localhost:8000';
       }
+      // All other origins (EC2 direct, Vercel proxy, custom domain) use same-origin
+      return window.location.origin;
     }
   }
   return '';
@@ -2195,7 +2194,7 @@ function integrations() {
           <div class="field">
             <label>Selected Application</label>
             <select class="control" id="integAppSelect" onchange="handleSelectIntegrationApp(this.value)" style="width:100%;">
-              ${apps.length === 0 ? `<option value="payments-api">payments-api (Demo Default)</option>` : apps.map(a => `<option value="${esc(a.app_id)}" ${a.app_id === selectedApp.app_id ? 'selected' : ''}>${esc(a.name || a.app_id)} [${esc(a.environment || 'prod')}]</option>`).join('')}
+              ${apps.length === 0 ? `<option value="" disabled selected>-- No applications registered --</option>` : apps.map(a => `<option value="${esc(a.app_id)}" ${a.app_id === selectedApp.app_id ? 'selected' : ''}>${esc(a.name || a.app_id)} [${esc(a.environment || 'prod')}]</option>`).join('')}
             </select>
           </div>
           <div class="field">
@@ -3527,6 +3526,7 @@ function enterControlRoom() {
   const app = $('#appShell');
   if (gate) gate.classList.add('hide');
   if (app) app.classList.remove('hide');
+  updateAuthUI();
 
   const td = $('#tenantDisplay');
   if (td) td.textContent = currentTenant || 'Primary Workspace';
