@@ -5,6 +5,22 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "http://13.211.144.111:8000/api/:path*"
+    },
+    {
+      "source": "/v1/:path*",
+      "destination": "http://13.211.144.111:8000/v1/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "http://13.211.144.111:8000/health"
+    },
+    {
+      "source": "/metrics",
+      "destination": "http://13.211.144.111:8000/metrics"
+    },
+    {
       "source": "/",
       "destination": "/index.html"
     },
