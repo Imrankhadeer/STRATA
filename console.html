@@ -2233,7 +2233,56 @@ function integrations() {
             <button class="btn small primary" type="button" id="btnTestTelemetry" onclick="triggerTelemetrySelfTest('${esc(selectedApp.app_id)}')">⚡ Test Live Telemetry Connection</button>
           </div>
           <div id="telemetryTestResult" class="tiny" style="margin-top:8px;font-family:monospace;display:none;"></div>
-        </div>
+        
+        <!-- Applications & Telemetry Keys Table -->
+        <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:12px;">
+          <div class="between" style="margin-bottom:8px;">
+            <b class="tiny" style="letter-spacing:0.05em;color:var(--text);text-transform:uppercase;">Registered Applications in this Workspace (${apps.length})</b>
+            <span class="tiny muted">Click "Inspect Snippet" to switch active view</span>
+          </div>
+          <div class="tablewrap" style="max-height:220px;overflow-y:auto;">
+            <table style="font-size:12px;">
+              <thead>
+                <tr>
+                  <th>App ID & Name</th>
+                  <th>Env</th>
+                  <th>Status</th>
+                  <th>Key Prefix</th>
+                  <th>Ingested Events</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${apps.length === 0 ? `<tr><td colspan="6" class="empty">No applications registered yet. Click "+ Register New Application" above to add your first service.</td></tr>` : apps.map(a => {
+                  const aKey = keys.find(k => k.app_id === a.app_id);
+                  const isCur = a.app_id === selectedApp.app_id;
+                  return `
+                  <tr style="${isCur ? 'background:rgba(52,211,153,0.06);' : ''}">
+                    <td>
+                      <b>${esc(a.name || a.app_id)}</b>
+                      ${isCur ? ' <span class="pill tiny good">ACTIVE</span>' : ''}
+                      <br><span class="mono dim tiny">${esc(a.app_id)}</span>
+                    </td>
+                    <td><span class="pill tiny ${a.environment === 'production' ? 'bad' : 'info'}">${esc(a.environment || 'production')}</span></td>
+                    <td>
+                      <span class="pill tiny ${a.status === 'live' ? 'good' : 'warn'}">
+                        ${a.status === 'live' ? 'LIVE' : 'AWAITING'}
+                      </span>
+                    </td>
+                    <td><code class="tiny">${esc(aKey ? aKey.key_prefix : (a.active_key_prefix || 'ce_live_...'))}</code></td>
+                    <td><b>${a.event_count || 0}</b></td>
+                    <td style="text-align:right;">
+                      <div class="row" style="gap:4px;justify-content:flex-end;">
+                        ${!isCur ? `<button class="btn small" type="button" onclick="handleSelectIntegrationApp('${esc(a.app_id)}')">Inspect</button>` : ''}
+                        <button class="btn small danger" type="button" onclick="handleDeleteApplication('${esc(a.app_id)}', '${esc(a.name || a.app_id)}')">Delete</button>
+                      </div>
+                    </td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div></div>
       </div>
 
       <!-- Card 2: Interactive Code Snippets for Independent Applications -->
@@ -2626,7 +2675,10 @@ function settings() {
                     <td><b>${a.event_count || 0}</b></td>
                     <td><span class="tiny muted">${a.last_event_at ? formatLocalTime(a.last_event_at) : 'Never'}</span></td>
                     <td style="text-align:right;">
-                      <button class="btn small" type="button" onclick="viewAppIntegration('${esc(a.app_id)}')">Integration Snippet</button>
+                      <div class="row" style="gap:6px;justify-content:flex-end;">
+                        <button class="btn small" type="button" onclick="viewAppIntegration('${esc(a.app_id)}')">Integration Snippet</button>
+                        ${canAdmin ? `<button class="btn small danger" type="button" onclick="handleDeleteApplication('${esc(a.app_id)}', '${esc(a.name || a.app_id)}')">Delete</button>` : ''}
+                      </div>
                     </td>
                   </tr>
                 `).join('')}
@@ -3862,6 +3914,27 @@ async function handleRemoveMember(userId) {
   }
 }
 
+async function handleDeleteApplication(appId, appName) {
+  const displayName = appName || appId;
+  if (!confirm(`Are you sure you want to delete application "${displayName}" (${appId})?\n\nThis will deactivate the application and permanently revoke its active ingestion API keys.`)) {
+    return;
+  }
+  try {
+    toast(`Deactivating application ${appId}...`);
+    await request(`/api/v1/apps/${encodeURIComponent(appId)}`, {
+      method: 'DELETE'
+    });
+    toast(`Application ${displayName} deleted and keys revoked.`);
+    if (currentAppFilter === appId) {
+      currentAppFilter = null;
+    }
+    await loadWorkspacesAndApps();
+    refresh();
+  } catch (err) {
+    toast('Failed to delete application: ' + err.message);
+  }
+}
+
 async function handleSaveWorkspaceName(e) {
   e.preventDefault();
   const name = $('#wsEditName')?.value.trim();
@@ -3992,6 +4065,7 @@ initSidebarTooltips();
       return;
     } else {
       if (page === 'integrations') {
+        try { cache.apps = await request('/api/v1/apps'); } catch (_) {}
         try { cache.apiKeys = unwrap(await request('/api/v1/keys'), ['keys', 'items', 'data']); } catch (_) {}
         try { cache.events = unwrap(await request('/api/v1/events?limit=25'), ['events', 'items', 'data']); } catch (_) {}
       } else if (page === 'settings') {
@@ -4913,6 +4987,7 @@ window.openInviteMemberModal = openInviteMemberModal;
 window.handleInviteMemberSubmit = handleInviteMemberSubmit;
 window.handleUpdateMemberRole = handleUpdateMemberRole;
 window.handleRemoveMember = handleRemoveMember;
+window.handleDeleteApplication = handleDeleteApplication;
 window.handleSaveWorkspaceName = handleSaveWorkspaceName;
 window.triggerTelemetrySelfTest = triggerTelemetrySelfTest;
 window.viewAppIntegration = viewAppIntegration;
