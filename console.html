@@ -807,7 +807,15 @@ async function request(path, { method = 'GET', body = null, timeoutMs = 12000 } 
       setConnection(false, 'Unauthenticated');
       throw new Error('HTTP 401 Unauthorized: Session token expired. Please sign in again.');
     }
-    const detail = data?.detail || data?.message || res.statusText || `HTTP ${res.status}`;
+    let detail = data?.detail || data?.message || res.statusText || `HTTP ${res.status}`;
+    if (Array.isArray(detail)) {
+      detail = detail.map(d => {
+        const field = Array.isArray(d.loc) ? d.loc.filter(x => x !== 'body').join('.') : '';
+        return field ? `${field}: ${d.msg}` : (d.msg || JSON.stringify(d));
+      }).join('; ');
+    } else if (typeof detail === 'object' && detail !== null) {
+      detail = JSON.stringify(detail);
+    }
     throw new Error(`HTTP ${res.status}: ${detail}`);
   }
 
@@ -3689,7 +3697,7 @@ function openRegisterAppModal() {
       <form onsubmit="handleRegisterAppSubmit(event)">
         <div class="field">
           <label>Application ID (Unique slug)</label>
-          <input class="control" id="newAppId" required placeholder="e.g. auth-service or checkout-api" pattern="^[a-zA-Z0-9_\-\.]+$" style="width:100%;font-family:monospace;">
+          <input class="control" id="newAppId" required placeholder="e.g. auth-service or checkout-api" style="width:100%;font-family:monospace;">
           <small class="dim">Lowercase alphanumeric, hyphens, and dots only.</small>
         </div>
         <div class="field">
@@ -3727,6 +3735,15 @@ async function handleRegisterAppSubmit(e) {
   const desc = $('#newAppDesc')?.value.trim() || undefined;
 
   if (!appId || !name) return;
+
+  if (appId.length < 2) {
+    toast('Application ID must be at least 2 characters long.');
+    return;
+  }
+  if (!/^[a-zA-Z0-9_.-]+$/.test(appId)) {
+    toast('Application ID may only contain alphanumeric characters, underscores, hyphens, and dots.');
+    return;
+  }
 
   try {
     const res = await request('/api/v1/apps', {
@@ -4137,7 +4154,7 @@ function openProvisionKeyModal() {
       <form id="provisionKeyForm" onsubmit="handleProvisionKey(event)">
         <div class="field">
           <label>Application ID (e.g. payments-api, auth-service, worker-svc)</label>
-          <input class="control" id="newKeyAppId" required placeholder="service-name" pattern="^[a-zA-Z0-9_\-\.]+$" style="width:100%;">
+          <input class="control" id="newKeyAppId" required placeholder="service-name" style="width:100%;">
         </div>
         <div class="field">
           <label>Expiration (Days)</label>
