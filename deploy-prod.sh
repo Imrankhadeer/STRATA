@@ -43,6 +43,30 @@ try:
             content += f'\nSECRET_KEY={new_secret}\n'
         print("[i] Automatically provisioned a secure 64-character SECRET_KEY in .env.production")
 
+    # Detect dummy AWS RDS placeholder in DATABASE_URL and route to compose db service
+    db_match = re.search(r'^DATABASE_URL=(.*)$', content, re.MULTILINE)
+    if db_match and ("xxxxxxxxx" in db_match.group(1) or "ternline-db" in db_match.group(1)):
+        pw_match = re.search(r'^POSTGRES_PASSWORD=(.*)$', content, re.MULTILINE)
+        pg_pw = pw_match.group(1).strip() if pw_match else "postgres_prod_password_change_me"
+        content = re.sub(
+            r'^DATABASE_URL=.*$',
+            f'DATABASE_URL=postgresql+psycopg2://postgres:{pg_pw}@db:5432/cyber_engine',
+            content,
+            flags=re.MULTILINE
+        )
+        print("[i] Detected unconfigured RDS placeholder; routed DATABASE_URL to local compose PostgreSQL service (db:5432)")
+
+    # Detect dummy AWS ElastiCache placeholder in REDIS_URL and route to compose redis service
+    redis_match = re.search(r'^REDIS_URL=(.*)$', content, re.MULTILINE)
+    if redis_match and ("xxxxxx" in redis_match.group(1) or "clustercfg" in redis_match.group(1)):
+        content = re.sub(
+            r'^REDIS_URL=.*$',
+            'REDIS_URL=redis://redis:6379/0',
+            content,
+            flags=re.MULTILINE
+        )
+        print("[i] Detected unconfigured ElastiCache placeholder; routed REDIS_URL to local compose Redis service (redis:6379)")
+
     with open(env_path, "w", encoding="utf-8") as f:
         f.write(content)
 except Exception as e:
