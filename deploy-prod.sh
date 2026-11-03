@@ -37,7 +37,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 
 # 5. Output status and health
 echo "==> Production services status:"
-docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml --env-file .env.production ps
 
 PUBLIC_IP=$(curl -s --connect-timeout 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "YOUR-EC2-PUBLIC-IP")
 

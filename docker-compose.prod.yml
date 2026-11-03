@@ -62,23 +62,6 @@ services:
       - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://postgres:postgres_prod_password_change_me@db:5432/cyber_engine}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
       - REDIS_REQUIRED=true
-      - SECRET_KEY=${SECRET_KEY}
-      - ALLOWED_CORS_ORIGINS=${ALLOWED_CORS_ORIGINS:-https://ternline.vercel.app}
-      - CORS_ALLOW_VERCEL=true
-      - FRONTEND_URL=${FRONTEND_URL:-https://ternline.vercel.app}
-      - AWS_REGION=${AWS_REGION:-us-east-1}
-      - AWS_SES_SOURCE=${AWS_SES_SOURCE:-noreply@ternline.io}
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-noreply@ternline.io}
-      - INITIAL_ADMIN_API_KEY=${INITIAL_ADMIN_API_KEY:-}
-      - INITIAL_TENANT_ID=${INITIAL_TENANT_ID:-tenant-alpha}
-      - INVESTIGATOR_PROVIDER=${INVESTIGATOR_PROVIDER:-muse}
-      - INVESTIGATOR_BASE_URL=${INVESTIGATOR_BASE_URL:-https://api.meta.ai/v1}
-      - INVESTIGATOR_MODEL=${INVESTIGATOR_MODEL:-muse-spark-1.3}
-      - INVESTIGATOR_API_KEY=${INVESTIGATOR_API_KEY:-}
       - ALLOW_SIMULATION_API=false
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/ops/health"]
