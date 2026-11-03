@@ -2316,6 +2316,43 @@ service:
     </div>`;
 }
 
+function governance() {
+  return head('Trust / AI Governance', 'Cryptographic verification, citation audit trails, and hallucination guardrails for deep investigations.')
+    + `<div class="grid cols-3" style="margin-bottom:20px;">
+        <div class="card metric">
+          <div class="metric-label">CITATION AUDIT STATUS</div>
+          <div class="metric-val" style="color:var(--lime);">100% AUDITED</div>
+          <div class="metric-sub">Zero hallucinated event IDs permitted</div>
+        </div>
+        <div class="card metric">
+          <div class="metric-label">GROUNDING POLICY</div>
+          <div class="metric-val" style="color:var(--blue);">STRICT DB PARITY</div>
+          <div class="metric-sub">Evidence checked against DB telemetry</div>
+        </div>
+        <div class="card metric">
+          <div class="metric-label">HALLUCINATION GUARDS</div>
+          <div class="metric-val" style="color:var(--purple);">ACTIVE</div>
+          <div class="metric-sub">Auto-rejection on unverified claims</div>
+        </div>
+      </div>
+      <div class="panel pad">
+        <h3 style="margin-top:0;">Forensic Investigation Integrity & Evidence Guardrails</h3>
+        <p class="tiny muted" style="margin-bottom:16px;">All forensic investigation reports produced by deep AI models are cryptographically validated and audited against raw database records before delivery to operators.</p>
+        <div class="card" style="margin-bottom:12px;padding:14px;background:var(--panel2);border:1px solid var(--line);">
+          <div style="font-weight:700;color:var(--text);margin-bottom:4px;">? Zero-Hallucination Citations</div>
+          <div class="tiny muted">Every event cited in a finding investigation must verifiably exist in the tenant's PostgreSQL database. Any candidate finding citing phantom IDs is rejected.</div>
+        </div>
+        <div class="card" style="margin-bottom:12px;padding:14px;background:var(--panel2);border:1px solid var(--line);">
+          <div style="font-weight:700;color:var(--text);margin-bottom:4px;">? Multi-Hypothesis Alternative Explanations</div>
+          <div class="tiny muted">AI models are forced to generate and score benign operational explanations to prevent false-positive escalations.</div>
+        </div>
+        <div class="card" style="padding:14px;background:var(--panel2);border:1px solid var(--line);">
+          <div style="font-weight:700;color:var(--text);margin-bottom:4px;">? Dual-Custody Approval for Active Containment</div>
+          <div class="tiny muted">Automated response playbooks require cryptographically signed human approval before executing sensitive remediation (e.g. revoking API keys or session isolation).</div>
+        </div>
+      </div>`;
+}
+
 function settings() {
   const currentTab = window._settingsActiveTab || 'workspace';
   const policy = cache.defensePolicy || {
