@@ -42,7 +42,7 @@ class EmailDeliveryService:
         Sends an account activation and email verification link to a newly registered user.
         """
         frontend_base = (base_url or settings.FRONTEND_URL).rstrip("/")
-        verification_link = f"{frontend_base}/verify-email?token={token}"
+        verification_link = f"{frontend_base}/console?token={token}"
 
         subject = f"Verify your email for {tenant_name} | Ternline"
         
@@ -100,7 +100,7 @@ class EmailDeliveryService:
     ) -> bool:
         """Sends a secure password reset link."""
         frontend_base = (base_url or settings.FRONTEND_URL).rstrip("/")
-        reset_link = f"{frontend_base}/reset-password?token={token}"
+        reset_link = f"{frontend_base}/console?token={token}&reset=true"
 
         subject = "Reset your Ternline account password"
         text_body = (
