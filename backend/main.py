@@ -256,12 +256,14 @@ async def control_room():
     """
     Serves the production Ternline Control Room.
     """
-    cr_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "TERNLINE_Control_Room_Enhanced.html")
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cr_path = os.path.join(base_dir, "console.html")
     if os.path.exists(cr_path):
         return FileResponse(cr_path)
     return JSONResponse({"error": "Control Room interface not found"}, status_code=404)
 
 
+@app.get("/docs", include_in_schema=False)
 @app.get("/documentation", include_in_schema=False)
 @app.get("/guide", include_in_schema=False)
 @app.get("/docs/guide", include_in_schema=False)
@@ -269,7 +271,8 @@ async def documentation():
     """
     Serves the Ternline Developer Onboarding & SDK Guide.
     """
-    doc_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "documentation.html")
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    doc_path = os.path.join(base_dir, "docs.html")
     if os.path.exists(doc_path):
         return FileResponse(doc_path)
     return JSONResponse({"error": "Documentation page not found"}, status_code=404)

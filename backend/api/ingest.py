@@ -244,8 +244,11 @@ async def ingest_event(
     # Enforce tenant isolation server-side
     event.tenant_id = auth.tenant_id
 
-    # Verify that the event's app_id matches the authenticated API key scope
-    if event.app_id != auth.app_id:
+    # Verify that the event's app_id matches the authenticated API key scope.
+    # Operator JWTs (auth_type='jwt') are tenant-scoped and may ingest for any registered
+    # app within their tenant (e.g. console self-test, SDK validation). Machine API keys
+    # must match their provisioned app_id exactly.
+    if auth.auth_type != 'jwt' and event.app_id != auth.app_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"API key is scoped to application '{auth.app_id}', not '{event.app_id}'"
@@ -405,7 +408,8 @@ async def ingest_events_batch(
 
     for event in payload.events:
         event.tenant_id = auth.tenant_id
-        if event.app_id != auth.app_id:
+        # Machine API keys enforce per-app scope; operator JWTs are tenant-scoped
+        if auth.auth_type != 'jwt' and event.app_id != auth.app_id:
             errors.append({
                 "event_id": event.event_id,
                 "error": f"Mismatched app_id scope: expected {auth.app_id}, got {event.app_id}"

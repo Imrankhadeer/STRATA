@@ -180,7 +180,7 @@ def test_password_forgot_and_reset_flow():
     last_email = email_service.get_last_sent_email()
     assert last_email["to_email"] == email
     reset_link = last_email["metadata"]["reset_link"]
-    reset_token = reset_link.split("token=")[-1]
+    reset_token = reset_link.split("token=")[-1].split("&")[0]
     assert len(reset_token) >= 16
 
     # 3. Perform reset

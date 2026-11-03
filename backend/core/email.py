@@ -100,7 +100,7 @@ class EmailDeliveryService:
     ) -> bool:
         """Sends a secure password reset link."""
         frontend_base = (base_url or settings.FRONTEND_URL).rstrip("/")
-        reset_link = f"{frontend_base}/console?token={token}&reset=true"
+        reset_link = f"{frontend_base}/console?reset=true&token={token}"
 
         subject = "Reset your Ternline account password"
         text_body = (

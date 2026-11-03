@@ -417,6 +417,28 @@ def update_member_role(
     )
 
 
+@router.get("/current", response_model=WorkspaceInfo)
+def get_current_workspace(
+    auth: AuthContext = Depends(get_current_auth),
+    db: Session = Depends(get_db),
+):
+    """Returns info for the authenticated operator's current workspace."""
+    tenant = db.query(Tenant).filter(Tenant.id == auth.tenant_id).first()
+    if not tenant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found.")
+    member_count = db.query(WorkspaceMemberModel).filter(
+        WorkspaceMemberModel.tenant_id == auth.tenant_id
+    ).count() or 1
+    return WorkspaceInfo(
+        id=tenant.id,
+        name=tenant.name,
+        role=auth.role if isinstance(auth.role, str) else auth.role.value,
+        is_current=True,
+        member_count=member_count,
+        created_at=tenant.created_at,
+    )
+
+
 @router.put("/current")
 def update_current_workspace_name(
     req: UpdateWorkspaceRequest,

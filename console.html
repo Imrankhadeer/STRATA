@@ -3925,19 +3925,20 @@ async function bootstrapSession() {
     const token = urlParams.get('token');
     const path = window.location.pathname;
 
-    if (token && (path.includes('verify-email') || path.includes('console') || path === '/')) {
+    const isReset = urlParams.get('reset') === 'true' || path.includes('reset-password');
+    if (token && isReset) {
+      showLoginGate();
+      switchGateTab('reset');
+      const rInput = $('#gateResetToken');
+      if (rInput) rInput.value = token;
+      return;
+    } else if (token && (urlParams.get('verify') === 'true' || path.includes('verify-email') || path.includes('console') || path === '/')) {
       showLoginGate();
       switchGateTab('verify');
       const vInput = $('#gateVerifyToken');
       if (vInput) vInput.value = token;
       // Auto verify if coming from verification email link
       handleGateVerify();
-      return;
-    } else if (token && path.includes('reset-password')) {
-      showLoginGate();
-      switchGateTab('reset');
-      const rInput = $('#gateResetToken');
-      if (rInput) rInput.value = token;
       return;
     }
   }
@@ -4902,7 +4903,26 @@ window.switchSettingsTab = switchSettingsTab;
 window.switchSdkTab = switchSdkTab;
 window.validateRegPassword = validateRegPassword;
 window.closeModal = typeof closeModal !== 'undefined' ? closeModal : () => { $('#modalBack')?.classList.add('hide'); };
-window.modal = typeof modal !== 'undefined' ? modal : () => {};
+// modal(html) — convenience wrapper used by Register App, Create Workspace, etc.
+// Renders raw HTML as modal body content (no title bar; content provides its own heading).
+window.modal = function modal(innerHtml) {
+  const back = $('#modalBack');
+  const content = $('#modalContent');
+  if (!back || !content) {
+    console.error('modal(): #modalBack or #modalContent not found in DOM');
+    return;
+  }
+  content.innerHTML = `<div class="pad" style="position:relative;">`
+    + `<button class="btn small ghost drawerclose" data-action="close-modal" `
+    + `style="position:absolute;top:0;right:0;z-index:1;" onclick="closeModal()">✕</button>`
+    + innerHtml
+    + `</div>`;
+  back.classList.remove('hide');
+  // Allow data-action="close-modal" buttons inside the modal to close it
+  content.querySelectorAll('[data-action="close-modal"]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal());
+  });
+};
 window.toast = typeof toast !== 'undefined' ? toast : (m) => alert(m);
 window.setPage = setPage;
 window.refresh = refresh;

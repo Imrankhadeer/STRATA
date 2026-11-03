@@ -1127,7 +1127,7 @@ X-Ternline-Signature: t=1730578490,v1=9f82c04...
 <p>Ternline supports production deployment with the frontend hosted on <strong>Vercel</strong> and the backend containerized on <strong>AWS (ECS Fargate / EC2)</strong>.</p>
 <h3 id="deployment-arch">Architecture Overview</h3>
 <ul>
-<li><strong>Frontend (Vercel):</strong> Static HTML5 control room (<code>index.html</code>, <code>TERNLINE_Control_Room_Enhanced.html</code>, <code>documentation.html</code>). Routes and HSTS/CSP security headers managed via <code>vercel.json</code>.</li>
+<li><strong>Frontend (Vercel):</strong> Static HTML5 control room (<code>index.html</code>, <code>console.html</code>, <code>docs.html</code>). Routes and HSTS/CSP security headers managed via <code>vercel.json</code>.</li>
 <li><strong>Backend API (AWS):</strong> Python 3.12 FastAPI container running behind an Application Load Balancer (ALB). Multi-stage production <code>Dockerfile</code> executing as non-root <code>appuser</code>.</li>
 <li><strong>Database (AWS RDS):</strong> PostgreSQL 16 with SSL enforcement (<code>sslmode=require</code>). SQLite is strictly prohibited.</li>
 <li><strong>Distributed State (AWS ElastiCache):</strong> Redis 7+ with in-transit encryption (TLS) for multi-worker correlation and rate limits.</li>

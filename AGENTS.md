@@ -112,7 +112,7 @@ curl -X POST http://localhost:8000/api/v1/keys \
 
 ## 6. Architectural Constraints & Code Rules
 
-1. **Backend Only:** All changes must be strictly backend engineering. Do not modify or redesign frontend files (`TERNLINE_Control_Room_Enhanced.html`, `index.html`, etc.).
+1. **Backend Only:** All changes must be strictly backend engineering. Do not modify or redesign frontend files (`console.html`, `index.html`, etc.).
 2. **Zero Ingestion Latency Impact:** Fast Track detection must remain deterministic in pure Python/Redis Lua (<1ms). Never place synchronous LLM API calls on the ingestion path.
 3. **Tenant Boundary Enforcement:** All Redis keys, PostgreSQL queries, and state storage must remain strictly scoped by `tenant_id`.
 4. **No Silent In-Memory Fallback in Production:** In `production`/`staging` environments, required Redis dependencies must fail fast rather than silently falling back to process-local state.

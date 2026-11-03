@@ -3,10 +3,10 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import pytest
 
-DOC_PATH = Path("documentation.html")
+DOC_PATH = Path("docs.html") if Path("docs.html").exists() else Path("documentation.html")
 
 def test_documentation_file_exists():
-    assert DOC_PATH.exists(), "documentation.html must exist"
+    assert DOC_PATH.exists(), f"{DOC_PATH} must exist"
 
 def test_documentation_anchors_and_links():
     html = DOC_PATH.read_text(encoding="utf-8")

@@ -60,8 +60,8 @@ services:
       - ./sdk:/app/sdk
       - ./scenarios:/app/scenarios
       - ./index.html:/app/index.html
-      - ./TERNLINE_Control_Room_Enhanced.html:/app/TERNLINE_Control_Room_Enhanced.html
-      - ./documentation.html:/app/documentation.html
+      - ./console.html:/app/console.html
+      - ./docs.html:/app/docs.html
       - ./docker-entrypoint.sh:/app/docker-entrypoint.sh
 
 volumes:

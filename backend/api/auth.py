@@ -431,7 +431,7 @@ def reset_password(
     req: PasswordResetConfirmRequest,
     db: Session = Depends(get_db),
 ):
-    token = req.token.strip()
+    token = req.token.strip().split("&")[0]
     user = db.query(UserModel).filter(UserModel.reset_token == token).first()
 
     if not user:

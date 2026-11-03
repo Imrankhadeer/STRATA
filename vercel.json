@@ -34,7 +34,7 @@
     },
     {
       "source": "/documentation",
-      "destination": "/documentation.html"
+      "destination": "/docs.html"
     },
     {
       "source": "/guide",

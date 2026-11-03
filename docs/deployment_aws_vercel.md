@@ -1,7 +1,7 @@
 # Ternline Production Deployment Guide: Frontend on Vercel & Backend on AWS
 
 This guide outlines the production deployment architecture and step-by-step setup for running Ternline with:
-- **Frontend UI & Documentation:** Hosted globally on **Vercel** (`index.html`, `TERNLINE_Control_Room_Enhanced.html`, `documentation.html`).
+- **Frontend UI & Documentation:** Hosted globally on **Vercel** (`index.html`, `console.html`, `docs.html`).
 - **Backend API & Detection Engine:** Hosted on **AWS** (ECS Fargate / App Runner / EC2) with AWS RDS PostgreSQL 16, AWS ElastiCache Redis 7, and AWS SES for email verification.
 
 ---
@@ -61,8 +61,8 @@ The frontend is fully configured via `vercel.json` with clean routing, security 
 
 ### Step 2: Route Mapping (Handled by `vercel.json`)
 - `/` &rarr; `index.html` (Landing page & threat overview)
-- `/console` &rarr; `TERNLINE_Control_Room_Enhanced.html` (Full SOC Control Room)
-- `/docs` &rarr; `documentation.html` (API & Architecture Documentation)
+- `/console` &rarr; `console.html` (Full SOC Control Room)
+- `/docs` &rarr; `docs.html` (API & Architecture Documentation)
 - `/verify-email` &rarr; Automatic verification token capture and session boot
 
 ### Step 3: Connect Frontend to Your AWS Backend
