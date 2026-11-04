@@ -9,16 +9,38 @@
 <title>TERNLINE — Security Intelligence for Distributed Applications</title>
 <style>
 :root{--bg:#090e0c;--side:#0d1411;--panel:#111a16;--panel2:#16211b;--panel3:#1b2921;--line:#293a30;--text:#e7f0e9;--muted:#9aaba0;--dim:#6e8074;--lime:#c5f36b;--green:#75d6a3;--red:#ff7777;--amber:#f3c16e;--blue:#8ebcff;--purple:#c1a2ff;--radius:13px;--shadow:0 16px 48px #0007}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:13px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--lime);outline-offset:2px}a{color:var(--lime)}/* Modern, Sleek, Compact Sidebar */
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:13px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--lime);outline-offset:2px}a{color:var(--lime)}/* Sleek, Polished, Compact Sidebar with Dark Custom Scrollbars */
+html {
+  color-scheme: dark;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #243329 transparent;
+}
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #243329;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #39523f;
+}
+
 .app {
   display: grid;
-  grid-template-columns: 228px minmax(0, 1fr);
+  grid-template-columns: 216px minmax(0, 1fr);
   min-height: 100vh;
 }
 .sidebar {
   background: #090e0c;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 14px 10px;
+  padding: 10px 7px;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -26,10 +48,10 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 7px;
   z-index: 5;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-color: #243329 transparent;
 }
 .sidebar::-webkit-scrollbar {
   width: 4px;
@@ -38,66 +60,66 @@
   background: transparent;
 }
 .sidebar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
+  background: #243329;
+  border-radius: 9999px;
 }
 .sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(183, 243, 107, 0.35);
+  background: rgba(183, 243, 107, 0.4);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 2px 6px 6px;
+  gap: 8px;
+  padding: 2px 4px 4px;
 }
 .brandmark {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border: 1px solid rgba(183, 243, 107, 0.35);
   background: linear-gradient(135deg, #1c2e1b, #0f1813);
-  border-radius: 7px;
+  border-radius: 6px;
   display: grid;
   place-items: center;
   color: var(--lime);
   font-weight: 800;
-  font-size: 15px;
-  box-shadow: 0 0 12px rgba(183, 243, 107, 0.1);
+  font-size: 13px;
+  box-shadow: 0 0 10px rgba(183, 243, 107, 0.1);
 }
 .brand b {
-  letter-spacing: 0.12em;
-  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-size: 11.5px;
   color: #f0fdf4;
 }
 .brand small {
   display: block;
   color: var(--muted);
-  font-size: 9px;
-  letter-spacing: 0.06em;
+  font-size: 8.5px;
+  letter-spacing: 0.05em;
   font-weight: 500;
 }
 
 .tenantbox {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 7px;
-  padding: 8px 10px;
+  border-radius: 6px;
+  padding: 6px 8px;
 }
 .tenantbox label, .field label {
   display: block;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 8.5px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 2px;
 }
 
 .navgroup {
-  margin: 10px 8px 4px;
-  color: #526356;
-  font-size: 9px;
+  margin: 6px 6px 2px;
+  color: #495a4c;
+  font-size: 8.5px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -106,19 +128,19 @@
   width: 100%;
   text-align: left;
   font: inherit;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 500;
   align-items: center;
-  gap: 8px;
-  padding: 6px 9px;
+  gap: 7px;
+  padding: 4px 7px;
   margin: 1px 0;
   border: 1px solid transparent;
-  border-radius: 6px;
-  color: #94a398;
+  border-radius: 5px;
+  color: #92a296;
   text-decoration: none;
   cursor: pointer;
   background: transparent;
-  transition: all 0.14s ease;
+  transition: all 0.12s ease;
   white-space: nowrap;
 }
 .nav:hover {
@@ -127,20 +149,20 @@
 }
 .nav.active {
   background: rgba(183, 243, 107, 0.08);
-  border-color: rgba(183, 243, 107, 0.22);
+  border-color: rgba(183, 243, 107, 0.18);
   color: var(--lime);
   font-weight: 600;
 }
 .nav .ico {
-  width: 14px;
-  font-size: 11px;
+  width: 13px;
+  font-size: 10.5px;
   text-align: center;
-  color: #5c6e61;
+  color: #55665a;
   flex-shrink: 0;
-  transition: color 0.14s ease;
+  transition: color 0.12s ease;
 }
 .nav:hover .ico {
-  color: #94a398;
+  color: #92a296;
 }
 .nav.active .ico {
   color: var(--lime);
@@ -148,14 +170,17 @@
 
 .nav-badge {
   margin-left: auto;
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 700;
-  padding: 0.5px 5px;
-  border-radius: 6px;
+  padding: 0 4.5px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
   background: rgba(183, 243, 107, 0.12);
   color: var(--lime);
-  line-height: 1.35;
-  border: 1px solid rgba(183, 243, 107, 0.25);
+  line-height: 1;
+  border: 1px solid rgba(183, 243, 107, 0.22);
 }
 .nav-badge.warn {
   background: rgba(247, 162, 59, 0.12);
@@ -174,9 +199,9 @@
 .sidefoot {
   margin-top: auto;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 10px 6px 2px;
+  padding: 8px 6px 2px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 9.5px;
 }
 .main{min-width:0}.topbar{height:62px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 24px;position:sticky;top:0;background:#0a100eeF;backdrop-filter:blur(12px);z-index:4}.crumb{font-weight:700;font-size:13px}.spacer{flex:1}.status{display:flex;align-items:center;gap:7px;color:var(--green);font-size:11px}.dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 12px #75d6a366}.topsearch{width:min(260px,28vw);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--text)}.content{padding:23px 26px 60px;max-width:1600px;margin:auto}.pagehead{display:flex;align-items:flex-start;gap:18px;margin-bottom:20px}.pagehead h1{font-size:23px;line-height:1.2;margin:0 0 6px;letter-spacing:-.035em}.pagehead p{color:var(--muted);margin:0;max-width:780px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}.btn{border:1px solid var(--line);border-radius:8px;padding:8px 11px;background:var(--panel2);color:var(--text);font-weight:650;font-size:11px}.btn:hover{border-color:#607d51;background:#203025}.btn.primary{background:var(--lime);color:#15200e;border-color:var(--lime)}.btn.primary:hover{background:#d7ff89}.btn.danger{border-color:#713b3b;color:#ff9a9a;background:#2a1717}.btn.ghost{background:transparent}.btn.small{padding:5px 8px;font-size:10px}.btn:disabled{opacity:.4;cursor:not-allowed}.grid{display:grid;gap:13px;grid-template-columns:minmax(0,1fr)}.grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);min-width:0}.pad{padding:15px}.panelhead{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line)}.panelhead h3{font-size:12px;margin:0}.panelhead small{margin-left:auto;color:var(--muted)}.metric{padding:14px 15px;min-height:106px}.metric .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.metric strong{display:block;font-size:27px;letter-spacing:-.04em;margin:7px 0 2px}.metric small{color:var(--muted);font-size:10px}.metric .up{color:var(--green)}.metric .warn{color:var(--amber)}.metric .bad{color:var(--red)}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}.muted{color:var(--muted)}.dim{color:var(--dim)}.tiny{font-size:10px}.mono,code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.pill{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:20px;padding:3px 7px;font-size:9px;color:var(--muted);white-space:nowrap}.pill.good{border-color:#315b43;background:#14271c;color:var(--green)}.pill.warn{border-color:#66512c;background:#2a2418;color:var(--amber)}.pill.bad{border-color:#683939;background:#2c1919;color:#ff9696}.pill.info{border-color:#355170;background:#172535;color:var(--blue)}.pill.purple{border-color:#51406e;background:#241c32;color:var(--purple)}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:660px}th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);font-weight:650;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}td{padding:10px 12px;border-bottom:1px solid #223027;color:#d6e1d9;font-size:11px;vertical-align:middle}tr:last-child td{border-bottom:0}tbody tr:hover{background:#18241d}tr.clickable{cursor:pointer}.toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line)}.control{background:#0d1511;border:1px solid var(--line);border-radius:7px;padding:8px 9px;color:var(--text);min-width:0}.control::placeholder{color:#68786e}.control:focus{border-color:#789b52}.toolbar .control{font-size:11px}.field{margin-bottom:12px}.field input,.field select,.field textarea{width:100%;background:#0d1511;border:1px solid var(--line);border-radius:7px;padding:9px;color:var(--text)}.field textarea{min-height:90px;resize:vertical}.field small{display:block;color:var(--dim);font-size:10px;margin-top:4px}.split{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(270px,.8fr);gap:13px}.stack{display:flex;flex-direction:column;gap:12px}.row{display:flex;align-items:center;gap:9px;min-width:0}.between{display:flex;justify-content:space-between;align-items:center;gap:12px}.bar{height:7px;background:#26342b;border-radius:9px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--lime);border-radius:9px}.bar.red>i{background:var(--red)}.bar.amber>i{background:var(--amber)}.bar.blue>i{background:var(--blue)}.list{display:flex;flex-direction:column}.listitem{padding:12px 14px;border-bottom:1px solid var(--line)}.listitem:last-child{border-bottom:0}.listitem h4{margin:0 0 4px;font-size:12px}.listitem p{margin:0;color:var(--muted);font-size:10px}.timeline{padding:4px 0 4px 17px;border-left:1px solid #435344;margin-left:6px}.tlitem{position:relative;padding:0 0 17px 13px}.tlitem:before{content:"";position:absolute;left:-22px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--lime);border:2px solid var(--panel)}.tlitem:last-child{padding-bottom:2px}.codebox{background:#08100c;border:1px solid #26372c;border-radius:9px;padding:12px;color:#c9e7bd;overflow:auto;font-size:10px;line-height:1.6;white-space:pre-wrap}.callout{padding:11px 13px;border:1px solid #3b5138;background:#152219;border-radius:9px;color:#c9d9cb;font-size:11px}.callout.warn{border-color:#66512c;background:#282216}.callout.danger{border-color:#683939;background:#281818}.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding:0 12px}.tab{padding:10px 9px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:11px}.tab.active{color:var(--lime);border-color:var(--lime)}.drawerback{position:fixed;inset:0;background:#0009;z-index:20;display:flex;justify-content:flex-end}.drawer{width:min(580px,95vw);height:100%;overflow:auto;background:#101914;border-left:1px solid var(--line);box-shadow:var(--shadow);padding:20px}.drawer h2{margin:0 0 4px;font-size:19px}.drawerclose{float:right}.modalback{position:fixed;inset:0;background:#000b;z-index:30;display:grid;place-items:center;padding:18px}.modal{width:min(700px,96vw);max-height:90vh;overflow:auto;background:#111a15;border:1px solid #405443;border-radius:14px;box-shadow:var(--shadow);padding:19px}.modal h2{margin:0 0 14px;font-size:17px}.toast{position:fixed;bottom:20px;right:20px;background:#1a2b20;border:1px solid #537344;color:#e5f3df;border-radius:9px;padding:11px 14px;z-index:50;box-shadow:var(--shadow);max-width:360px;font-size:11px}.empty{padding:28px;text-align:center;color:var(--muted)}.kpirow{display:flex;gap:15px;flex-wrap:wrap}.kpirow span{font-size:10px;color:var(--muted)}.kpirow b{display:block;color:var(--text);font-size:16px}.graph{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:15px}.node{border:1px solid #435b46;background:#17251b;border-radius:9px;padding:10px;text-align:center;min-width:0}.node b{display:block;font-size:10px;overflow-wrap:anywhere}.node small{color:var(--muted);font-size:9px}.node .nodeicon{font-size:17px;margin-bottom:5px}.grapharrow{text-align:center;color:var(--lime);padding:5px}.hide{display:none!important}.footerhint{padding:10px 14px;color:var(--dim);font-size:10px;border-top:1px solid var(--line)}.checkbox{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:11px;margin:8px 0}.checkbox input{accent-color:var(--lime)}.mobilemenu{display:none}
 @media(max-width:1050px){.app{grid-template-columns:210px minmax(0,1fr)}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.content{padding:20px}.split{grid-template-columns:1fr}}
@@ -1326,7 +1351,7 @@ function compactMetric(label, value, note, spark = '') {
 function serviceDistributionChart(rows) {
   if(!rows?.length)return chartEmpty('Service coverage will appear when event records include service names.');
   const counts=new Map();
-  rows.forEach(r=>{const name=String(field(r,'service','service_name','source_service'));if(name!=='—')counts.set(name,(counts.get(name)||0)+1);});
+  rows.forEach(r=>{const name=String(field(r,'service_id','service','service_name','source_service'));if(name!=='—')counts.set(name,(counts.get(name)||0)+1);});
   const list=[...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,7);
   if(!list.length)return chartEmpty('Returned events do not contain service identifiers.');
   const max=Math.max(1,...list.map(x=>x[1]));
@@ -1414,7 +1439,7 @@ function overview() {
   const findingSpark = sparkline(recent);
   const investigationSpark = sparkline(investigationsRows);
   const openFindings = Number(sec.open_findings ?? 0);
-  const serviceCount = new Set(events.map(r=>field(r,'service','service_name','source_service')).filter(v=>v!=='—')).size;
+  const serviceCount = new Set(events.map(r=>field(r,'service_id','service','service_name','source_service')).filter(v=>v!=='—')).size;
   const healthState = String(pipe.fast_track_engine_status || 'unknown').toLowerCase();
 
   return head('Overview', 'A live picture of telemetry, detection activity and investigation outcomes across your connected applications.', `<button class="btn small primary" data-action="refresh">↻ Refresh Data</button>`)
@@ -1733,6 +1758,9 @@ async function viewInvestigationReport(investigationId) {
             <p class="muted tiny" style="margin:4px 0">${esc(cr.description)}</p>
             <div class="tiny dim">Rationale: ${esc(cr.rationale)}</div>
             <pre class="codebox" style="margin-top:6px">${esc(JSON.stringify(cr.proposed_thresholds, null, 2))}</pre>
+            <div style="margin-top:8px">
+              <button class="btn small primary" data-action="promote-candidate-rule" data-title="${esc(cr.title)}" data-desc="${esc(cr.description)}" data-logic="${esc(cr.logic_type)}" data-rationale="${esc(cr.rationale)}">⚡ Promote to Fast Track Rule Registry</button>
+            </div>
           </div>
         `).join('') || '<div class="dim tiny">Zero candidate rules proposed</div>'}
 
@@ -5598,11 +5626,18 @@ async function executeDeepSearch() {
             } else if (data.stage === 'evidence_ready') {
               appendLog('✓', `[2/4] Evidence Context: ${data.detail || (data.events_count + ' events gathered')}`);
             } else if (data.stage === 'inference_dispatched') {
-              appendLog('▶', `[3/4] AI Inference: Investigation provider returned model ${data.model || 'not reported'}...`);
+              appendLog('▶', `[3/4] AI Inference: Investigation provider dispatched to ${data.model || 'muse-spark-1.3'}...`);
+            } else if (data.stage === 'model_dispatch') {
+              appendLog('▶', `[3/4] Model Inference: ${data.detail || 'Dispatching...'}`);
+            } else if (data.stage === 'model_completed') {
+              appendLog('✓', `[3/4] Model Completed: Verdict '${data.verdict}', ${data.hypotheses_count || 0} hypotheses formulated.`);
+              if (data.report) finalReport = data.report;
             } else if (data.stage === 'citation_audit') {
               appendLog('▶', '[4/4] Grounding Audit: Auditing mathematical citations against PostgreSQL...');
             } else if (data.stage === 'audit_passed') {
               appendLog('✓', `[4/4] Grounding Verified: ${data.detail}`);
+            } else if (data.stage === 'audit_failed') {
+              appendLog('✕', `[4/4] Grounding Audit Notice: ${data.detail || 'Audit flagged ungrounded citations'}`);
             } else if (data.stage === 'complete') {
               finalReport = data.report;
             }
@@ -5825,8 +5860,28 @@ async function rotateKey(keyId) {
 async function promoteCandidateRule(btn) {
   const title = btn.dataset.title;
   const description = btn.dataset.desc;
-  const logicType = btn.dataset.logic || 'sequence';
+  const logicType = (btn.dataset.logic || 'threshold').toLowerCase();
   const rationale = btn.dataset.rationale || 'Promoted from Deep Track AI Investigation';
+
+  const isSequence = logicType === 'sequence';
+  const parameters = isSequence ? {
+    rule_type: 'sequence',
+    group_by: ['tenant_id', 'trace_id'],
+    window_seconds: 300,
+    require_distinct_services: true,
+    sequence_stages: [
+      { stage_id: 'ingress', service_id: 'api-service', conditions: [{ field: 'service_id', operator: 'equals', value: 'api-service' }] },
+      { stage_id: 'egress', service_id: 'worker-service', conditions: [{ field: 'service_id', operator: 'equals', value: 'worker-service' }] }
+    ],
+    rationale: rationale
+  } : {
+    rule_type: 'threshold',
+    group_by: ['tenant_id', 'service_id'],
+    window_seconds: 300,
+    conditions: [{ field: 'event_type', operator: 'contains', value: 'sensitive' }],
+    threshold: { metric: 'count', operator: 'gte', value: 5 },
+    rationale: rationale
+  };
 
   try {
     toast('Submitting candidate rule proposal to Rule Registry...');
@@ -5836,11 +5891,7 @@ async function promoteCandidateRule(btn) {
         target_detector: 'detector.deep_track.promoted',
         title: title,
         description: description,
-        parameters: {
-          logic_type: logicType,
-          rationale: rationale,
-          condition: { severity: 'high' }
-        }
+        parameters: parameters
       }
     });
     toast('Candidate rule submitted to Rule Registry! Opening rules...');

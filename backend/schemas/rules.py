@@ -148,6 +148,15 @@ class DeclarativeRule(BaseModel):
                     if re.search(pattern, str_repr, re.IGNORECASE):
                         raise ValueError(f"Unsafe expression detected in rule parameter '{k}': '{v}'")
             BruteForceRuleParameters(**raw_params)
+        elif self.target_detector in ("detector.deep_track.promoted", "generic.declarative"):
+            for k, v in raw_params.items():
+                str_repr = str(v)
+                for pattern in UNSAFE_PATTERNS:
+                    if re.search(pattern, str_repr, re.IGNORECASE):
+                        raise ValueError(f"Unsafe expression detected in rule parameter '{k}': '{v}'")
+            if raw_params.get("rule_type") in ("threshold", "sequence"):
+                from backend.schemas.declarative_spec import GenericDeclarativeRuleDefinition
+                GenericDeclarativeRuleDefinition(**raw_params)
         elif raw_params.get("rule_type") in ("threshold", "sequence"):
             from backend.schemas.declarative_spec import GenericDeclarativeRuleDefinition
             GenericDeclarativeRuleDefinition(**raw_params)

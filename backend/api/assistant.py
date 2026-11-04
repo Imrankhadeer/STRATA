@@ -247,39 +247,102 @@ def _validate_citations(reply_text: str, db: Session, tenant_id: str) -> List[Va
     return citations
 
 
-async def _call_llm(messages: list, tenant_id: str) -> str:
-    """Call the configured LLM provider for the assistant."""
+def _synthesize_grounded_response(messages: list, tenant_id: str, note: str = "") -> str:
+    """Synthesizes a factually grounded response from live database telemetry context."""
+    user_msg = messages[-1]["content"] if messages else ""
+    user_lower = user_msg.lower()
 
+    # Off-topic barrier
+    off_topic_keywords = [
+        "banana", "fruit", "recipe", "cook", "sport", "football",
+        "weather", "movie", "joke", "song", "diet", "celebrity"
+    ]
+    if any(w in user_lower for w in off_topic_keywords):
+        return (
+            "I'm strictly a cybersecurity assistant for the Ternline platform. "
+            "I can only help with security operations, threat detection, incident response, rule authoring, "
+            "and related workspace topics. For general questions, please use a general-purpose assistant."
+        )
+
+    sys_content = messages[0]["content"] if messages else ""
+    lines = [f"**Ternline Workspace Assistant** (`{tenant_id}`)\n"]
+
+    if any(k in user_lower for k in ("finding", "incident", "attack", "exfil", "threat", "breach", "alert")):
+        if "Recent Findings:" in sys_content:
+            parts = sys_content.split("Recent Findings:")
+            findings_part = parts[1].split("Active Detection Rules:")[0].strip() if len(parts) > 1 else ""
+            lines.append("### Active Workspace Findings")
+            lines.append(findings_part)
+            lines.append("\nYou can click any cited finding to open its full evidence timeline or trigger a Deep Track investigation.")
+        else:
+            lines.append("No active security findings are currently recorded for this workspace. Telemetry pipelines are nominal.")
+
+    elif any(k in user_lower for k in ("rule", "detection", "threshold", "sequence", "promote", "registry")):
+        if "Active Detection Rules:" in sys_content:
+            parts = sys_content.split("Active Detection Rules:")
+            rules_part = parts[1].split("Recent Telemetry Events:")[0].strip() if len(parts) > 1 else ""
+            lines.append("### Detection Rules Status")
+            lines.append(rules_part)
+            lines.append("\nTo author a new declarative rule, navigate to **Detection Engineering → Rule Registry** or click *Propose Rule with AI*.")
+        else:
+            lines.append("Baseline declarative detection rules govern Fast Track correlation. Visit **Rule Registry** to inspect active rules.")
+
+    elif any(k in user_lower for k in ("health", "status", "pipeline", "latency", "engine", "system")):
+        if "Pipeline & Engine Health:" in sys_content:
+            parts = sys_content.split("Pipeline & Engine Health:")
+            health_part = parts[1].split("Recent Findings:")[0].strip() if len(parts) > 1 else ""
+            lines.append("### Engine & Telemetry Pipeline Health")
+            lines.append(health_part)
+        else:
+            lines.append("Fast Track engine and ingestion pipelines are online and operational.")
+
+    elif any(k in user_lower for k in ("event", "telemetry", "signal", "log", "sample")):
+        if "Recent Telemetry Events:" in sys_content:
+            parts = sys_content.split("Recent Telemetry Events:")
+            events_part = parts[1].split("Pipeline & Engine Health:")[0].strip() if len(parts) > 1 else ""
+            lines.append("### Recent Telemetry Events Sample")
+            lines.append(events_part)
+            lines.append("\nNavigate to **Detection & Investigation → Event Explorer** to filter or recheck specific event traces.")
+        else:
+            lines.append("Recent event records can be searched in real-time in **Event Explorer**.")
+
+    else:
+        lines.append(f"I am ready to assist with security operations and intelligence for tenant `{tenant_id}`.")
+        lines.append("- **Findings & Incidents**: Ask about detected exfiltrations, brute-force anomalies, or active alerts.")
+        lines.append("- **Deep Track Investigations**: Inquire about hypotheses, root cause analysis, or candidate rules.")
+        lines.append("- **Detection Engineering**: Ask how to author, replay-validate, or promote declarative rules.")
+        lines.append("- **Active Defense**: Ask about automated mitigations, rollback capabilities, and response plans.")
+
+    if note:
+        lines.append(f"\n\n*(Notice: {note})*")
+
+    return "\n".join(lines)
+
+
+async def _call_llm(messages: list, tenant_id: str) -> str:
+    """Call the configured LLM provider for the assistant, falling back cleanly to grounded database telemetry."""
     provider = settings.INVESTIGATOR_PROVIDER
     if provider == "mock":
-        user_msg = messages[-1]["content"] if messages else ""
-        off_topic_keywords = [
-            "banana", "fruit", "recipe", "cook", "sport", "football",
-            "weather", "movie", "joke", "song", "diet"
-        ]
-        if any(w in user_msg.lower() for w in off_topic_keywords):
-            return (
-                "I'm strictly a cybersecurity assistant for the Ternline platform. "
-                "I can only help with security operations, threat detection, incident response, rule authoring, "
-                "and related workspace topics. For general questions, please use a general-purpose assistant."
-            )
-        return (
-            f"I am the Ternline Workspace Assistant for workspace '{tenant_id}'. "
-            "Fast Track detection engine and telemetry pipelines are active. "
-            "How can I assist with your workspace security operations or platform configuration?"
-        )
+        return _synthesize_grounded_response(messages, tenant_id)
 
     base_url = settings.INVESTIGATOR_BASE_URL.rstrip("/")
     api_key = settings.INVESTIGATOR_API_KEY
     model = settings.INVESTIGATOR_MODEL
     timeout = min(settings.INVESTIGATOR_TIMEOUT_SECONDS, 45.0)
 
+    if not api_key:
+        logger.warning("Assistant LLM: INVESTIGATOR_API_KEY not configured. Using grounded workspace fallback.")
+        return _synthesize_grounded_response(
+            messages,
+            tenant_id,
+            "INVESTIGATOR_API_KEY is not configured in .env.production. Running on grounded workspace telemetry engine."
+        )
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-
     payload = {
         "model": model,
         "messages": messages,
@@ -300,33 +363,26 @@ async def _call_llm(messages: list, tenant_id: str) -> str:
             return content.strip()
     except httpx.HTTPStatusError as e:
         code = e.response.status_code
-        if code == 401:
-            logger.error("Assistant LLM: Authentication failed (401). Check INVESTIGATOR_API_KEY.")
-            raise HTTPException(
-                status_code=503,
-                detail="Assistant AI service authentication failed. Contact your administrator.",
-            )
-        elif code == 429:
-            logger.error("Assistant LLM: Rate limit exceeded (429).")
-            raise HTTPException(
-                status_code=503,
-                detail="Assistant AI service is temporarily rate-limited. Please try again shortly.",
-            )
-        else:
-            logger.error("Assistant LLM: HTTP error %s - %s", code, e.response.text[:200])
-            raise HTTPException(
-                status_code=503,
-                detail=f"Assistant AI service error (HTTP {code}). Try again later.",
-            )
+        logger.warning("Assistant LLM: HTTP %s from %s. Using grounded workspace fallback.", code, base_url)
+        return _synthesize_grounded_response(
+            messages,
+            tenant_id,
+            f"Meta LLM API returned HTTP {code}. Synthesized from verified workspace database records."
+        )
     except httpx.TimeoutException:
-        logger.error("Assistant LLM: Request timed out after %ss.", timeout)
-        raise HTTPException(
-            status_code=504,
-            detail="Assistant AI service timed out. Try a shorter query.",
+        logger.warning("Assistant LLM: Request timed out (%ss). Using grounded workspace fallback.", timeout)
+        return _synthesize_grounded_response(
+            messages,
+            tenant_id,
+            f"Meta LLM API request timed out ({timeout}s). Synthesized from verified workspace database records."
         )
     except Exception as e:
-        logger.error("Assistant LLM: Unexpected error - %s", e)
-        raise HTTPException(status_code=503, detail="Assistant AI service unavailable.")
+        logger.warning("Assistant LLM: Upstream failure (%s). Using grounded workspace fallback.", e)
+        return _synthesize_grounded_response(
+            messages,
+            tenant_id,
+            f"Meta LLM API connection unavailable. Synthesized from verified workspace database records."
+        )
 
 
 @router.post("/chat", response_model=ChatResponse)

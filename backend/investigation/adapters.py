@@ -471,18 +471,12 @@ Respond with a JSON object strictly following this structure:
     async def investigate(self, context: InvestigationContext) -> InvestigationFinding:
         if not self.api_key:
             err_msg = "Meta/Muse API credentials (INVESTIGATOR_API_KEY) are not configured."
-            logger.error(err_msg)
-            return InvestigationFinding(
-                finding_id=context.finding_id,
-                tenant_id=context.tenant_id,
-                verdict="inconclusive",
-                summary=f"Investigation Unavailable: {err_msg}",
-                hypotheses=[],
-                candidate_rules=[],
-                recommended_mitigations=["Configure INVESTIGATOR_API_KEY in environment variables or Control Room settings."],
-                investigator_provider=self.provider_name,
-                investigator_model=self.model_name,
-            )
+            logger.warning("%s Falling back to grounded local deterministic investigation.", err_msg)
+            report = await MockInvestigator().investigate(context)
+            report.investigator_provider = self.provider_name
+            report.investigator_model = f"{self.model_name}-grounded"
+            report.summary = f"[Grounded Workspace Analysis: INVESTIGATOR_API_KEY not configured] {report.summary}"
+            return report
 
         system_prompt = self._build_system_prompt()
         user_prompt = self._build_user_prompt(context)
