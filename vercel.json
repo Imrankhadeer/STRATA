@@ -6,19 +6,19 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://ternline-cyber-engine.onrender.com/api/:path*"
+      "destination": "http://13.236.168.75:8000/api/:path*"
     },
     {
       "source": "/v1/:path*",
-      "destination": "https://ternline-cyber-engine.onrender.com/v1/:path*"
+      "destination": "http://13.236.168.75:8000/v1/:path*"
     },
     {
       "source": "/health",
-      "destination": "https://ternline-cyber-engine.onrender.com/health"
+      "destination": "http://13.236.168.75:8000/health"
     },
     {
       "source": "/metrics",
-      "destination": "https://ternline-cyber-engine.onrender.com/metrics"
+      "destination": "http://13.236.168.75:8000/metrics"
     },
     {
       "source": "/",

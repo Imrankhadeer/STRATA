@@ -9,6 +9,23 @@ echo "=========================================================="
 echo " Ternline Production Deployment on AWS EC2"
 echo "=========================================================="
 
+# 0. Automatic pre-deployment snapshot if database is currently running
+BACKUP_DIR="./backups"
+if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^ternline_prod_db$"; then
+  mkdir -p "${BACKUP_DIR}"
+  TS=$(date +"%Y%m%d_%H%M%S")
+  BF="${BACKUP_DIR}/pre_deploy_backup_${TS}.sql"
+  echo "==> Taking automatic pre-deployment database backup to ${BF}..."
+  if docker exec ternline_prod_db pg_dump -U postgres cyber_engine > "${BF}" 2>/dev/null; then
+    if [ -s "${BF}" ]; then
+      gzip -f "${BF}"
+      echo "✔ Automatic database snapshot saved: ${BF}.gz"
+    else
+      rm -f "${BF}"
+    fi
+  fi
+fi
+
 # 1. Ensure .env.production exists
 if [ ! -f .env.production ]; then
   if [ -f .env.production.example ]; then
