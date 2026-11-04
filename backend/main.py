@@ -32,6 +32,7 @@ from backend.api.threat_intel import router as threat_intel_router
 from backend.api.auth import router as auth_router
 from backend.api.workspaces import router as workspaces_router
 from backend.api.apps import router as apps_router
+from backend.api.assistant import router as assistant_router
 from backend.core.auth import AuthContext, Permission, require_permission
 
 logging.basicConfig(
@@ -113,6 +114,7 @@ app.include_router(threat_intel_router)
 app.include_router(auth_router)
 app.include_router(workspaces_router)
 app.include_router(apps_router)
+app.include_router(assistant_router)
 
 
 @app.on_event("startup")
