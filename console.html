@@ -1499,6 +1499,9 @@ function findings() {
             <button class="btn small primary" data-action="inspect-finding" data-id="${esc(r.finding_id)}">Inspect</button>
             <button class="btn small" data-action="run-investigation" data-id="${esc(r.finding_id)}">⌘ Deep Track</button>
             <button class="btn small" data-action="plan-defense-finding" data-id="${esc(r.finding_id)}" style="border-color:var(--lime);color:var(--lime)">⛨ Defend</button>
+            ${r.status === 'open' 
+              ? `<button class="btn small" data-action="feedback-finding" data-id="${esc(r.finding_id)}" data-status="resolved" title="Mark Resolved" style="border-color:#3e5833;color:var(--green)">✓ Resolve</button>` 
+              : `<button class="btn small ghost" data-action="feedback-finding" data-id="${esc(r.finding_id)}" data-status="open" title="Reopen Finding">↺ Reopen</button>`}
           </div>` }
         ])
       : empty('No findings returned', 'The backend has returned zero findings for this tenant.', !bearerToken)
@@ -1771,6 +1774,19 @@ async function viewInvestigationReport(investigationId) {
           </ul>
         ` : ''}
 
+        <div class="panel pad" style="margin-top:12px;background:var(--panel2);border-color:#334d38">
+          <div class="between" style="margin-bottom:6px">
+            <b style="color:var(--lime)">Interactive Follow-Up Analysis</b>
+            <span class="pill info tiny">Version-Safe Follow-Up</span>
+          </div>
+          <p class="muted tiny" style="margin:0 0 8px">Ask the investigation adapter targeted forensic questions about this trace. Preserves original findings without mutating audit history.</p>
+          <div class="row" style="gap:6px">
+            <input class="control" id="investigationFollowUpInput" placeholder="e.g. Could this database query volume be legitimate batch synchronization?" style="flex:1;font-size:11px">
+            <button class="btn small primary" data-action="submit-investigation-followup" data-id="${esc(rep.investigation_id)}">Ask Follow-Up</button>
+          </div>
+          <div id="investigationFollowUpResult" style="margin-top:8px"></div>
+        </div>
+
         <div class="callout" style="margin-top:10px">
           <b>Deterministic Grounding:</b> Citations were deterministically audited against stored database records. Candidate detectors are non-authoritative proposals until promoted via Replay Validation.
         </div>
@@ -1870,8 +1886,26 @@ async function inspectEvent(eventId) {
 
 // E. Historical Analysis Page
 function historical() {
-  return head('Historical Analysis', 'Bounded, indexed historical telemetry queries. Read-only safety: historical searches never trigger live detection or response actions.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
+  setTimeout(() => loadTrends(24, 60), 50);
+  return head('Event Trends & Periodic Reports', 'Telemetry signals over time, automated burst anomaly detection, and indexed historical queries.', `<button class="btn small primary" data-action="load-trends" data-hours="24" data-minutes="60">↻ Refresh Trends</button>`)
     + errPanel()
+    + `<div class="panel pad" style="margin-bottom:14px;border-color:#334d38;background:var(--panel2)">
+        <div class="between" style="margin-bottom:8px">
+          <div>
+            <div class="eyebrow">AUTOMATED TELEMETRY INTELLIGENCE</div>
+            <h3 style="margin:2px 0">Periodic Trend Reports & Burst Detection</h3>
+          </div>
+          <div class="row" style="gap:6px">
+            <button class="btn small" data-action="load-trends" data-hours="6" data-minutes="15">6h (15m slices)</button>
+            <button class="btn small active" data-action="load-trends" data-hours="24" data-minutes="60">24h (1h slices)</button>
+            <button class="btn small" data-action="load-trends" data-hours="72" data-minutes="120">72h (2h slices)</button>
+          </div>
+        </div>
+        <p class="muted tiny" style="margin:0 0 10px">Periodically groups historical telemetry into time buckets, analyzing microservice activity baselines and surfacing anomalous volumetric bursts.</p>
+        <div id="trendsContainer">
+          <div class="panel empty" style="padding:16px;text-align:center"><div class="tiny dim">Loading automated telemetry trend report...</div></div>
+        </div>
+      </div>`
     + `<div class="panel pad">
         <div class="between">
           <div><h3 style="margin:0 0 4px">Indexed Time-Range Telemetry Query</h3><div class="tiny muted">Times are converted to UTC ISO-8601 for server query execution. Max bounded window: 90 days.</div></div>
@@ -5413,6 +5447,12 @@ document.addEventListener('click', e => {
     case 'feedback-finding':
       sendFindingFeedback(a.dataset.id, a.dataset.status);
       break;
+    case 'submit-investigation-followup':
+      submitInvestigationFollowUp(a.dataset.id);
+      break;
+    case 'load-trends':
+      loadTrends(Number(a.dataset.hours || 24), Number(a.dataset.minutes || 60));
+      break;
     case 'open-propose-rule':
       openProposeRuleModal();
       break;
@@ -5854,6 +5894,84 @@ async function rotateKey(keyId) {
     refresh();
   } catch (err) {
     toast(`Rotation failed: ${err.message}`);
+  }
+}
+
+async function submitInvestigationFollowUp(invId) {
+  const inp = $('#investigationFollowUpInput');
+  const q = (inp?.value || '').trim();
+  if (!q) {
+    toast('Please enter a follow-up question.');
+    return;
+  }
+  const resEl = $('#investigationFollowUpResult');
+  if (resEl) resEl.innerHTML = `<div class="tiny muted">Analyzing trace evidence with Deep Track adapter...</div>`;
+  try {
+    const res = await request(`/api/v1/investigations/${encodeURIComponent(invId)}/follow-up`, {
+      method: 'POST',
+      body: { query: q }
+    });
+    toast('Follow-up analysis recorded.');
+    if (resEl) {
+      resEl.innerHTML = `
+        <div class="panel pad" style="background:var(--panel);border-color:var(--line);margin-top:6px;border-radius:8px">
+          <div class="between"><b class="tiny" style="color:var(--lime)">Follow-Up Result [${esc(res.entry_id)}]</b><span class="tiny dim">${formatLocalTime(res.created_at)}</span></div>
+          <div class="tiny" style="margin:4px 0;color:var(--text);line-height:1.6">${esc(res.response)}</div>
+        </div>
+      `;
+    }
+  } catch (err) {
+    if (resEl) resEl.innerHTML = `<div class="callout danger tiny">Follow-up failed: ${esc(err.message)}</div>`;
+  }
+}
+
+async function loadTrends(windowHours = 24, intervalMinutes = 60) {
+  const target = $('#trendsContainer');
+  if (!target) return;
+  target.innerHTML = `<div class="panel empty" style="padding:16px;text-align:center"><div class="tiny dim">Querying telemetry trends (${windowHours}h window, ${intervalMinutes}m intervals)...</div></div>`;
+  try {
+    const data = await request(`/api/v1/events/trends?window_hours=${windowHours}&interval_minutes=${intervalMinutes}`);
+    const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+    const maxCount = Math.max(1, ...timeline.map(t => t.event_count || 0));
+
+    target.innerHTML = `
+      ${data.anomaly_detected ? `
+        <div class="callout danger" style="margin-bottom:10px">
+          <div class="between">
+            <b>⚠ Telemetry Burst Anomaly Detected</b>
+            <button class="btn small" data-action="fill-deep-search" data-query="Investigate anomalous telemetry burst in ${data.window_hours}h trend report: ${esc(data.anomaly_reason || '')}">⌘ Investigate with Deep Track</button>
+          </div>
+          <div class="tiny" style="margin-top:3px">${esc(data.anomaly_reason)}</div>
+        </div>
+      ` : `
+        <div class="callout good" style="margin-bottom:10px">
+          <b>✓ Nominal Telemetry Baselines:</b> Zero anomalous spikes or unalerted bursts detected across ${data.total_events} events evaluated in ${data.window_hours}h window.
+        </div>
+      `}
+
+      <div class="panel pad" style="background:var(--panel);margin-bottom:8px">
+        <div class="between" style="margin-bottom:8px">
+          <small class="muted uppercase tiny">Activity by Interval (${timeline.length} slices)</small>
+          <small class="dim tiny">Total: ${data.total_events} events</small>
+        </div>
+        <div class="coverage-list">
+          ${timeline.slice(-12).map((pt, i) => `
+            <div class="coverage-row" style="margin-bottom:6px">
+              <div class="between">
+                <span class="mono tiny">${formatLocalTime(pt.interval_start)}</span>
+                <span class="tiny"><b>${pt.event_count}</b> events ${pt.high_critical_count > 0 ? `<span class="pill bad tiny" style="margin-left:4px">${pt.high_critical_count} critical/high</span>` : ''}</span>
+              </div>
+              <div class="coverage-track" style="height:6px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden">
+                <i style="width:${(pt.event_count / maxCount) * 100}%;height:100%;background:${pt.high_critical_count > 0 ? 'var(--red)' : 'var(--lime)'};display:block;border-radius:4px"></i>
+              </div>
+              <div class="tiny dim" style="margin-top:2px">Active services: ${(pt.top_services && pt.top_services.length) ? pt.top_services.join(', ') : 'none'}</div>
+            </div>
+          `).join('') || '<div class="tiny dim">No events recorded in this time range</div>'}
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    target.innerHTML = `<div class="callout danger tiny">Failed to load trend report: ${esc(err.message)}</div>`;
   }
 }
 
