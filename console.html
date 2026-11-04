@@ -2915,6 +2915,7 @@ async function handleAuthLogin(e) {
       toast(`Signed in successfully as ${currentUserEmail}`);
       setConnection(true);
       toggleLiveStream(true);
+      startBackgroundSync();
       refresh();
     }
   } catch (err) {
@@ -2977,6 +2978,7 @@ function handleAuthDirectKey(e) {
   toast('Connected with direct API Key.');
   setConnection(true);
   toggleLiveStream(true);
+  startBackgroundSync();
   refresh();
 }
 
@@ -4135,14 +4137,14 @@ async function preloadAllTabs() {
   }
 }
 
-// Background poller every 10 seconds to keep live data fresh even if SSE drops
+// Background poller every 5 seconds to keep active views and telemetry completely live
 function startBackgroundSync() {
   if (backgroundSyncTimer) clearInterval(backgroundSyncTimer);
   backgroundSyncTimer = setInterval(() => {
     if (bearerToken && document.visibilityState === 'visible') {
       silentBackgroundRefresh(page);
     }
-  }, 10000);
+  }, 5000);
 }
 
 function hasCachedData(p) {
