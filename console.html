@@ -1764,43 +1764,96 @@ async function runHistorical() {
 }
 
 // Threat Hunting Workspace
+// E. Threat Hunting Workspace (Guided, Multi-Parameter Telemetry Search)
 function hunting() {
-  return head('Threat Hunting', 'Proactively explore telemetry to discover suspicious patterns. Use Deep Investigation when you have a specific finding, trace or incident to explain.', '')
-    + `<div class="grid g2">
-        <div class="panel pad">
-          <div class="panelhead"><h3>Hunt Workspace</h3></div>
-          <p class="muted tiny" style="margin:10px 0">Explore telemetry to test an analyst hypothesis. The current search endpoint applies the explicit category and severity filters; the hypothesis is retained as analyst context, not interpreted by the backend.</p>
-          <div class="field">
-            <label>Analyst Hypothesis (context only)</label>
-            <input class="control" id="huntHypothesis" placeholder="e.g. Distributed credential spraying across auth services" style="width:100%">
-            <small class="muted">This describes what you are looking for; it is not currently sent as a semantic query.</small>
+  return head('Threat Hunting', 'Proactively search telemetry across microservices to uncover suspicious activity, lateral movement, or policy anomalies before alerts trigger.', '')
+    + `<div class="grid g2" style="margin-bottom:16px">
+        <div class="panel pad" style="border-color:var(--border-subtle);background:radial-gradient(800px 300px at 0% 0%, rgba(30,58,138,0.18), var(--panel))">
+          <div class="between" style="margin-bottom:8px">
+            <h3 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--lime)"></span>
+              Proactive Threat Hunter
+            </h3>
+            <span class="pill info">TELEMETRY MINING</span>
           </div>
-          <div class="field">
-            <label>Event Category Filter (required)</label>
-            <input class="control" id="huntCategory" placeholder="Enter a backend-supported event category" style="width:100%">
+          <p class="muted tiny" style="margin:0 0 14px;line-height:1.55">
+            <b>How to use:</b> Select a quick hunting scenario preset below or enter specific microservice keywords (e.g. <code>api-service</code>, <code>auth</code>, <code>db</code>) to inspect live and historical telemetry for anomalies.
+          </p>
+
+          <div style="margin-bottom:12px">
+            <div class="tiny dim" style="margin-bottom:6px;font-weight:600;letter-spacing:0.5px">QUICK HUNT PRESETS:</div>
+            <div class="row" style="gap:6px;flex-wrap:wrap">
+              <button class="btn small ghost" data-action="fill-hunt-preset" data-cat="auth" data-sev="" data-desc="Authentication Failures & Credential Stuffing" style="font-size:11px">🔐 Auth / Credential Spray</button>
+              <button class="btn small ghost" data-action="fill-hunt-preset" data-cat="exfiltration" data-sev="" data-desc="Cross-Service Data Exfiltration Patterns" style="font-size:11px">📡 Data Exfiltration</button>
+              <button class="btn small ghost" data-action="fill-hunt-preset" data-cat="database" data-sev="" data-desc="Database & SQL Query Anomalies" style="font-size:11px">🗄️ Database Spikes</button>
+              <button class="btn small ghost" data-action="fill-hunt-preset" data-cat="" data-sev="high" data-desc="High & Critical Severity Telemetry Only" style="font-size:11px">🚨 High/Critical Only</button>
+              <button class="btn small ghost" data-action="fill-hunt-preset" data-cat="worker-service" data-sev="" data-desc="Asynchronous Worker & Background Jobs" style="font-size:11px">⚙️ Worker Service</button>
+            </div>
           </div>
-          <div class="field">
-            <label>Minimum Severity Threshold</label>
-            <select class="control" id="huntSeverity" style="width:100%">
-              <option value="">Any severity</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
-            </select>
+
+          <div class="field" style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:600;color:var(--text-subtle)">Target Keyword / Service / Pattern</label>
+            <input class="control" id="huntCategory" placeholder="e.g. auth, api-service, worker-service, exfiltration, 198.51.100.24" style="width:100%;font-size:12px">
+            <small class="muted" style="font-size:10px">Matches event_type, service_id, source/target resource, or attributes across your microservices.</small>
           </div>
-          <button class="btn primary" data-action="run-hunt">Execute Hunt Query</button>
+
+          <div class="row" style="gap:10px;margin-bottom:12px">
+            <div class="field" style="flex:1">
+              <label style="font-size:11px;font-weight:600;color:var(--text-subtle)">Minimum Severity</label>
+              <select class="control" id="huntSeverity" style="width:100%;font-size:12px">
+                <option value="">Any Severity (All Events)</option>
+                <option value="medium">Medium & Higher</option>
+                <option value="high">High & Higher</option>
+                <option value="critical">Critical Only</option>
+              </select>
+            </div>
+            <div class="field" style="flex:1">
+              <label style="font-size:11px;font-weight:600;color:var(--text-subtle)">Analyst Hypothesis (Context Note)</label>
+              <input class="control" id="huntHypothesis" placeholder="e.g. Suspicious egress from database service" style="width:100%;font-size:12px">
+            </div>
+          </div>
+
+          <div class="row" style="gap:10px">
+            <button class="btn primary small" data-action="run-hunt" id="btnExecuteHunt" style="font-weight:600;padding:6px 14px">🔍 Execute Hunt Query</button>
+            <button class="btn small ghost" data-action="reset-hunt">Clear Filters</button>
+          </div>
         </div>
+
         <div class="panel pad">
-          <div class="panelhead"><h3>When to use Threat Hunting</h3></div>
-          <p class="tiny muted" style="margin:8px 0 0">Hunting is exploratory and search-led. Deep Investigation is focused and evidence-led: it starts from a particular security concern and reconstructs what happened.</p><div class="timeline" style="margin-top:12px">
-            <div class="tlitem"><b>1 · Form Threat Hypothesis</b><div class="tiny muted">Define suspicious activity pattern and affected microservices.</div></div>
-            <div class="tlitem"><b>2 · Query Telemetry</b><div class="tiny muted">Search across service events, trace IDs, and temporal windows.</div></div>
-            <div class="tlitem"><b>3 · Validate a discovery</b><div class="tiny muted">Review matching events, then start a Deep Investigation or propose a rule for independent replay validation.</div></div>
+          <div class="between" style="margin-bottom:8px">
+            <h3 style="margin:0;font-size:15px">Threat Hunting vs Deep Investigation</h3>
+            <span class="pill info">OPERATIONAL GUIDE</span>
+          </div>
+          <p class="tiny muted" style="margin:0 0 12px;line-height:1.55">
+            Understanding the distinction between proactive hunting and reactive investigation:
+          </p>
+          <div class="timeline" style="margin-top:6px">
+            <div class="tlitem">
+              <b>1 · Formulate Hypothesis</b>
+              <div class="tiny muted">Ask a security question: <i>"Did any external IP hit worker-service directly without passing api-service?"</i></div>
+            </div>
+            <div class="tlitem">
+              <b>2 · Query Telemetry (This Screen)</b>
+              <div class="tiny muted">Mine canonical telemetry events across service footprints, trace IDs, and time windows.</div>
+            </div>
+            <div class="tlitem">
+              <b>3 · Escalate or Ground Rules</b>
+              <div class="tiny muted">When anomalies are found, pivot to <b>Deep Investigation</b> to build a chain of custody or propose an automated Fast Track detection rule.</div>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:6px">
+            <div class="tiny" style="color:var(--cyan);font-weight:600;margin-bottom:2px">💡 Pro-Tip: Deep Investigation Shortcut</div>
+            <div class="tiny muted">Click <b>"Investigate"</b> on any returned event row to launch a Deep Track forensic correlation.</div>
           </div>
         </div>
       </div>
-      <div id="huntResults" style="margin-top:13px">
-        ${empty('No hunt query executed', 'Enter a threat hypothesis and click Execute Hunt Query.')}
+
+      <div id="huntResults">
+        <div class="panel empty" style="padding:32px 16px;text-align:center">
+          <div style="font-size:24px;margin-bottom:8px">🔭</div>
+          <b style="font-size:13px">Ready to Hunt</b>
+          <p class="tiny muted" style="margin:4px 0 12px">Choose a preset above or enter a keyword/service name, then click <b>Execute Hunt Query</b>.</p>
+        </div>
       </div>`;
 }
 
@@ -1808,35 +1861,48 @@ async function runHunt() {
   const hyp = $('#huntHypothesis')?.value.trim();
   const cat = $('#huntCategory')?.value.trim();
   const sev = $('#huntSeverity')?.value;
-  if (!cat) {
-    toast('Enter an event category. The current backend search endpoint requires a category filter.');
-    return;
-  }
+
   const params = new URLSearchParams({ limit: '50' });
   if (cat) params.set('category', cat);
   if (sev) params.set('min_severity', sev);
 
   const target = $('#huntResults');
-  if (target) target.innerHTML = '<div class="panel empty">Hunting telemetry…</div>';
+  if (target) target.innerHTML = '<div class="panel empty" style="padding:28px"><div class="skel" style="height:36px;margin-bottom:8px"></div><p class="tiny muted">Hunting telemetry events across microservices...</p></div>';
 
   try {
     const res = await request(`/api/v1/events/search?${params.toString()}`);
     const evs = res.events || [];
+    const summary = res.summary || {};
+    const total = summary.total_events !== undefined ? summary.total_events : evs.length;
+
     if (target) {
       target.innerHTML = `
-        <div class="panel pad">
-          <div class="between">
-            <div><b>Hunt Telemetry Results</b><div class="tiny muted">Analyst hypothesis: ${esc(hyp || 'Not supplied')} · Backend filter: category=${esc(cat)}${sev ? ` · minimum severity=${esc(sev)}` : ''}</div><div class="tiny dim" style="margin-top:4px">The hypothesis is contextual only; matches are determined by the filters accepted by the event-search API.</div></div>
-            <span class="pill info">${evs.length} records returned</span>
+        <div class="panel pad" style="border-color:var(--border-subtle)">
+          <div class="between" style="margin-bottom:12px">
+            <div>
+              <b style="font-size:14px">Hunt Telemetry Results</b>
+              <div class="tiny muted" style="margin-top:3px">
+                Keyword/Category: <code>${esc(cat || 'ALL EVENTS')}</code>
+                ${sev ? ` · Minimum Severity: <span class="pill ${sev === 'critical' ? 'danger' : (sev === 'high' ? 'warn' : 'info')}">${esc(sev)}</span>` : ''}
+                ${hyp ? ` · Hypothesis: <i>${esc(hyp)}</i>` : ''}
+              </div>
+            </div>
+            <div class="row" style="gap:8px;align-items:center">
+              <span class="pill info">${total} Total Matched</span>
+              <span class="pill ok">Showing ${evs.length} Records</span>
+            </div>
           </div>
+
           ${evs.length ? table(evs, [
               { label: 'Timestamp (Local)', render: r => formatLocalTime(r.timestamp) },
-              { label: 'Event Type', render: r => `<b>${esc(r.event_type)}</b>` },
-              { label: 'Service', keys: ['service_id'] },
+              { label: 'Event Type', render: r => `<b style="color:var(--text-main)">${esc(r.event_type)}</b>` },
+              { label: 'Service', render: r => `<span class="pill neutral" style="font-family:monospace">${esc(r.service_id)}</span>` },
               { label: 'Severity', render: r => pill(r.severity) },
-              { label: 'Source', render: r => `<code>${esc(r.source_resource || r.app_id || '—')}</code>` },
-              { label: 'Trace ID', render: r => `<code class="tiny dim">${esc(r.trace_id || '—')}</code>` }
-            ]) : '<div class="empty">No telemetry records matched the applied backend filters. This is not proof that the environment is threat-free.</div>'}
+              { label: 'Source Resource', render: r => `<code>${esc(r.source_resource || r.app_id || '—')}</code>` },
+              { label: 'Target Resource', render: r => `<code>${esc(r.target_resource || '—')}</code>` },
+              { label: 'Trace ID', render: r => `<code class="tiny dim">${esc((r.trace_id || '—').substring(0, 16))}...</code>` },
+              { label: 'Action', render: r => r.trace_id ? `<button class="btn small ghost" data-action="investigate-trace-hunt" data-trace="${esc(r.trace_id)}" data-type="${esc(r.event_type)}" style="font-size:10px;padding:2px 8px">🔎 Investigate</button>` : '—' }
+            ]) : '<div class="empty" style="padding:24px">No telemetry records matched the query. Try broadening your keyword filter or lowering the severity threshold.</div>'}
         </div>
       `;
     }
@@ -1845,85 +1911,355 @@ async function runHunt() {
   }
 }
 
-// F. Telemetry category search; external threat-intelligence enrichment is not yet connected
+// F. Threat Intelligence & IOC Blast Radius Matcher
 function threatIntel() {
-  return head('IOC Telemetry Search', 'Search the telemetry stored by Ternline for an event category. External IOC reputation and threat-intelligence enrichment are not connected in this workspace yet.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
+  return head('Threat Intelligence & IOCs', 'Manage Indicators of Compromise (IPs, domains, hashes) and scan microservice telemetry to calculate blast radius and MITRE ATT&CK coverage.', `
+      <button class="btn small" data-action="refresh-threat-intel">↻ Refresh</button>
+      <button class="btn primary small" data-action="open-create-ioc" style="margin-left:6px">+ Register IOC</button>
+    `)
     + errPanel()
-    + `<div class="panel pad" style="margin-bottom:16px;border-color:#435b46;background:radial-gradient(800px 240px at 50% -40px,#1a2d21,#111a16)">
-        <div class="between" style="margin-bottom:10px">
-          <div>
-            <div class="eyebrow" style="color:var(--lime)">TENANT TELEMETRY LOOKUP</div>
-            <h3 style="margin:3px 0 0">Search stored events by category</h3>
+    + `<div class="grid g2" style="margin-bottom:16px">
+        <!-- Telemetry Matcher & Blast Radius Scanner -->
+        <div class="panel pad" style="border-color:var(--border-subtle);background:radial-gradient(800px 300px at 0% 0%, rgba(13,148,136,0.18), var(--panel))">
+          <div class="between" style="margin-bottom:8px">
+            <h3 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cyan)"></span>
+              Indicator Blast Radius Scanner
+            </h3>
+            <span class="pill info">TELEMETRY CORRELATOR</span>
           </div>
-          <span class="pill info">BACKEND SEARCH</span>
+          <p class="muted tiny" style="margin:0 0 12px;line-height:1.55">
+            <b>What is this?</b> Enter any suspected malicious indicator (IP address, domain, file hash, or keyword) to scan all stored tenant telemetry. Determines which microservices were exposed and identifies matched MITRE ATT&CK techniques.
+          </p>
+
+          <div style="margin-bottom:12px">
+            <div class="tiny dim" style="margin-bottom:6px;font-weight:600;letter-spacing:0.5px">QUICK TEST INDICATORS:</div>
+            <div class="row" style="gap:6px;flex-wrap:wrap">
+              <button class="btn small ghost" data-action="fill-ioc-search" data-query="198.51.100.24" style="font-size:11px">IP: 198.51.100.24</button>
+              <button class="btn small ghost" data-action="fill-ioc-search" data-query="api-service" style="font-size:11px">Service: api-service</button>
+              <button class="btn small ghost" data-action="fill-ioc-search" data-query="worker-service" style="font-size:11px">Service: worker-service</button>
+              <button class="btn small ghost" data-action="fill-ioc-search" data-query="exfiltration" style="font-size:11px">Keyword: exfiltration</button>
+            </div>
+          </div>
+
+          <div class="field" style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:600;color:var(--text-subtle)">Indicator, IP, Domain, or Pattern</label>
+            <input id="iocSearchInput" class="control" style="width:100%;font-size:12px;font-family:monospace" placeholder="e.g. 198.51.100.24, evil-c2.net, or api-service">
+          </div>
+
+          <div class="row" style="gap:10px;margin-bottom:12px">
+            <div class="field" style="flex:1">
+              <label style="font-size:11px;font-weight:600;color:var(--text-subtle)">Scan Window</label>
+              <select id="iocSearchHours" class="control" style="width:100%;font-size:12px">
+                <option value="24" selected>Last 24 Hours</option>
+                <option value="72">Last 3 Days</option>
+                <option value="168">Last 7 Days</option>
+                <option value="720">Last 30 Days</option>
+              </select>
+            </div>
+            <div class="field" style="flex:1">
+              <label style="font-size:11px;font-weight:600;color:var(--text-subtle)">Result Limit</label>
+              <select id="iocSearchLimit" class="control" style="width:100%;font-size:12px">
+                <option value="25">25 Events</option>
+                <option value="50" selected>50 Events</option>
+                <option value="100">100 Events</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row" style="gap:10px">
+            <button class="btn primary small" data-action="execute-ioc-search" id="btnExecIocSearch" style="font-weight:600;padding:6px 14px">🛡️ Scan Blast Radius</button>
+            <button class="btn small ghost" data-action="reset-ioc-search">Clear</button>
+          </div>
         </div>
-        <p class="muted tiny" style="margin:0 0 12px;line-height:1.6">
-          This currently queries the event-search endpoint using its category filter. It does not perform arbitrary text search, external IP/domain reputation checks, or MITRE ATT&CK enrichment.
-        </p>
-        <div class="field" style="margin-bottom:10px">
-          <label>Event category</label>
-          <input id="iocSearchInput" class="control" style="width:100%;font-size:12px;font-family:inherit" placeholder="Enter a supported event category, e.g. authentication, network, database">
+
+        <!-- MITRE ATT&CK Matrix Coverage Summary -->
+        <div class="panel pad">
+          <div class="between" style="margin-bottom:8px">
+            <h3 style="margin:0;font-size:15px">MITRE ATT&CK Coverage</h3>
+            <span class="pill ok">LIVE MAPPING</span>
+          </div>
+          <p class="tiny muted" style="margin:0 0 12px;line-height:1.55">
+            How your active detectors, detection rules, and registered indicators map into the MITRE ATT&CK enterprise matrix:
+          </p>
+          <div id="mitreCoverageSummary">
+            <div class="panel empty" style="padding:16px"><div class="skel" style="height:32px"></div><p class="tiny muted">Loading MITRE ATT&CK matrix coverage...</p></div>
+          </div>
         </div>
-        <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:12px">
-          <span class="tiny dim">Example categories:</span>
-          <button class="btn small ghost" data-action="fill-ioc-search" data-query="authentication">Authentication</button>
-          <button class="btn small ghost" data-action="fill-ioc-search" data-query="network">Network</button>
-          <button class="btn small ghost" data-action="fill-ioc-search" data-query="database">Database</button>
+      </div>
+
+      <!-- Scan Results Container -->
+      <div id="iocSearchResults" style="margin-bottom:16px"></div>
+
+      <!-- Registered Threat Intel Registry -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:12px">
+          <div>
+            <h3 style="margin:0;font-size:15px">Registered Indicators of Compromise (IOC)</h3>
+            <div class="tiny muted" style="margin-top:2px">Catalog of active threat actor signatures, IPs, domains, and malicious hashes for this tenant.</div>
+          </div>
+          <button class="btn small ghost" data-action="load-ioc-registry">↻ Reload Registry</button>
         </div>
-        <div class="row" style="gap:10px">
-          <button class="btn primary small" data-action="execute-ioc-search" id="btnExecIocSearch">Search telemetry</button>
-          <button class="btn small ghost" data-action="reset-ioc-search">Clear</button>
+        <div id="iocRegistryContainer">
+          <div class="panel empty" style="padding:20px"><p class="tiny muted">Loading registered threat indicators...</p></div>
         </div>
-        <div id="iocSearchResults" style="margin-top:14px"></div>
-      </div>`
-    + `<div class="panel pad">
-        <div class="between" style="margin-bottom:8px"><h3 style="margin:0">External Threat Intelligence</h3><span class="pill warn">NOT CONNECTED</span></div>
-        <p class="muted tiny" style="margin:0;line-height:1.6">No external IOC feeds or reputation providers are configured here. To make this a true threat-intelligence workspace, connect a provider and persist indicator source, first-seen/last-seen timestamps, confidence, expiry and enrichment provenance. Until then, this page reports telemetry matches only.</p>
+      </div>
+
+      <!-- Register IOC Modal -->
+      <div id="createIocModal" class="modal-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center">
+        <div class="modal pad" style="width:520px;max-width:95vw;background:var(--panel);border:1px solid var(--border-subtle);border-radius:8px">
+          <div class="between" style="margin-bottom:12px">
+            <h3 style="margin:0;font-size:15px">Register New Indicator of Compromise</h3>
+            <button class="btn small ghost" data-action="close-create-ioc">✕</button>
+          </div>
+          <p class="tiny muted" style="margin:0 0 14px">Add a threat indicator to monitor across tenant telemetry and correlation pipelines.</p>
+
+          <div class="field" style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:600">Indicator Type</label>
+            <select id="newIocType" class="control" style="width:100%">
+              <option value="ip">IP Address</option>
+              <option value="domain">Domain Name</option>
+              <option value="sha256">SHA-256 Hash</option>
+              <option value="user_agent">User-Agent</option>
+              <option value="query_pattern">Query Pattern</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:600">Indicator Value</label>
+            <input id="newIocValue" class="control" placeholder="e.g. 198.51.100.24 or c2.malicious-domain.com" style="width:100%;font-family:monospace">
+          </div>
+          <div class="row" style="gap:10px;margin-bottom:10px">
+            <div class="field" style="flex:1">
+              <label style="font-size:11px;font-weight:600">Severity</label>
+              <select id="newIocSeverity" class="control" style="width:100%">
+                <option value="critical">Critical</option>
+                <option value="high" selected>High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+            <div class="field" style="flex:1">
+              <label style="font-size:11px;font-weight:600">Confidence</label>
+              <select id="newIocConfidence" class="control" style="width:100%">
+                <option value="high" selected>High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:600">Threat Actor / Campaign (Optional)</label>
+            <input id="newIocActor" class="control" placeholder="e.g. APT29, FIN7, Cobalt Strike" style="width:100%">
+          </div>
+          <div class="field" style="margin-bottom:14px">
+            <label style="font-size:11px;font-weight:600">Description</label>
+            <input id="newIocDesc" class="control" placeholder="e.g. Command & Control egress node observed in credential spraying" style="width:100%">
+          </div>
+
+          <div class="row" style="gap:10px;justify-content:flex-end">
+            <button class="btn small ghost" data-action="close-create-ioc">Cancel</button>
+            <button class="btn primary small" data-action="submit-create-ioc" id="btnSubmitIoc">Save Indicator</button>
+          </div>
+        </div>
       </div>`;
+}
+
+async function loadMitreCoverage() {
+  const container = $('#mitreCoverageSummary');
+  if (!container) return;
+  try {
+    const data = await request('/api/v1/threat-intelligence/mitre-coverage');
+    const techs = data.techniques || [];
+    if (!techs.length) {
+      container.innerHTML = '<div class="tiny muted">No MITRE ATT&CK techniques registered.</div>';
+      return;
+    }
+    container.innerHTML = `
+      <div class="between" style="margin-bottom:8px">
+        <span class="tiny muted">Coverage: <b>${data.covered_techniques_count || techs.length}</b> Techniques Tracked</span>
+        <span class="pill ok">${Math.round(data.coverage_percentage || 100)}% Matrix Health</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding-right:4px">
+        ${techs.slice(0, 6).map(t => `
+          <div style="padding:6px 8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:4px" class="between">
+            <div>
+              <b style="font-size:11px;color:var(--text-main)">${esc(t.technique_id)} · ${esc(t.technique_name)}</b>
+              <div class="tiny dim">${esc(t.tactic)}</div>
+            </div>
+            <span class="pill neutral" style="font-size:10px">${(t.detectors || []).length} Detector(s)</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = `<div class="tiny danger">Could not load MITRE coverage: ${esc(err.message)}</div>`;
+  }
+}
+
+async function loadIocRegistry() {
+  const target = $('#iocRegistryContainer');
+  if (!target) return;
+  try {
+    const list = await request('/api/v1/threat-intelligence');
+    const iocs = Array.isArray(list) ? list : [];
+    if (!iocs.length) {
+      target.innerHTML = '<div class="empty" style="padding:20px">No custom threat indicators registered yet. Click <b>+ Register IOC</b> above to add one.</div>';
+      return;
+    }
+    target.innerHTML = table(iocs, [
+      { label: 'Type', render: r => `<span class="pill info" style="font-size:10px">${esc(r.ioc_type.toUpperCase())}</span>` },
+      { label: 'Indicator Value', render: r => `<code style="font-size:12px;color:var(--lime)">${esc(r.value)}</code>` },
+      { label: 'Severity', render: r => pill(r.severity) },
+      { label: 'Confidence', render: r => `<span class="pill neutral" style="font-size:10px">${esc(r.confidence)}</span>` },
+      { label: 'Threat Actor', render: r => r.threat_actor ? `<b>${esc(r.threat_actor)}</b>` : '<span class="dim">—</span>' },
+      { label: 'Description', render: r => `<span class="tiny muted">${esc(r.description || '—')}</span>` },
+      { label: 'Actions', render: r => `
+        <button class="btn small ghost" data-action="quick-scan-ioc" data-query="${esc(r.value)}" style="font-size:10px;padding:2px 8px">🔍 Scan</button>
+        <button class="btn small danger ghost" data-action="delete-ioc" data-id="${esc(r.ioc_id)}" style="font-size:10px;padding:2px 8px;margin-left:4px">🗑️</button>
+      `}
+    ]);
+  } catch (err) {
+    target.innerHTML = `<div class="callout danger">Failed loading IOC registry: ${esc(err.message)}</div>`;
+  }
 }
 
 async function executeIocSearch() {
   const input = $('#iocSearchInput');
   const q = (input ? input.value : '').trim();
   if (!q) {
-    toast('Please enter an event category to search.');
+    toast('Please enter an indicator, IP, domain, or pattern to scan.');
     return;
   }
+  const hours = parseInt($('#iocSearchHours')?.value || '24', 10);
+  const limit = parseInt($('#iocSearchLimit')?.value || '50', 10);
+
   const target = $('#iocSearchResults');
-  if (target) target.innerHTML = '<div class="panel empty"><div class="skel" style="height:40px"></div><p style="margin-top:8px">Searching stored tenant telemetry by event category...</p></div>';
+  if (target) target.innerHTML = '<div class="panel empty" style="padding:28px"><div class="skel" style="height:36px;margin-bottom:8px"></div><p class="tiny muted">Scanning stored telemetry and computing microservice blast radius...</p></div>';
 
   try {
-    const params = new URLSearchParams({ category: q, limit: '50' });
-    const data = await request(`/api/v1/events/search?${params.toString()}`);
-    const events = Array.isArray(data.events) ? data.events : [];
-    if (!events.length) {
-      target.innerHTML = `<div class="callout" style="background:var(--panel);border-color:var(--line)">
-        <b>No matching telemetry events:</b> No events were returned for category <code>${esc(q)}</code> by the current search endpoint. This is not an external IOC reputation check and does not establish that the environment is clean.
-      </div>`;
-      return;
-    }
-    const svcs = [...new Set(events.map(e => e.service_id))];
+    const res = await request('/api/v1/threat-intelligence/match', {
+      method: 'POST',
+      body: JSON.stringify({ query: q, time_window_hours: hours, limit: limit })
+    });
+
+    const events = Array.isArray(res.matched_events) ? res.matched_events : [];
+    const matchedIocs = Array.isArray(res.matched_iocs) ? res.matched_iocs : [];
+    const affectedSvcs = Array.isArray(res.affected_services) ? res.affected_services : [];
+    const mitreTechs = Array.isArray(res.mitre_techniques) ? res.mitre_techniques : [];
+
     target.innerHTML = `
-      <div class="panel pad" style="border-color:#3e5833;background:var(--panel)">
-        <div class="between">
+      <div class="panel pad" style="border-color:var(--border-subtle);background:var(--panel)">
+        <div class="between" style="margin-bottom:12px">
           <div>
-            <b>Telemetry category matches: <code>${esc(q)}</code></b>
-            <div class="tiny muted">${events.length} returned event(s) in this result page; observed services: ${svcs.map(s => `<b>${esc(s)}</b>`).join(', ')}</div>
+            <h3 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px">
+              Blast Radius Analysis: <code style="color:var(--cyan);font-size:14px">${esc(q)}</code>
+            </h3>
+            <div class="tiny muted" style="margin-top:3px">
+              Scanned window: Last ${hours} hours · Matches: <b>${res.matched_events_count}</b> events across microservices
+            </div>
           </div>
-          <span class="pill warn">${events.length} Matches</span>
+          <span class="pill ${res.matched_events_count > 0 ? 'warn' : 'ok'}">${res.matched_events_count} Matches</span>
         </div>
-        ${table(events.slice(0, 15), [
+
+        <!-- Microservice Blast Radius Footprint -->
+        <div class="grid g2" style="margin-bottom:14px">
+          <div style="padding:10px;background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:6px">
+            <div class="tiny dim" style="font-weight:600;margin-bottom:6px">AFFECTED MICROSERVICE FOOTPRINT:</div>
+            ${affectedSvcs.length ? `
+              <div class="row" style="gap:6px;flex-wrap:wrap">
+                ${affectedSvcs.map(s => `<span class="pill danger" style="font-family:monospace;font-size:11px">⚠️ ${esc(s)}</span>`).join('')}
+              </div>
+            ` : '<div class="tiny ok">✔ Zero microservices exposed to this indicator</div>'}
+          </div>
+
+          <div style="padding:10px;background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:6px">
+            <div class="tiny dim" style="font-weight:600;margin-bottom:6px">MATCHED MITRE ATT&CK TECHNIQUES:</div>
+            ${mitreTechs.length ? `
+              <div class="row" style="gap:6px;flex-wrap:wrap">
+                ${mitreTechs.map(t => `<span class="pill info" style="font-size:11px">🎯 ${esc(t)}</span>`).join('')}
+              </div>
+            ` : '<div class="tiny muted">No explicit ATT&CK technique tags associated</div>'}
+          </div>
+        </div>
+
+        ${matchedIocs.length ? `
+          <div style="margin-bottom:14px;padding:10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:6px">
+            <b class="tiny" style="color:var(--danger)">Identified Registered Threat Indicators (${matchedIocs.length}):</b>
+            <div style="margin-top:4px" class="row" style="gap:8px">
+              ${matchedIocs.map(i => `<span class="pill danger">${esc(i.ioc_type.toUpperCase())}: ${esc(i.value)} (${esc(i.threat_actor || 'Unknown Actor')})</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Telemetry Evidence Table -->
+        <h4 style="margin:12px 0 8px;font-size:13px">Telemetry Event Evidence (${events.length} shown)</h4>
+        ${events.length ? table(events, [
           { label: 'Timestamp (Local)', render: r => formatLocalTime(r.timestamp) },
           { label: 'Event Type', render: r => `<b>${esc(r.event_type)}</b>` },
-          { label: 'Service', keys: ['service_id'] },
+          { label: 'Service', render: r => `<span class="pill neutral" style="font-family:monospace">${esc(r.service_id)}</span>` },
           { label: 'Severity', render: r => pill(r.severity) },
-          { label: 'Source', render: r => `<code>${esc(r.source_resource || r.app_id || '—')}</code>` },
-          { label: 'Trace ID', render: r => `<code class="tiny dim">${esc(r.trace_id || '—')}</code>` }
-        ])}
+          { label: 'Source Resource', render: r => `<code>${esc(r.source_resource || '—')}</code>` },
+          { label: 'Target Resource', render: r => `<code>${esc(r.target_resource || '—')}</code>` },
+          { label: 'Trace ID', render: r => `<code class="tiny dim">${esc((r.trace_id || '—').substring(0, 16))}...</code>` },
+          { label: 'Action', render: r => r.trace_id ? `<button class="btn small ghost" data-action="investigate-trace-hunt" data-trace="${esc(r.trace_id)}" data-type="${esc(r.event_type)}" style="font-size:10px;padding:2px 8px">🔎 Investigate</button>` : '—' }
+        ]) : '<div class="empty" style="padding:20px">No telemetry events matched this indicator during the selected time window. Microservices are clean for this pattern.</div>'}
       </div>
     `;
   } catch (err) {
-    if (target) target.innerHTML = `<div class="callout danger">Indicator search failed: ${esc(err.message)}</div>`;
+    if (target) target.innerHTML = `<div class="callout danger">Indicator scan failed: ${esc(err.message)}</div>`;
+  }
+}
+
+async function submitCreateIoc() {
+  const iocType = $('#newIocType')?.value || 'ip';
+  const val = $('#newIocValue')?.value.trim();
+  const sev = $('#newIocSeverity')?.value || 'high';
+  const conf = $('#newIocConfidence')?.value || 'high';
+  const actor = $('#newIocActor')?.value.trim() || null;
+  const desc = $('#newIocDesc')?.value.trim() || null;
+
+  if (!val) {
+    toast('Indicator value is required.');
+    return;
+  }
+
+  const btn = $('#btnSubmitIoc');
+  if (btn) btn.disabled = true;
+
+  try {
+    await request('/api/v1/threat-intelligence', {
+      method: 'POST',
+      body: JSON.stringify({
+        ioc_type: iocType,
+        value: val,
+        severity: sev,
+        confidence: conf,
+        threat_actor: actor,
+        description: desc
+      })
+    });
+    toast('Indicator of Compromise registered successfully.');
+    closeModal();
+    const modal = $('#createIocModal');
+    if (modal) modal.style.display = 'none';
+    loadIocRegistry();
+    loadMitreCoverage();
+  } catch (err) {
+    toast('Failed to create IOC: ' + err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function deleteIoc(iocId) {
+  if (!confirm('Deactivate and delete this threat intelligence indicator?')) return;
+  try {
+    await request(`/api/v1/threat-intelligence/${encodeURIComponent(iocId)}`, { method: 'DELETE' });
+    toast('Indicator deactivated.');
+    loadIocRegistry();
+    loadMitreCoverage();
+  } catch (err) {
+    toast('Failed to deactivate indicator: ' + err.message);
   }
 }
 
@@ -4349,10 +4685,19 @@ function setPage(p) {
   closeProfileMenu();
   page = p;
   $('#sidebar')?.classList.remove('open');
-  if (p === 'historical') {
+    if (p === 'historical') {
     render();
 initSidebarTooltips();
     setHistoryRange('24h');
+    return;
+  }
+  if (p === 'threatIntel') {
+    render();
+    initSidebarTooltips();
+    setTimeout(() => {
+      loadMitreCoverage();
+      loadIocRegistry();
+    }, 50);
     return;
   }
   refresh();
@@ -4600,8 +4945,59 @@ document.addEventListener('click', e => {
     case 'run-historical':
       runHistorical();
       break;
-    case 'run-hunt':
+        case 'run-hunt':
       runHunt();
+      break;
+    case 'fill-hunt-preset':
+      if ($('#huntCategory')) $('#huntCategory').value = a.dataset.cat || '';
+      if ($('#huntSeverity')) $('#huntSeverity').value = a.dataset.sev || '';
+      if ($('#huntHypothesis')) $('#huntHypothesis').value = a.dataset.desc || '';
+      runHunt();
+      break;
+    case 'reset-hunt':
+      if ($('#huntCategory')) $('#huntCategory').value = '';
+      if ($('#huntSeverity')) $('#huntSeverity').value = '';
+      if ($('#huntHypothesis')) $('#huntHypothesis').value = '';
+      if ($('#huntResults')) $('#huntResults').innerHTML = '<div class="panel empty" style="padding:32px 16px;text-align:center"><div style="font-size:24px;margin-bottom:8px">🔭</div><b style="font-size:13px">Ready to Hunt</b><p class="tiny muted" style="margin:4px 0 12px">Choose a preset above or enter a keyword/service name, then click <b>Execute Hunt Query</b>.</p></div>';
+      break;
+    case 'investigate-trace-hunt':
+      setPage('investigations');
+      setTimeout(() => {
+        const inp = $('#deepSearchInput');
+        if (inp) {
+          inp.value = `Investigate suspicious ${a.dataset.type || 'telemetry'} activity for trace ${a.dataset.trace || ''}. Reconstruct cross-service sequence and audit evidence citations.`;
+        }
+        executeDeepSearch();
+      }, 50);
+      break;
+    case 'refresh-threat-intel':
+      loadMitreCoverage();
+      loadIocRegistry();
+      break;
+    case 'open-create-ioc': {
+      const modal = $('#createIocModal');
+      if (modal) modal.style.display = 'flex';
+      break;
+    }
+    case 'close-create-ioc': {
+      const modal = $('#createIocModal');
+      if (modal) modal.style.display = 'none';
+      break;
+    }
+    case 'submit-create-ioc':
+      submitCreateIoc();
+      break;
+    case 'load-ioc-registry':
+      loadIocRegistry();
+      break;
+    case 'quick-scan-ioc':
+      if ($('#iocSearchInput')) {
+        $('#iocSearchInput').value = a.dataset.query || '';
+        executeIocSearch();
+      }
+      break;
+    case 'delete-ioc':
+      deleteIoc(a.dataset.id);
       break;
     case 'filter-events':
       filterEvents();

@@ -286,8 +286,8 @@ async def stream_query_investigator(
             db.add(db_report)
             db.commit()
 
-            yield f"data: {json.dumps({'stage': 'scope_rejected', 'reason': reason, 'verdict': 'inconclusive', 'report': out_of_scope_finding.model_dump()})}\n\n"
-            yield f"data: {json.dumps({'stage': 'complete', 'verdict': 'inconclusive', 'report': out_of_scope_finding.model_dump()})}\n\n"
+            yield f"data: {json.dumps({'stage': 'scope_rejected', 'reason': reason, 'verdict': 'inconclusive', 'report': out_of_scope_finding.model_dump()}, default=str)}\n\n"
+            yield f"data: {json.dumps({'stage': 'complete', 'verdict': 'inconclusive', 'report': out_of_scope_finding.model_dump()}, default=str)}\n\n"
             return
 
         yield f"data: {json.dumps({'stage': 'scope_verified', 'detail': 'Inquiry verified within cybersecurity domain.'})}\n\n"

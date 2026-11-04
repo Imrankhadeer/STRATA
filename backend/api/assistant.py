@@ -1,6 +1,7 @@
 """
 Workspace Assistant API - Cybersecurity-only conversational AI.
 Strictly restricted to cybersecurity topics. Refuses off-topic queries.
+Fully integrated with live workspace security telemetry, findings, rules, and policy.
 """
 
 import logging
@@ -12,9 +13,19 @@ from datetime import datetime, timedelta, timezone
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from backend.config import settings
 from backend.core.auth import AuthContext, require_permission, Permission
+from backend.db.session import get_db
+from backend.models import (
+    SecurityFinding,
+    DeclarativeRuleModel,
+    TenantDefensePolicyModel,
+    ApplicationModel,
+    DefenseActionModel,
+    EventModel,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +48,84 @@ def _prune_old_conversations():
         _conversation_timestamps.pop(cid, None)
 
 
-SYSTEM_PROMPT = """You are the Ternline Workspace Security Assistant — an enterprise-grade AI assistant embedded in the Ternline CYBER ENGINE Security Intelligence Platform.
+def _build_workspace_context(db: Session, tenant_id: str) -> str:
+    """Build a concise, grounded workspace telemetry context for the assistant."""
+    lines = [f"--- LIVE WORKSPACE TELEMETRY CONTEXT (Tenant: {tenant_id}) ---"]
+    try:
+        # 1. Defense policy mode
+        policy = db.query(TenantDefensePolicyModel).filter(TenantDefensePolicyModel.tenant_id == tenant_id).first()
+        mode = policy.default_mode if policy else "observe"
+        lines.append(f"Active Defense Policy Mode: {mode.upper()}")
+
+        # 2. Recent Findings
+        findings = (
+            db.query(SecurityFinding)
+            .filter(SecurityFinding.tenant_id == tenant_id)
+            .order_by(SecurityFinding.created_at.desc())
+            .limit(5)
+            .all()
+        )
+        if findings:
+            lines.append(f"Recent Workspace Security Findings ({len(findings)}):")
+            for f in findings:
+                svcs = ", ".join(f.services) if f.services else "unspecified"
+                lines.append(f"  - [{f.severity.upper()}] \"{f.title}\" (ID: {f.finding_id}, Status: {f.status}, Detector: {f.detector_id}, Services: {svcs})")
+        else:
+            lines.append("Recent Workspace Security Findings: 0 active findings (clean baseline)")
+
+        # 3. Active Rules
+        active_rules = (
+            db.query(DeclarativeRuleModel)
+            .filter(DeclarativeRuleModel.tenant_id == tenant_id, DeclarativeRuleModel.status == "active")
+            .all()
+        )
+        lines.append(f"Active Detection Rules in Fast Track Engine: {len(active_rules)}")
+        for r in active_rules[:4]:
+            lines.append(f"  - \"{r.title}\" (detector: {r.target_detector}, version: {r.version})")
+
+        # 4. Applications
+        apps = db.query(ApplicationModel).filter(ApplicationModel.tenant_id == tenant_id).all()
+        if apps:
+            app_summary = ", ".join([f"{a.name or a.id} [{a.environment or 'prod'}]" for a in apps])
+            lines.append(f"Connected Applications: {app_summary}")
+        else:
+            lines.append("Connected Applications: Default workspace telemetry producer")
+
+        # 5. Actions awaiting approval
+        pending_actions = (
+            db.query(DefenseActionModel)
+            .filter(
+                DefenseActionModel.tenant_id == tenant_id,
+                DefenseActionModel.status.in_(["awaiting_approval", "proposed"]),
+            )
+            .limit(3)
+            .all()
+        )
+        if pending_actions:
+            lines.append(f"Containment Actions Awaiting Approval ({len(pending_actions)}):")
+            for a in pending_actions:
+                lines.append(f"  - ID {a.action_id}: {a.action_type} on {a.target_entity_type}:{a.target_entity_id}")
+        else:
+            lines.append("Containment Actions Awaiting Approval: 0 (no actions pending sign-off)")
+
+        # 6. Ingestion throughput (last 1 hour)
+        one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+        recent_count = (
+            db.query(EventModel)
+            .filter(EventModel.tenant_id == tenant_id, EventModel.timestamp >= one_hour_ago)
+            .count()
+        )
+        lines.append(f"Telemetry Events Ingested in Last 1 Hour: {recent_count}")
+
+    except Exception as e:
+        logger.warning("Error fetching workspace context for assistant: %s", e)
+        lines.append(f"Workspace Context: Telemetry available (query detail unavailable: {e})")
+
+    lines.append("--- END WORKSPACE CONTEXT ---")
+    return "\n".join(lines)
+
+
+SYSTEM_PROMPT = """You are the Ternline Workspace Security Assistant — an enterprise-grade AI security copilot embedded in the Ternline CYBER ENGINE Security Intelligence Platform.
 
 STRICT DOMAIN ENFORCEMENT:
 You are EXCLUSIVELY a cybersecurity assistant. You ONLY answer questions about:
@@ -56,12 +144,16 @@ You are EXCLUSIVELY a cybersecurity assistant. You ONLY answer questions about:
 - Malware analysis, reverse engineering concepts
 - Zero-trust architecture, security architecture review
 
+WORKSPACE ACCESS & GROUNDING:
+You have direct, real-time access to the user's workspace telemetry, findings, rules, policy, and connected applications as provided in the LIVE WORKSPACE TELEMETRY CONTEXT block.
+When the user asks about their findings, rules, defense policy, or telemetry, always ground your response in the LIVE WORKSPACE CONTEXT provided. Be factual and exact; do not invent findings or event IDs.
+
 REFUSAL RULE — NON-NEGOTIABLE:
 If a user asks about ANYTHING not directly related to cybersecurity or the Ternline platform, you MUST respond with:
 "I'm strictly a cybersecurity assistant for the Ternline platform. I can only help with security operations, threat detection, incident response, and related cybersecurity topics. For general questions, please use a general-purpose assistant."
 
 Do NOT answer questions about:
-- Food, recipes, nutrition, health (unless it's about operational security hygiene)
+- Food, recipes, bananas, nutrition, health (unless it's about operational security hygiene)
 - Sports, entertainment, pop culture
 - Mathematics, physics, chemistry unrelated to cryptography
 - Travel, geography, history (unless cyber-history like notable breaches)
@@ -74,8 +166,7 @@ RESPONSE STYLE:
 - Use technical security terminology appropriately.
 - When discussing Ternline-specific features, reference Fast Track (deterministic detection engine), Deep Track (AI investigation), findings, rules, events, telemetry ingestion.
 - Format responses with markdown when helpful (code blocks for rule examples, bullet points for steps).
-- Always ground recommendations in the evidence or context provided.
-- Never hallucinate CVE numbers, event IDs, or specific findings not mentioned by the user.
+- Always ground recommendations in the live workspace context provided.
 """
 
 
@@ -107,7 +198,7 @@ async def _call_llm(messages: list, tenant_id: str) -> str:
                 "and related cybersecurity topics. For general questions, please use a general-purpose assistant."
             )
         return (
-            "I am the Ternline Workspace Security Assistant. "
+            f"I am the Ternline Workspace Security Assistant for workspace '{tenant_id}'. "
             "Fast Track detection and telemetry processing are operating within normal baseline parameters. "
             "How can I assist with your security operations?"
         )
@@ -176,10 +267,12 @@ async def _call_llm(messages: list, tenant_id: str) -> str:
 async def assistant_chat(
     req: ChatRequest,
     auth: AuthContext = Depends(require_permission(Permission.FINDINGS_READ)),
+    db: Session = Depends(get_db),
 ):
     """
     Cybersecurity-only workspace assistant chat endpoint.
     Strictly restricted to cybersecurity and Ternline platform topics.
+    Incorporate live workspace context (findings, rules, defense policy, telemetry).
     """
     _prune_old_conversations()
 
@@ -209,10 +302,13 @@ async def assistant_chat(
         }
         page_hint = page_map.get(req.context["current_page"], "")
         if page_hint:
-            page_context = f"\n\nCurrent Console Context: {page_hint}"
+            page_context = f"\n\nCurrent Console Location: {page_hint}"
+
+    # Build live workspace context from database
+    workspace_context = _build_workspace_context(db, auth.tenant_id)
 
     # Build messages list
-    system_content = SYSTEM_PROMPT
+    system_content = f"{SYSTEM_PROMPT}\n\n{workspace_context}"
     if page_context:
         system_content += page_context
 
