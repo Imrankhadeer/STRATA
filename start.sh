@@ -80,9 +80,14 @@ if [ "$FORCE_LOCAL" = true ] || [ "$HAS_DOCKER" = false ]; then
   fi
 
   # 3. Virtual environment setup
-  if [ ! -d ".venv" ]; then
-    echo "==> Creating Python virtual environment in .venv..."
-    $PYTHON_CMD -m venv .venv
+  if [ ! -f ".venv/bin/activate" ] && [ ! -f ".venv/Scripts/activate" ]; then
+    echo "==> Creating or repairing Python virtual environment in .venv..."
+    rm -rf .venv 2>/dev/null || true
+    if ! $PYTHON_CMD -m venv .venv; then
+      echo "❌ Error: Failed to create virtual environment."
+      echo "👉 On Ubuntu/Debian/WSL, you may need to run: sudo apt update && sudo apt install -y python3-venv python3-pip"
+      exit 1
+    fi
   fi
 
   echo "==> Activating virtual environment..."

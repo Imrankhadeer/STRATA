@@ -44,7 +44,14 @@ class ReplayValidationEngine:
         Supports both generic declarative rules and legacy detector configurations.
         No dynamic code evaluation or script execution occurs.
         """
-        if rule.parameters and rule.parameters.get("rule_type") in ("threshold", "sequence"):
+        is_generic = (
+            rule.target_detector in ("detector.deep_track.promoted", "generic.declarative")
+            or (rule.parameters and (
+                rule.parameters.get("rule_type") in ("threshold", "sequence")
+                or rule.parameters.get("type") in ("threshold", "sequence")
+            ))
+        )
+        if is_generic:
             from backend.schemas.declarative_spec import GenericDeclarativeRuleDefinition
             from backend.detection.generic_evaluator import GenericDeclarativeEvaluator
             from backend.detection.state_store import InMemoryCorrelationStateStore, RedisCorrelationStateStore
@@ -83,7 +90,22 @@ class ReplayValidationEngine:
             else:
                 state_store = InMemoryCorrelationStateStore()
 
-            spec = GenericDeclarativeRuleDefinition(**rule.parameters)
+            norm_params = dict(rule.parameters or {})
+            if "rule_type" not in norm_params:
+                norm_params["rule_type"] = norm_params.get("type") or (
+                    "sequence" if "sequence_stages" in norm_params or "stages" in norm_params else "threshold"
+                )
+            if "sequence_stages" not in norm_params and "stages" in norm_params:
+                norm_params["sequence_stages"] = norm_params["stages"]
+
+            if "sequence_stages" in norm_params and isinstance(norm_params["sequence_stages"], list):
+                raw_stages = norm_params["sequence_stages"]
+                norm_params["sequence_stages"] = [
+                    {"stage_index": idx, "service_id": st} if isinstance(st, str) else st
+                    for idx, st in enumerate(raw_stages)
+                ]
+
+            spec = GenericDeclarativeRuleDefinition(**norm_params)
             return GenericDeclarativeEvaluator(
                 rule_id=rule.rule_id,
                 version=rule.version,

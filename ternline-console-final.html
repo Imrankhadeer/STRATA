@@ -10,38 +10,42 @@
 <style>
 :root{color-scheme:dark;--bg:#090e0c;--side:#0d1411;--panel:#111a16;--panel2:#16211b;--panel3:#1b2921;--line:#293a30;--text:#e7f0e9;--muted:#9aaba0;--dim:#6e8074;--lime:#c5f36b;--green:#75d6a3;--red:#ff7777;--amber:#f3c16e;--blue:#8ebcff;--purple:#c1a2ff;--radius:13px;--shadow:0 16px 48px #0007}
 *{box-sizing:border-box}html,body{color-scheme:dark;margin:0;min-height:100%;background:var(--bg);color:var(--text);font:13px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--lime);outline-offset:2px}a{color:var(--lime)}/* Sleek, Polished, Compact Sidebar with Dark Custom Scrollbars */
-html {
+html, body {
   color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
 }
 * {
   scrollbar-width: thin;
-  scrollbar-color: #243329 transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
 }
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #080d0b;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #243329;
+  background: rgba(255, 255, 255, 0.16);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #39523f;
+  background: rgba(197, 243, 107, 0.4);
 }
-
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
 
 .app {
   display: grid;
-  grid-template-columns: 215px minmax(0, 1fr);
+  grid-template-columns: 216px minmax(0, 1fr);
   min-height: 100vh;
 }
 .sidebar {
   background: #090e0c;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 12px 8px;
+  padding: 10px 8px 12px;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -49,53 +53,55 @@ html {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 3px;
   z-index: 5;
+  color-scheme: dark;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
 }
 .sidebar::-webkit-scrollbar {
   width: 4px;
 }
 .sidebar::-webkit-scrollbar-track {
-  background: #080d0b;
+  background: transparent;
 }
 .sidebar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
   border-radius: 4px;
 }
 .sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(183, 243, 107, 0.35);
+  background: rgba(197, 243, 107, 0.4);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 2px 4px 4px;
+  padding: 3px 5px 6px;
 }
 .brandmark {
-  width: 24px;
-  height: 24px;
-  border: 1px solid rgba(183, 243, 107, 0.35);
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(197, 243, 107, 0.35);
   background: linear-gradient(135deg, #1c2e1b, #0f1813);
-  border-radius: 6px;
+  border-radius: 5px;
   display: grid;
   place-items: center;
   color: var(--lime);
   font-weight: 800;
-  font-size: 13px;
-  box-shadow: 0 0 10px rgba(183, 243, 107, 0.1);
+  font-size: 11px;
+  box-shadow: 0 0 10px rgba(197, 243, 107, 0.1);
 }
 .brand b {
-  letter-spacing: 0.1em;
-  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  font-size: 11px;
   color: #f0fdf4;
 }
 .brand small {
   display: block;
   color: var(--muted);
-  font-size: 8.5px;
+  font-size: 8px;
   letter-spacing: 0.05em;
   font-weight: 500;
 }
@@ -103,24 +109,25 @@ html {
 .tenantbox {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  padding: 6px 8px;
+  border-radius: 5px;
+  padding: 5px 8px;
+  margin-bottom: 2px;
 }
 .tenantbox label, .field label {
   display: block;
   color: var(--muted);
-  font-size: 8.5px;
+  font-size: 8px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 2px;
 }
 
 .navgroup {
-  margin: 6px 6px 2px;
-  color: #495a4c;
+  margin: 7px 6px 2px;
+  color: #4f6355;
   font-size: 8.5px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
@@ -129,15 +136,16 @@ html {
   width: 100%;
   text-align: left;
   font: inherit;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 500;
   align-items: center;
   gap: 7px;
-  padding: 4px 7px;
+  padding: 4.5px 7.5px;
+  min-height: 28px;
   margin: 1px 0;
   border: 1px solid transparent;
   border-radius: 5px;
-  color: #92a296;
+  color: #92a497;
   text-decoration: none;
   cursor: pointer;
   background: transparent;
@@ -146,24 +154,28 @@ html {
 }
 .nav:hover {
   background: rgba(255, 255, 255, 0.04);
-  color: #e2e8f0;
+  color: #f0fdf4;
 }
 .nav.active {
-  background: rgba(183, 243, 107, 0.08);
-  border-color: rgba(183, 243, 107, 0.18);
+  background: rgba(197, 243, 107, 0.09);
+  border-color: rgba(197, 243, 107, 0.22);
   color: var(--lime);
   font-weight: 600;
 }
+.nav:focus, .nav:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
 .nav .ico {
-  width: 13px;
+  width: 14px;
   font-size: 10.5px;
   text-align: center;
-  color: #55665a;
+  color: #556c5d;
   flex-shrink: 0;
   transition: color 0.12s ease;
 }
 .nav:hover .ico {
-  color: #92a296;
+  color: #a3b8aa;
 }
 .nav.active .ico {
   color: var(--lime);
@@ -171,17 +183,17 @@ html {
 
 .nav-badge {
   margin-left: auto;
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 700;
   padding: 0 4.5px;
-  height: 15px;
+  height: 14px;
   display: inline-flex;
   align-items: center;
-  border-radius: 4px;
-  background: rgba(183, 243, 107, 0.12);
+  border-radius: 3px;
+  background: rgba(197, 243, 107, 0.12);
   color: var(--lime);
   line-height: 1;
-  border: 1px solid rgba(183, 243, 107, 0.22);
+  border: 1px solid rgba(197, 243, 107, 0.22);
 }
 .nav-badge.warn {
   background: rgba(247, 162, 59, 0.12);
@@ -200,9 +212,9 @@ html {
 .sidefoot {
   margin-top: auto;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 8px 6px 2px;
+  padding: 8px 6px 4px;
   color: var(--muted);
-  font-size: 9.5px;
+  font-size: 9px;
 }
 .main{min-width:0}.topbar{height:62px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 24px;position:sticky;top:0;background:#0a100eeF;backdrop-filter:blur(12px);z-index:4}.crumb{font-weight:700;font-size:13px}.spacer{flex:1}.status{display:flex;align-items:center;gap:7px;color:var(--green);font-size:11px}.dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 12px #75d6a366}.topsearch{width:min(260px,28vw);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--text)}.content{padding:23px 26px 60px;max-width:1600px;margin:auto}.pagehead{display:flex;align-items:flex-start;gap:18px;margin-bottom:20px}.pagehead h1{font-size:23px;line-height:1.2;margin:0 0 6px;letter-spacing:-.035em}.pagehead p{color:var(--muted);margin:0;max-width:780px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}.btn{border:1px solid var(--line);border-radius:8px;padding:8px 11px;background:var(--panel2);color:var(--text);font-weight:650;font-size:11px}.btn:hover{border-color:#607d51;background:#203025}.btn.primary{background:var(--lime);color:#15200e;border-color:var(--lime)}.btn.primary:hover{background:#d7ff89}.btn.danger{border-color:#713b3b;color:#ff9a9a;background:#2a1717}.btn.ghost{background:transparent}.btn.small{padding:5px 8px;font-size:10px}.btn:disabled{opacity:.4;cursor:not-allowed}.grid{display:grid;gap:13px;grid-template-columns:minmax(0,1fr)}.grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);min-width:0}.pad{padding:15px}.panelhead{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line)}.panelhead h3{font-size:12px;margin:0}.panelhead small{margin-left:auto;color:var(--muted)}.metric{padding:14px 15px;min-height:106px}.metric .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.metric strong{display:block;font-size:27px;letter-spacing:-.04em;margin:7px 0 2px}.metric small{color:var(--muted);font-size:10px}.metric .up{color:var(--green)}.metric .warn{color:var(--amber)}.metric .bad{color:var(--red)}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}.muted{color:var(--muted)}.dim{color:var(--dim)}.tiny{font-size:10px}.mono,code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.pill{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:20px;padding:3px 7px;font-size:9px;color:var(--muted);white-space:nowrap}.pill.good{border-color:#315b43;background:#14271c;color:var(--green)}.pill.warn{border-color:#66512c;background:#2a2418;color:var(--amber)}.pill.bad{border-color:#683939;background:#2c1919;color:#ff9696}.pill.info{border-color:#355170;background:#172535;color:var(--blue)}.pill.purple{border-color:#51406e;background:#241c32;color:var(--purple)}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:660px}th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);font-weight:650;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}td{padding:10px 12px;border-bottom:1px solid #223027;color:#d6e1d9;font-size:11px;vertical-align:middle}tr:last-child td{border-bottom:0}tbody tr:hover{background:#18241d}tr.clickable{cursor:pointer}.toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line)}.control{background:#0d1511;border:1px solid var(--line);border-radius:7px;padding:8px 9px;color:var(--text);min-width:0}.control::placeholder{color:#68786e}.control:focus{border-color:#789b52}.toolbar .control{font-size:11px}.field{margin-bottom:12px}.field input,.field select,.field textarea{width:100%;background:#0d1511;border:1px solid var(--line);border-radius:7px;padding:9px;color:var(--text)}.field textarea{min-height:90px;resize:vertical}.field small{display:block;color:var(--dim);font-size:10px;margin-top:4px}.split{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(270px,.8fr);gap:13px}.stack{display:flex;flex-direction:column;gap:12px}.row{display:flex;align-items:center;gap:9px;min-width:0}.between{display:flex;justify-content:space-between;align-items:center;gap:12px}.bar{height:7px;background:#26342b;border-radius:9px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--lime);border-radius:9px}.bar.red>i{background:var(--red)}.bar.amber>i{background:var(--amber)}.bar.blue>i{background:var(--blue)}.list{display:flex;flex-direction:column}.listitem{padding:12px 14px;border-bottom:1px solid var(--line)}.listitem:last-child{border-bottom:0}.listitem h4{margin:0 0 4px;font-size:12px}.listitem p{margin:0;color:var(--muted);font-size:10px}.timeline{padding:4px 0 4px 17px;border-left:1px solid #435344;margin-left:6px}.tlitem{position:relative;padding:0 0 17px 13px}.tlitem:before{content:"";position:absolute;left:-22px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--lime);border:2px solid var(--panel)}.tlitem:last-child{padding-bottom:2px}.codebox{background:#08100c;border:1px solid #26372c;border-radius:9px;padding:12px;color:#c9e7bd;overflow:auto;font-size:10px;line-height:1.6;white-space:pre-wrap}.callout{padding:11px 13px;border:1px solid #3b5138;background:#152219;border-radius:9px;color:#c9d9cb;font-size:11px}.callout.warn{border-color:#66512c;background:#282216}.callout.danger{border-color:#683939;background:#281818}.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding:0 12px}.tab{padding:10px 9px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:11px}.tab.active{color:var(--lime);border-color:var(--lime)}.drawerback{position:fixed;inset:0;background:#0009;z-index:20;display:flex;justify-content:flex-end}.drawer{width:min(580px,95vw);height:100%;overflow:auto;background:#101914;border-left:1px solid var(--line);box-shadow:var(--shadow);padding:20px}.drawer h2{margin:0 0 4px;font-size:19px}.drawerclose{float:right}.modalback{position:fixed;inset:0;background:#000b;z-index:30;display:grid;place-items:center;padding:18px}.modal{width:min(700px,96vw);max-height:90vh;overflow:auto;background:#111a15;border:1px solid #405443;border-radius:14px;box-shadow:var(--shadow);padding:19px}.modal h2{margin:0 0 14px;font-size:17px}.toast{position:fixed;bottom:20px;right:20px;background:#1a2b20;border:1px solid #537344;color:#e5f3df;border-radius:9px;padding:11px 14px;z-index:50;box-shadow:var(--shadow);max-width:360px;font-size:11px}.empty{padding:28px;text-align:center;color:var(--muted)}.kpirow{display:flex;gap:15px;flex-wrap:wrap}.kpirow span{font-size:10px;color:var(--muted)}.kpirow b{display:block;color:var(--text);font-size:16px}.graph{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:15px}.node{border:1px solid #435b46;background:#17251b;border-radius:9px;padding:10px;text-align:center;min-width:0}.node b{display:block;font-size:10px;overflow-wrap:anywhere}.node small{color:var(--muted);font-size:9px}.node .nodeicon{font-size:17px;margin-bottom:5px}.grapharrow{text-align:center;color:var(--lime);padding:5px}.hide{display:none!important}.footerhint{padding:10px 14px;color:var(--dim);font-size:10px;border-top:1px solid var(--line)}.checkbox{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:11px;margin:8px 0}.checkbox input{accent-color:var(--lime)}.mobilemenu{display:none}
 @media(max-width:1050px){.app{grid-template-columns:210px minmax(0,1fr)}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.content{padding:20px}.split{grid-template-columns:1fr}}
@@ -629,11 +641,7 @@ html {
 
 /* Ternline usability pass: readable at 100% browser zoom */
 html, body { font-size: 14px; }
-.app { grid-template-columns: 238px minmax(0, 1fr); }
-.sidebar { padding: 15px 10px; gap: 10px; }
-.brandmark { width: 28px; height: 28px; font-size: 15px; }
-.nav { min-height: 37px; padding: 8px 10px; font-size: 12.5px; }
-.navgroup { font-size: 10px; letter-spacing: .11em; margin: 12px 9px 6px; }
+.app { grid-template-columns: 216px minmax(0, 1fr); }
 .topbar { height: 66px; padding: 0 28px; }
 .crumb { font-size: 14px; }
 .content { padding: 28px 32px 64px; max-width: 1760px; }
@@ -1785,7 +1793,7 @@ function investigations() {
   const completed = rows.filter(r=>['completed','confirmed_threat','likely_benign','inconclusive'].includes(String(r.status||r.verdict||'').toLowerCase())).length;
   const review = rows.filter(r=>['needs_review','inconclusive','needs_more_data'].includes(String(r.status||r.verdict||'').toLowerCase())).length;
   const failed = rows.filter(r=>String(r.status||'').toLowerCase()==='failed').length;
-  const selected = rows[0] || null;
+  const selected = (selectedDeepTrackId ? rows.find(r => r.investigation_id === selectedDeepTrackId) : null) || rows[0] || null;
   const hypotheses = Array.isArray(selected?.hypotheses)?selected.hypotheses:[];
   const candidates = Array.isArray(selected?.candidate_rules)?selected.candidate_rules:[];
   const evidence = hypotheses.flatMap(h=>Array.isArray(h.supporting_evidence)?h.supporting_evidence:[]).slice(0,5);
@@ -1799,7 +1807,7 @@ function investigations() {
       <section class="panel ref-queue"><div class="panelhead"><div><h3>Investigation Queue (${rows.length})</h3><small>Recent reports and active work</small></div></div><div class="pad" style="padding-bottom:8px"><input class="control" style="width:100%" placeholder="⌕ Search investigations…" oninput="filterDeepQueue(this.value)"></div><div class="ref-queue-list" id="deepQueueList">${rows.length?rows.slice(0,30).map((r,i)=>{
         const id=field(r,'investigation_id'); const title=field(r,'title','query','summary','finding_id'); const verdict=field(r,'verdict','status');
         const cls=/threat|failed/i.test(verdict)?'danger':/benign|complete/i.test(verdict)?'ok':'warn';
-        return `<button class="ref-queue-item ${i===0?'active':''}" data-search="${esc(`${id} ${title} ${verdict}`.toLowerCase())}" data-action="view-investigation" data-id="${esc(id)}"><div class="between"><strong>${esc(id||'Investigation')}</strong>${pill(verdict,cls)}</div><p>${esc(title)}</p><small>▣ ${formatLocalTime(r.completed_at||r.created_at)} &nbsp; · &nbsp; ${(r.hypotheses||[]).length} hypotheses</small></button>`;
+        return `<button class="ref-queue-item ${selected && selected.investigation_id === id ? 'active' : ''}" data-search="${esc(`${id} ${title} ${verdict}`.toLowerCase())}" data-action="select-investigation" data-id="${esc(id)}"><div class="between"><strong>${esc(id||'Investigation')}</strong>${pill(verdict,cls)}</div><p>${esc(title)}</p><small>▣ ${formatLocalTime(r.completed_at||r.created_at)} &nbsp; · &nbsp; ${(r.hypotheses||[]).length} hypotheses</small></button>`;
       }).join(''):`<div class="pad">${empty('No investigations yet','Start an evidence-led investigation using the prompt. Completed reports will appear in this queue.')}</div>`}</div></section>
       <div class="ref-deep-center">
         <section class="panel ref-deep-prompt"><div class="eyebrow" style="color:var(--lime)">✣ &nbsp;META MUSE SPARK · DEEP TRACK</div><h3>Ask Deep Track</h3><div class="prompt-row"><textarea id="deepSearchInput" class="control" rows="2" style="width:100%;font-size:11px;line-height:1.5" placeholder="Investigate a finding, trace, service or describe a security concern…"></textarea><button class="btn primary" data-action="execute-deep-search" id="btnExecDeepSearch">▷ Investigate</button></div><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn small ghost" data-action="fill-deep-search" data-query="Investigate this finding and cite the supporting telemetry">♧ Analyze this finding</button><button class="btn small ghost" data-action="fill-deep-search" data-query="Investigate cross-service activity and reconstruct the event sequence">⌁ Check cross-service activity</button><button class="btn small ghost" data-action="fill-deep-search" data-query="Look for unusual outbound data transfer and possible exfiltration">♧ Find data exfiltration</button><button class="btn small ghost" data-action="fill-deep-search" data-query="Investigate suspicious activity in the selected time window">◷ Review time window</button></div><div id="deepSearchStatus" class="callout hide" style="margin-top:10px"><div class="row"><span class="dot"></span><span id="deepSearchStatusText">Investigating telemetry and grounding evidence citations…</span></div></div><div id="deepSearchResult" style="margin-top:10px"></div></section>
@@ -1961,33 +1969,61 @@ initSidebarTooltips();
   }
 }
 
-// Inspect Raw Event Modal
+// Inspect Human-Readable & Forensic Event Details
 async function inspectEvent(eventId) {
   try {
     const ev = await request(`/api/v1/events/${encodeURIComponent(eventId)}`);
+    const attrs = ev.attributes || {};
+    const attrRows = Object.entries(attrs).map(([k, v]) => `
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:11.5px">
+        <span class="dim mono">${esc(k)}</span>
+        <span class="mono" style="color:var(--text);word-break:break-all">${typeof v === 'object' ? esc(JSON.stringify(v)) : esc(String(v))}</span>
+      </div>
+    `).join('') || '<div class="tiny dim">No structured attributes recorded.</div>';
+
     const inner = `
-      <div class="stack">
+      <div class="stack" style="gap:14px">
         <div class="between">
-          <div><b>${esc(ev.event_type)}</b> <span class="tiny dim">(${esc(ev.event_id)})</span></div>
+          <div><div class="eyebrow">${esc(ev.service_id)} · CANONICAL TELEMETRY</div><h3 style="margin:2px 0">${esc(ev.event_type)}</h3></div>
           <div>${pill(ev.severity)}</div>
         </div>
+
         <div class="ce-kv">
-          <div class="cell"><small class="muted">Service</small><b>${esc(ev.service_id)}</b></div>
-          <div class="cell"><small class="muted">Timestamp (UTC)</small><b class="mono" style="font-size:10px">${esc(ev.timestamp)}</b></div>
-          <div class="cell"><small class="muted">Local Time</small><b>${formatLocalTime(ev.timestamp)}</b></div>
-          <div class="cell"><small class="muted">Trace ID</small><b class="mono" style="font-size:10px">${esc(ev.trace_id || '—')}</b></div>
+          <div class="cell"><small class="muted">Event Identifier</small><b class="mono" style="font-size:11px">${esc(ev.event_id)}</b></div>
+          <div class="cell"><small class="muted">Service Footprint</small><b>${esc(ev.service_id)}</b></div>
+          <div class="cell"><small class="muted">Observed Timestamp</small><b>${formatLocalTime(ev.timestamp)}</b></div>
+          <div class="cell"><small class="muted">Distributed Trace ID</small><b class="mono" style="font-size:11px">${esc(ev.trace_id || 'N/A')}</b></div>
         </div>
-        <div>
-          <b>Attributes Payload</b>
-          <pre class="codebox" style="margin-top:6px;max-height:260px">${esc(JSON.stringify(ev.attributes, null, 2))}</pre>
+
+        <div class="row" style="gap:8px;flex-wrap:wrap;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px">
+          <button class="btn small" onclick="copyToClipboard('${esc(ev.event_id)}', 'Event ID copied to clipboard!')">📋 Copy Event ID</button>
+          ${ev.trace_id ? `<button class="btn small" onclick="copyToClipboard('${esc(ev.trace_id)}', 'Trace ID copied to clipboard!')">📋 Copy Trace ID</button>` : ''}
+          ${ev.trace_id ? `<button class="btn small primary" data-action="investigate-event-trace" data-trace="${esc(ev.trace_id)}" data-service="${esc(ev.service_id)}">⌘ Deep Track on this Trace</button>` : ''}
+          <button class="btn small" data-action="filter-events-by-service" data-svc="${esc(ev.service_id)}">⌖ Filter Service in Events</button>
         </div>
-        <div>
-          <b>Provenance Metadata</b>
-          <pre class="codebox" style="margin-top:6px;max-height:140px">${esc(JSON.stringify(ev.provenance, null, 2))}</pre>
+
+        <div class="panel pad" style="background:var(--panel)">
+          <div class="between" style="margin-bottom:8px">
+            <b style="font-size:12px">Structured Telemetry Attributes</b>
+            <span class="tiny dim">${Object.keys(attrs).length} attributes</span>
+          </div>
+          <div style="max-height:220px;overflow-y:auto;padding-right:6px">
+            ${attrRows}
+          </div>
         </div>
+
+        <details style="border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--panel2)">
+          <summary style="font-weight:600;font-size:11.5px;cursor:pointer;color:var(--muted)">Advanced: Raw Canonical JSON & Provenance Metadata</summary>
+          <div style="margin-top:10px">
+            <div class="tiny dim" style="margin-bottom:4px">Attributes:</div>
+            <pre class="codebox" style="margin:0 0 10px;max-height:180px">${esc(JSON.stringify(ev.attributes, null, 2))}</pre>
+            <div class="tiny dim" style="margin-bottom:4px">Provenance Metadata:</div>
+            <pre class="codebox" style="margin:0;max-height:120px">${esc(JSON.stringify(ev.provenance, null, 2))}</pre>
+          </div>
+        </details>
       </div>
     `;
-    openModal('Event Inspector: ' + ev.event_id, inner);
+    openModal('Event Forensic Details: ' + ev.event_id, inner);
   } catch (err) {
     toast('Error loading event: ' + err.message);
   }
@@ -2991,11 +3027,11 @@ function topology() {
       ${compactMetric('Services',serviceNames,'Observed in telemetry')}${compactMetric('Connections',edgeList.length,'Observed communication links')}${compactMetric('At risk',impacted.size,'Services linked to open findings')}${compactMetric('Traces',traces.size,'Distinct trace identifiers')}
     </div>`
     + `<div class="ref-topology-layout">
-      <section class="panel ref-topology-graph"><div class="ref-graph-tools"><div class="ref-graph-tabs"><button class="active" type="button">⌘ Topology Graph</button><button type="button" disabled>♧ Service Map</button><button type="button" disabled>⌁ Trace Flow</button></div><span class="spacer"></span><span class="pill ${ev.length?'good':'info'}">● ${ev.length?'Telemetry loaded':'Waiting for telemetry'}</span><button class="btn small" type="button" onclick="toast('Graph is derived from the currently loaded event sample')">Show Labels ◉</button></div>
+      <section class="panel ref-topology-graph"><div class="ref-graph-tools"><div class="ref-graph-tabs"><button class="active" type="button">⌘ Topology Graph</button></div><span class="spacer"></span><span class="pill ${ev.length?'good':'info'}">● ${ev.length?'Telemetry loaded':'Waiting for telemetry'}</span><button class="btn small" type="button" onclick="toast('Graph is derived from the currently loaded event sample')">Show Labels ◉</button></div>
       ${nodes.length?`<svg class="ref-graph-svg" viewBox="0 0 930 420" role="img" aria-label="Service communication graph">${edgeSvg}${nodeSvg}</svg>`:`<div class="empty" style="position:absolute;inset:80px 20px 20px;display:grid;place-content:center;text-align:center"><b>No service topology yet</b><p class="muted tiny">Topology nodes and links appear when telemetry includes service and source fields.</p></div>`}
       <div class="ref-graph-legend"><span><i class="dot" style="display:inline-block"></i> Normal flow</span><span><i class="dot" style="display:inline-block;background:var(--red)"></i> Service linked to open finding</span><span>— Observed communication link</span></div></section>
       <aside class="panel ref-inspector"><div class="ref-inspector-head"><div style="font-size:27px;color:var(--lime)">⬡</div><div style="flex:1;min-width:0"><b style="font-size:15px">${esc(selected||'No service selected')}</b><div class="tiny muted">Selected service · telemetry profile</div></div>${selectedFinding?'<span class="pill danger">⚠ At Risk</span>':'<span class="pill ok">Observed</span>'}</div>
-        <div class="ref-inspector-tabs"><button class="active">Overview</button><button type="button" disabled>Telemetry</button><button type="button" disabled>Findings</button><button type="button" disabled>Traces</button></div>
+        <div class="ref-inspector-tabs"><button class="active">Overview</button></div>
         <div class="ref-inspector-metrics"><div><small>Events</small><b>${selectedEvents.length}</b></div><div><small>Related traces</small><b>${new Set(selectedEvents.map(e=>field(e,'trace_id')).filter(x=>x!=='—')).size}</b></div><div><small>Findings</small><b>${selectedFinding?'1':'0'}</b></div></div>
         <h3 style="font-size:11px;margin:13px 0 4px">Connections (${edgeList.filter(e=>e.source===selected||e.target===selected).length})</h3>
         ${edgeList.filter(e=>e.source===selected||e.target===selected).slice(0,6).map(e=>`<div class="ref-evidence-row"><b>${e.source===selected?'→':'←'} ${esc(e.source===selected?e.target:e.source)}</b><span class="pill info">${e.count} events</span></div>`).join('')||'<div class="tiny dim" style="padding:8px 0">No directed links were identified in the loaded sample.</div>'}
@@ -4593,6 +4629,23 @@ function enterVisualPreview() {
 }
 window.enterVisualPreview = enterVisualPreview;
 
+function copyToClipboard(text, successMsg) {
+  if (!text) return;
+  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => toast(successMsg || 'Copied to clipboard!'));
+  } else {
+    const input = document.createElement('input');
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    toast(successMsg || 'Copied to clipboard!');
+  }
+}
+window.copyToClipboard = copyToClipboard;
+
+
 function enterControlRoom() {
   const gate = $('#loginGateView');
   const app = $('#appShell');
@@ -5466,6 +5519,18 @@ document.addEventListener('click', e => {
     case 'inspect-event':
       inspectEvent(a.dataset.id);
       break;
+    case 'select-investigation':
+      selectedDeepTrackId = a.dataset.id;
+      render();
+      break;
+    case 'investigate-event-trace':
+      setPage('investigations');
+      setTimeout(() => {
+        const inp = $('#deepSearchInput');
+        if (inp) inp.value = `Investigate distributed trace '${a.dataset.trace || ''}' originating from service '${a.dataset.service || ''}'. Reconstruct cross-service sequence and audit evidence citations.`;
+        executeDeepSearch();
+      }, 50);
+      break;
     case 'view-investigation':
       viewInvestigationReport(a.dataset.id);
       break;
@@ -5838,6 +5903,22 @@ async function executeDeepSearch() {
     }
 
     if (!finalReport) {
+      // Non-streaming fallback: Query the standard JSON endpoint if stream ended without report
+      appendLog('ℹ', 'Stream ended; attempting non-streaming query fallback...');
+      try {
+        const fbRes = await fetch(apiUrl('/api/v1/investigations/query'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(bearerToken ? { 'Authorization': `Bearer ${bearerToken}` } : {}) },
+          body: JSON.stringify({ query: q })
+        });
+        if (fbRes.ok) {
+          finalReport = await fbRes.json();
+          appendLog('✓', 'Non-streaming query response received successfully.');
+        }
+      } catch (_) {}
+    }
+
+    if (!finalReport) {
       throw new Error('The server closed the investigation stream without a completed report. Check backend logs for the query/stream endpoint.');
     }
     await renderReport(finalReport);
@@ -5846,6 +5927,8 @@ async function executeDeepSearch() {
     if (timedOut || err.name === 'AbortError') {
       message = 'Deep Track timed out after 180 seconds while waiting for the backend. Check evidence collection, Meta API latency and backend logs.';
     }
+    appendLog('✕', `Investigation interrupted: ${message}`);
+    if (statusText) statusText.textContent = `Error: ${message}`;
     if (statusEl) statusEl.classList.add('hide');
     toast(`Deep Track error: ${message}`);
     resEl.innerHTML = `<div class="callout danger"><b>Deep Track failed</b><p style="margin:5px 0 0">${esc(message)}</p><small>Check the browser Network tab and backend logs for <code>/api/v1/investigations/query/stream</code>.</small></div>`;

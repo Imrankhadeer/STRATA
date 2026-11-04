@@ -632,8 +632,8 @@ async def stream_investigate_finding(
                     investigator_model=existing_report.investigator_model,
                     completed_at=existing_report.created_at,
                 )
-                yield f"data: {json.dumps({'stage': 'cache_hit', 'detail': f'Reused cached report {existing_report.investigation_id}', 'report': rep_obj.model_dump()}, default=str)}\n\n"
-                yield f"data: {json.dumps({'stage': 'complete', 'verdict': rep_obj.verdict, 'report': rep_obj.model_dump()}, default=str)}\n\n"
+                yield f"data: {json.dumps({'stage': 'cache_hit', 'detail': f'Reused cached report {existing_report.investigation_id}', 'report': rep_obj.model_dump(mode='json')}, default=str)}\n\n"
+                yield f"data: {json.dumps({'stage': 'complete', 'verdict': rep_obj.verdict, 'report': rep_obj.model_dump(mode='json')}, default=str)}\n\n"
                 return
 
         flight_key = f"{auth.tenant_id}:{finding_id}"
