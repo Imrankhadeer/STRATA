@@ -1,0 +1,12 @@
+{
+  "include": [
+    "backend",
+    "scenarios",
+    "sdk",
+    "tests"
+  ],
+  "extraPaths": [
+    "sdk",
+    "."
+  ]
+}

@@ -303,9 +303,10 @@ def test_contain_incident_api(auth_client):
     assert res.status_code == 200
     data = res.json()
     assert data["incident_id"] == inc_id
-    assert data["status"] == "contained"
+    assert data["status"] == "investigating"
     assert data["contained_entities_count"] >= 1
     assert any(a["target"] == attacker_ip for a in data["actions_triggered"])
+    assert all(a["status"] == "proposed" for a in data["actions_triggered"])
 
 
 def test_threat_intel_ioc_crud(auth_client):

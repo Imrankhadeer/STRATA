@@ -231,6 +231,7 @@ def switch_workspace(
         scopes=scopes,
         is_human=True,
         role=membership.role,
+        auth_version=user.auth_version,
     )
 
     ops_bus.publish(
@@ -459,4 +460,3 @@ def update_current_workspace_name(
     tenant.name = req.name.strip()
     db.commit()
     return {"success": True, "name": tenant.name}
-

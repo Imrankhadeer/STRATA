@@ -50,6 +50,7 @@ class UserModel(Base):
     verification_token_expires_at = Column(DateTime, nullable=True)
     reset_token = Column(String(128), nullable=True, unique=True, index=True)
     reset_token_expires_at = Column(DateTime, nullable=True)
+    auth_version = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
 
@@ -416,5 +417,4 @@ class ThreatIntelIocModel(Base):
         Index("ix_threat_intel_tenant_type_val", "tenant_id", "ioc_type", "value"),
         Index("ix_threat_intel_tenant_active", "tenant_id", "is_active"),
     )
-
 

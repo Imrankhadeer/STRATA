@@ -11,6 +11,7 @@ from collections import defaultdict
 # OWASP Recommended PBKDF2 Parameters (2024/2026)
 PBKDF2_ALGORITHM = "sha256"
 PBKDF2_ITERATIONS = 600_000
+PBKDF2_MAX_VERIFY_ITERATIONS = 1_000_000
 SALT_BYTES = 16
 
 
@@ -43,6 +44,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         if len(parts) != 4 or parts[0] != f"pbkdf2_{PBKDF2_ALGORITHM}":
             return False
         iterations = int(parts[1])
+        if iterations < 1 or iterations > PBKDF2_MAX_VERIFY_ITERATIONS:
+            return False
         salt = bytes.fromhex(parts[2])
         expected_hash = bytes.fromhex(parts[3])
 
@@ -112,4 +115,4 @@ class AuthRateLimiter:
 
 
 auth_rate_limiter = AuthRateLimiter(max_attempts=5, window_seconds=300)
-
+auth_email_rate_limiter = AuthRateLimiter(max_attempts=3, window_seconds=3600)

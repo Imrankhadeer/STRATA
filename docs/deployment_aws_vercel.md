@@ -64,6 +64,7 @@ The frontend is fully configured via `vercel.json` with clean routing, security 
 - `/console` &rarr; `console.html` (Full SOC Control Room)
 - `/docs` &rarr; `docs.html` (API & Architecture Documentation)
 - `/verify-email` &rarr; Automatic verification token capture and session boot
+- Replace the `https://api.yourdomain.com` rewrite target in `vercel.json` with the HTTPS hostname of your deployed backend before deploying.
 
 ### Step 3: Connect Frontend to Your AWS Backend
 When accessing the Control Room on Vercel, navigate to **Backend & Settings** (gear icon) in the bottom-left sidebar:
@@ -85,6 +86,12 @@ When accessing the Control Room on Vercel, navigate to **Backend & Settings** (g
 3. **AWS SES (Simple Email Service)**:
    - Verify your sending domain (e.g., `ternline.io`) or email address (e.g., `noreply@ternline.io`).
    - Grant `ses:SendEmail` permissions to your ECS Task Execution Role.
+4. **Production secrets**:
+   - Set `POSTGRES_PASSWORD`, `INVESTIGATOR_API_KEY`, and `SECRET_KEY` through the deployment secret manager.
+   - Set `INITIAL_ADMIN_API_KEY` before the first database bootstrap; the service will not generate or log a production key.
+   - Configure `ALLOWED_CORS_ORIGINS` with exact trusted domains; wildcard Vercel origins are disabled in production.
+   - Prometheus `/metrics` endpoints require the `metrics:read` permission; event, finding, and rule metrics are tenant-scoped.
+   - When using `.env.production` for Compose interpolation, pass it with `docker compose --env-file .env.production -f docker-compose.prod.yml`.
 
 ### 2. Build and Push Docker Image to Amazon ECR
 ```bash
@@ -129,4 +136,3 @@ docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/ternline-backend:la
    - Protects `/api/v1/auth/login` by enforcing sliding window limits (maximum 5 failed attempts per 5 minutes per account).
 4. **Tenant Isolation**:
    - All findings, rules, actions, and audit logs are strictly scoped by `tenant_id`.
-

@@ -485,8 +485,13 @@ def test_alembic_migration_revision_chain():
     script = ScriptDirectory.from_config(alembic_cfg)
     heads = script.get_heads()
 
-    # The chain now heads at 7b8c9d0e1f2a which extends 6a7b8c9d0e1f
-    assert "7b8c9d0e1f2a" in heads
+    # User session revocation extends the API-key scopes migration.
+    assert heads == ["9c31a4d8e6f2"]
+    rev_auth = script.get_revision("9c31a4d8e6f2")
+    assert rev_auth is not None
+    assert rev_auth.down_revision == "7b8c9d0e1f2a"
+
+    assert "7b8c9d0e1f2a" not in heads
     rev_scopes = script.get_revision("7b8c9d0e1f2a")
     assert rev_scopes is not None
     assert rev_scopes.down_revision == "6a7b8c9d0e1f"
@@ -499,4 +504,3 @@ def test_alembic_migration_revision_chain():
     assert rev is not None
     assert rev.down_revision == "38a2b18135c4"
     assert "active defense" in rev.doc.lower()
-

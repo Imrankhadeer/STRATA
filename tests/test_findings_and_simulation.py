@@ -131,8 +131,10 @@ def test_get_finding_not_found(client, auth_headers):
 
 
 def test_get_finding_cross_tenant_forbidden(client, auth_headers, seed_findings):
+    # Security fix: cross-tenant findings now return 404 (not 403) to prevent
+    # existence oracle attacks (UUID enumeration across tenant boundaries).
     res = client.get("/api/v1/findings/find-beta-001", headers=auth_headers)
-    assert res.status_code == 403
+    assert res.status_code == 404
 
 
 def test_submit_finding_feedback(client, auth_headers, seed_findings):
@@ -182,12 +184,14 @@ def test_submit_finding_feedback_invalid(client, auth_headers, seed_findings):
 
 
 def test_submit_finding_feedback_cross_tenant(client, auth_headers, seed_findings):
+    # Security fix: cross-tenant feedback now returns 404 (not 403) to prevent
+    # existence oracle attacks (UUID enumeration across tenant boundaries).
     res = client.post(
         "/api/v1/findings/find-beta-001/feedback",
         headers=auth_headers,
         json={"status": "resolved", "reason": "Attempting cross-tenant resolve"},
     )
-    assert res.status_code == 403
+    assert res.status_code == 404
 
 
 def test_simulation_run_exfiltration(client, auth_headers):

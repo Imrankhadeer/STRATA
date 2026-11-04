@@ -22,7 +22,13 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
 from backend.config import settings
-from backend.core.auth import get_current_auth, AuthContext, hash_api_key
+from backend.core.auth import (
+    get_current_auth,
+    AuthContext,
+    Permission,
+    hash_api_key,
+    require_permission,
+)
 from backend.db.session import get_db
 from backend.models import (
     ApiKey,
@@ -30,6 +36,8 @@ from backend.models import (
     SecurityFinding,
     InvestigationReport,
     DeclarativeRuleModel,
+    Tenant,
+    UserModel,
 )
 from backend.ops.bus import ops_bus, OpsEvent
 
@@ -123,14 +131,45 @@ async def get_stream_auth(
     """
     # 1. Single-use short-lived stream ticket
     if ticket:
-        consumed = ops_bus.validate_and_consume_ticket(ticket)
+        consumed = ops_bus.consume_stream_ticket(ticket)
         if not consumed:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid, expired, or previously consumed stream ticket. Obtain a new ticket via POST /api/v1/ops/stream-ticket.",
             )
-        tenant_id, app_id = consumed
-        return AuthContext(tenant_id=tenant_id, app_id=app_id, key_id="stream-ticket")
+        tenant = db.query(Tenant).filter(
+            Tenant.id == consumed.tenant_id,
+            Tenant.is_active == True,
+        ).first()
+        if not tenant:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Ticket tenant is inactive.")
+
+        if consumed.auth_type == "jwt":
+            user = db.query(UserModel).filter(
+                UserModel.email == consumed.operator_principal,
+                UserModel.tenant_id == consumed.tenant_id,
+                UserModel.is_active == True,
+            ).first()
+            if not user:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Ticket operator is inactive.")
+        else:
+            api_key = db.query(ApiKey).filter(
+                ApiKey.id == consumed.key_id,
+                ApiKey.tenant_id == consumed.tenant_id,
+                ApiKey.is_active == True,
+            ).first()
+            expires_at = api_key.expires_at if api_key else None
+            if expires_at and expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
+            if not api_key or (expires_at and expires_at < datetime.datetime.now(datetime.timezone.utc)):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Ticket API key is inactive.")
+        return AuthContext(
+            tenant_id=consumed.tenant_id,
+            app_id=consumed.app_id,
+            key_id=consumed.key_id or "stream-ticket",
+            operator_principal=consumed.operator_principal,
+            auth_type=consumed.auth_type,
+        )
 
     # 2. Standard Bearer Authorization header
     if credentials and credentials.credentials:
@@ -349,7 +388,13 @@ async def create_stream_ticket(auth: AuthContext = Depends(get_current_auth)):
     Enables the browser to connect to the SSE endpoint without exposing long-lived API keys
     in URL query parameters.
     """
-    ticket = ops_bus.create_stream_ticket(tenant_id=auth.tenant_id, app_id=auth.app_id)
+    ticket = ops_bus.create_stream_ticket(
+        tenant_id=auth.tenant_id,
+        app_id=auth.app_id,
+        key_id=auth.key_id,
+        auth_type=auth.auth_type,
+        operator_principal=auth.operator_principal,
+    )
     return StreamTicketResponse(
         ticket=ticket,
         expires_in_seconds=60,
@@ -416,10 +461,12 @@ async def stream_operations_events(
 
 
 @router.get("/metrics")
-def get_ops_metrics(db: Session = Depends(get_db)):
+def get_ops_metrics(
+    auth: AuthContext = Depends(require_permission(Permission.METRICS_READ)),
+    db: Session = Depends(get_db),
+):
     """Standard Prometheus metrics export endpoint for operations."""
     from backend.ops.metrics import metrics_registry
     from fastapi.responses import Response
-    content = metrics_registry.export_prometheus(db)
+    content = metrics_registry.export_prometheus(db, tenant_id=auth.tenant_id)
     return Response(content=content, media_type="text/plain; version=0.0.4; charset=utf-8")
-

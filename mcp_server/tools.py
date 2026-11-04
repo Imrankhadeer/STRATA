@@ -18,7 +18,7 @@ import jsonschema
 from mcp_server.schemas import CANONICAL_EVENT_SCHEMA, TEMPLATES, RECOMMENDED_EVENT_TYPES
 
 DEFAULT_ENDPOINT = os.getenv("TERNLINE_ENDPOINT", "http://localhost:8000")
-DEFAULT_API_KEY = os.getenv("TERNLINE_API_KEY", "ce_live_test_api_key_secret_12345")
+DEFAULT_API_KEY = os.getenv("TERNLINE_API_KEY")
 
 
 # --- Tool 1: Get SDK Integration Instructions ---
@@ -35,7 +35,7 @@ def get_sdk_instructions(language: str) -> Dict[str, Any]:
 Ensure your service has access to the Ternline Security Engine:
 ```env
 TERNLINE_ENDPOINT=http://localhost:8000
-TERNLINE_API_KEY=ce_live_test_api_key_secret_12345
+TERNLINE_API_KEY=your_api_key_here
 ```
 
 ## 2. In-Tree Client Usage
@@ -74,7 +74,7 @@ For FastAPI applications, use the `ternline_generate_middleware` MCP tool with `
 ## 1. Environment Configuration
 ```env
 TERNLINE_ENDPOINT=http://localhost:8000
-TERNLINE_API_KEY=ce_live_test_api_key_secret_12345
+TERNLINE_API_KEY=your_api_key_here
 ```
 
 ## 2. Standard Event Struct
@@ -116,7 +116,7 @@ Use the `ternline_generate_middleware` MCP tool with `framework="gin"` to genera
 ## 1. Environment Configuration
 ```env
 TERNLINE_ENDPOINT=http://localhost:8000
-TERNLINE_API_KEY=ce_live_test_api_key_secret_12345
+TERNLINE_API_KEY=your_api_key_here
 ```
 
 ## 2. Asynchronous Ingestion Helper
@@ -172,7 +172,7 @@ Use the `ternline_generate_middleware` MCP tool with `framework="express"` to ge
 ## 1. Environment Configuration
 ```properties
 ternline.endpoint=http://localhost:8000
-ternline.api-key=ce_live_test_api_key_secret_12345
+ternline.api-key=your_api_key_here
 ternline.app-id=banking-backend
 ```
 
@@ -463,6 +463,8 @@ def provision_key(
     """
     target = (endpoint or DEFAULT_ENDPOINT).rstrip("/")
     key = admin_key or DEFAULT_API_KEY
+    if not key:
+        return {"content": [{"type": "text", "text": "An admin API key is required. Set TERNLINE_API_KEY or pass admin_key."}], "isError": True}
     url = f"{target}/api/v1/keys"
 
     payload: Dict[str, Any] = {
@@ -528,6 +530,8 @@ def query_findings(
     """
     target = (endpoint or DEFAULT_ENDPOINT).rstrip("/")
     key = api_key or DEFAULT_API_KEY
+    if not key:
+        return {"content": [{"type": "text", "text": "An API key is required. Set TERNLINE_API_KEY or pass api_key."}], "isError": True}
     url = f"{target}/api/v1/findings"
 
     params: Dict[str, Any] = {"limit": min(limit, 100)}
@@ -572,9 +576,11 @@ def query_incidents(
     """
     target = (endpoint or DEFAULT_ENDPOINT).rstrip("/")
     key = api_key or DEFAULT_API_KEY
+    if not key:
+        return {"content": [{"type": "text", "text": "An API key is required. Set TERNLINE_API_KEY or pass api_key."}], "isError": True}
     url = f"{target}/api/v1/incidents"
 
-    params: Dict[str, Any] = {"limit": min(limit, 50)}
+    params: Dict[str, Any] = {"limit": max(1, min(limit, 200))}
     if status:
         params["status"] = status.lower().strip()
     if severity:
@@ -604,6 +610,33 @@ def query_incidents(
         return {"content": [{"type": "text", "text": f"Connection failed to {url}: {e}"}], "isError": True}
 
 
+def get_defense_policy(
+    endpoint: Optional[str] = None,
+    api_key: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Fetches the authenticated tenant's current Active Defense policy."""
+    target = (endpoint or DEFAULT_ENDPOINT).rstrip("/")
+    key = api_key or DEFAULT_API_KEY
+    if not key:
+        return {"content": [{"type": "text", "text": "An API key is required. Set TERNLINE_API_KEY or pass api_key."}], "isError": True}
+    url = f"{target}/api/v1/defense/policy"
+    headers = {"Authorization": f"Bearer {key}"}
+    try:
+        with httpx.Client(timeout=4.0) as client:
+            response = client.get(url, headers=headers)
+            if response.status_code == 200:
+                return {
+                    "content": [{"type": "text", "text": json.dumps(response.json(), indent=2)}],
+                    "isError": False,
+                }
+            return {
+                "content": [{"type": "text", "text": f"Error querying defense policy: HTTP {response.status_code} - {response.text}"}],
+                "isError": True,
+            }
+    except Exception as exc:
+        return {"content": [{"type": "text", "text": f"Connection failed to {url}: {exc}"}], "isError": True}
+
+
 # --- Tool 9: Deep Search AI Investigation ---
 def run_deep_search(
     query: str,
@@ -615,6 +648,8 @@ def run_deep_search(
     """
     target = (endpoint or DEFAULT_ENDPOINT).rstrip("/")
     key = api_key or DEFAULT_API_KEY
+    if not key:
+        return {"content": [{"type": "text", "text": "An API key is required. Set TERNLINE_API_KEY or pass api_key."}], "isError": True}
     url = f"{target}/api/v1/investigations/query"
 
     payload = {"query": query.strip()}
@@ -761,7 +796,7 @@ def list_detection_rules(
 
     try:
         with httpx.Client(timeout=4.0) as client:
-            resp = client.get(url, headers=headers)
+            resp = client.get(url, params={"status_filter": "active"}, headers=headers)
             if resp.status_code == 200:
                 rules = resp.json()
                 result = {

@@ -49,7 +49,15 @@ class MetricsRegistry:
             self._total_ingest_count += 1
             self._last_ingest_latency = latency_seconds
 
-    def export_prometheus(self, db: Optional[Session] = None) -> str:
+    @staticmethod
+    def _escape_label(value: str) -> str:
+        return str(value).replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
+
+    def export_prometheus(
+        self,
+        db: Optional[Session] = None,
+        tenant_id: Optional[str] = None,
+    ) -> str:
         """Renders standard Prometheus exposition text."""
         lines = []
 
@@ -58,9 +66,15 @@ class MetricsRegistry:
         lines.append("# TYPE cyber_engine_events_ingested_total counter")
         with self._lock:
             for (t, s, st), count in self._event_counters.items():
-                lines.append(f'cyber_engine_events_ingested_total{{tenant_id="{t}",service_id="{s}",status="{st}"}} {count}')
+                if tenant_id is not None and t != tenant_id:
+                    continue
+                labels = tuple(self._escape_label(v) for v in (t, s, st))
+                lines.append(
+                    f'cyber_engine_events_ingested_total{{tenant_id="{labels[0]}",service_id="{labels[1]}",status="{labels[2]}"}} {count}'
+                )
             if not self._event_counters:
-                lines.append('cyber_engine_events_ingested_total{tenant_id="default",service_id="system",status="accepted"} 0')
+                if tenant_id is None:
+                    lines.append('cyber_engine_events_ingested_total{tenant_id="default",service_id="system",status="accepted"} 0')
 
         # 2. Ingestion Latency
         lines.append("# HELP cyber_engine_ingest_latency_seconds Latency of last ingestion execution in seconds")
@@ -78,9 +92,15 @@ class MetricsRegistry:
         lines.append("# TYPE cyber_engine_findings_total counter")
         with self._lock:
             for (t, det, sev), count in self._finding_counters.items():
-                lines.append(f'cyber_engine_findings_total{{tenant_id="{t}",detector_id="{det}",severity="{sev}"}} {count}')
+                if tenant_id is not None and t != tenant_id:
+                    continue
+                labels = tuple(self._escape_label(v) for v in (t, det, sev))
+                lines.append(
+                    f'cyber_engine_findings_total{{tenant_id="{labels[0]}",detector_id="{labels[1]}",severity="{labels[2]}"}} {count}'
+                )
             if not self._finding_counters:
-                lines.append('cyber_engine_findings_total{tenant_id="default",detector_id="none",severity="none"} 0')
+                if tenant_id is None:
+                    lines.append('cyber_engine_findings_total{tenant_id="default",detector_id="none",severity="none"} 0')
 
         # 4. Live Subscribers
         lines.append("# HELP cyber_engine_ops_subscribers_connected Live SSE console clients connected")
@@ -108,9 +128,12 @@ class MetricsRegistry:
 
             # Active declarative rules from DB
             try:
-                active_rules_count = db.query(func.count(DeclarativeRuleModel.rule_id)).filter(
+                rule_query = db.query(func.count(DeclarativeRuleModel.rule_id)).filter(
                     DeclarativeRuleModel.status == "active"
-                ).scalar() or 0
+                )
+                if tenant_id is not None:
+                    rule_query = rule_query.filter(DeclarativeRuleModel.tenant_id == tenant_id)
+                active_rules_count = rule_query.scalar() or 0
                 lines.append("# HELP cyber_engine_active_rules_total Total currently active declarative rules in engine")
                 lines.append("# TYPE cyber_engine_active_rules_total gauge")
                 lines.append(f"cyber_engine_active_rules_total {active_rules_count}")
@@ -122,4 +145,3 @@ class MetricsRegistry:
 
 # Global metrics registry singleton
 metrics_registry = MetricsRegistry()
-

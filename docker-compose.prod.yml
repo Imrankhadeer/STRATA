@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_prod_password_change_me}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the production environment}
       POSTGRES_DB: ${POSTGRES_DB:-cyber_engine}
     volumes:
       - ternline_pg_data:/var/lib/postgresql/data
@@ -59,7 +59,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - HOST=0.0.0.0
       - PORT=8000
-      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://postgres:postgres_prod_password_change_me@db:5432/cyber_engine}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the production environment}@db:5432/${POSTGRES_DB:-cyber_engine}}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
       - REDIS_REQUIRED=true
       - ALLOW_SIMULATION_API=false
@@ -86,5 +86,4 @@ services:
 volumes:
   ternline_pg_data:
   ternline_redis_data:
-
 

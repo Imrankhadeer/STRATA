@@ -9,7 +9,7 @@ import jwt
 
 from backend.config import settings
 from backend.db.session import get_db
-from backend.models import ApiKey, Tenant
+from backend.models import ApiKey, Tenant, UserModel
 from backend.ops.bus import ops_bus
 
 
@@ -38,6 +38,14 @@ class Permission:
     INCIDENTS_READ = "incidents:read"
     INCIDENTS_WRITE = "incidents:write"
     INCIDENTS_CONTAIN = "incidents:contain"
+    RULES_WRITE = "rules:write"
+    RULES_VALIDATE = "rules:validate"
+    RULES_APPROVE = "rules:approve"
+    RULES_ACTIVATE = "rules:activate"
+    RULES_DISABLE = "rules:disable"
+    RULES_ROLLBACK = "rules:rollback"
+    METRICS_READ = "metrics:read"
+    SIMULATION_RUN = "simulation:run"
     THREAT_INTEL_READ = "threat_intel:read"
     THREAT_INTEL_WRITE = "threat_intel:write"
     ADMIN = "admin"
@@ -63,6 +71,14 @@ ALL_PERMISSIONS: Set[str] = {
     Permission.INCIDENTS_READ,
     Permission.INCIDENTS_WRITE,
     Permission.INCIDENTS_CONTAIN,
+    Permission.RULES_WRITE,
+    Permission.RULES_VALIDATE,
+    Permission.RULES_APPROVE,
+    Permission.RULES_ACTIVATE,
+    Permission.RULES_DISABLE,
+    Permission.RULES_ROLLBACK,
+    Permission.METRICS_READ,
+    Permission.SIMULATION_RUN,
     Permission.THREAT_INTEL_READ,
     Permission.THREAT_INTEL_WRITE,
     Permission.ADMIN,
@@ -100,6 +116,8 @@ ROLE_PERMISSIONS = {
         Permission.DEFENSE_ACTIONS_PROPOSE,
         Permission.THREAT_INTEL_READ,
         Permission.THREAT_INTEL_WRITE,
+        Permission.RULES_WRITE,
+        Permission.RULES_VALIDATE,
     ],
     Role.VIEWER: [
         Permission.FINDINGS_READ,
@@ -139,6 +157,7 @@ def create_operator_token(
     is_human: bool = True,
     app_id: str = "operator-console",
     role: str = "owner",
+    auth_version: Optional[int] = None,
 ) -> str:
     """
     Issues a cryptographically signed JWT representing a verified operator session.
@@ -157,6 +176,8 @@ def create_operator_token(
         "iat": int(now.timestamp()),
         "exp": int(exp.timestamp()),
     }
+    if auth_version is not None:
+        payload["auth_version"] = auth_version
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 
@@ -226,6 +247,30 @@ class AuthContext:
         return permission in self.permissions
 
 
+def _validate_human_session(payload: dict, db: Session) -> None:
+    if not payload.get("is_human"):
+        return
+    user = db.query(UserModel).filter(
+        UserModel.email == payload.get("sub"),
+        UserModel.tenant_id == payload.get("tenant_id"),
+        UserModel.is_active == True,
+    ).first()
+    if user is None:
+        if payload.get("auth_version") is not None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Operator session has been revoked.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return
+    if user.auth_version != payload.get("auth_version", 0):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Operator session has been revoked.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
 def get_current_auth(
     credentials: HTTPAuthorizationCredentials = Security(security_bearer),
     request: Request = None,
@@ -252,6 +297,7 @@ def get_current_auth(
     # 1. Direct Operator JWT Bearer Token (Authorization: Bearer <jwt>)
     if raw_token.count(".") == 2 and (raw_token.startswith("ey") or "eyJ" in raw_token):
         payload = verify_operator_token(raw_token)
+        _validate_human_session(payload, db)
         tenant = db.query(Tenant).filter(Tenant.id == payload["tenant_id"], Tenant.is_active == True).first()
         if not tenant:
             raise HTTPException(
@@ -322,11 +368,7 @@ def get_current_auth(
     if api_key_record.scopes is not None:
         key_permissions = set(api_key_record.scopes)
     else:
-        # Backward compatibility for seeded test key vs legacy untagged keys
-        if api_key_record.id == "key-001" or api_key_record.key_hash == hash_api_key("ce_live_test_api_key_secret_12345"):
-            key_permissions = {Permission.ADMIN}
-        else:
-            key_permissions = {Permission.EVENTS_INGEST}
+        key_permissions = {Permission.EVENTS_INGEST}
 
     operator_principal = None
     is_human = False
@@ -339,6 +381,7 @@ def get_current_auth(
             if token_str.lower().startswith("bearer "):
                 token_str = token_str[7:].strip()
             op_payload = verify_operator_token(token_str, expected_tenant_id=api_key_record.tenant_id)
+            _validate_human_session(op_payload, db)
             operator_principal = op_payload.get("sub")
             is_human = bool(op_payload.get("is_human", False))
             key_permissions.update(op_payload.get("scopes", []))

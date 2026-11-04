@@ -24,6 +24,26 @@ router = APIRouter(prefix="/v1", tags=["telemetry"])
 # In-memory Token Bucket Rate Limiter per Tenant
 # (tokens_available, last_refreshed_timestamp)
 _rate_limit_state: Dict[str, Tuple[float, float]] = defaultdict(lambda: (float(settings.INGESTION_RATE_LIMIT_PER_MINUTE), time.time()))
+_rate_limit_redis_client = None
+_TOKEN_BUCKET_SCRIPT = """
+local values = redis.call('HMGET', KEYS[1], 'tokens', 'updated_ms')
+local now = redis.call('TIME')
+local now_ms = now[1] * 1000 + math.floor(now[2] / 1000)
+local capacity = tonumber(ARGV[1])
+local refill_per_ms = tonumber(ARGV[2])
+local requested = tonumber(ARGV[3])
+local tokens = tonumber(values[1]) or capacity
+local updated_ms = tonumber(values[2]) or now_ms
+tokens = math.min(capacity, tokens + math.max(0, now_ms - updated_ms) * refill_per_ms)
+if tokens < requested then
+  redis.call('HMSET', KEYS[1], 'tokens', tokens, 'updated_ms', now_ms)
+  redis.call('EXPIRE', KEYS[1], 120)
+  return 0
+end
+redis.call('HMSET', KEYS[1], 'tokens', tokens - requested, 'updated_ms', now_ms)
+redis.call('EXPIRE', KEYS[1], 120)
+return 1
+"""
 
 def _check_rate_limit(tenant_id: str, count: int = 1) -> bool:
     """
@@ -32,6 +52,34 @@ def _check_rate_limit(tenant_id: str, count: int = 1) -> bool:
     """
     max_rate = float(settings.INGESTION_RATE_LIMIT_PER_MINUTE)
     fill_rate_per_sec = max_rate / 60.0
+    global _rate_limit_redis_client
+    if settings.REDIS_URL:
+        try:
+            if _rate_limit_redis_client is None:
+                import redis
+                _rate_limit_redis_client = redis.Redis.from_url(
+                    settings.REDIS_URL,
+                    socket_timeout=0.1,
+                    socket_connect_timeout=0.1,
+                )
+            return bool(
+                _rate_limit_redis_client.eval(
+                    _TOKEN_BUCKET_SCRIPT,
+                    1,
+                    f"cyber_engine:ingest_rate:{tenant_id}",
+                    max_rate,
+                    fill_rate_per_sec / 1000.0,
+                    count,
+                )
+            )
+        except Exception as exc:
+            if settings.ENVIRONMENT.lower() in ("production", "staging") or settings.REDIS_REQUIRED:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Distributed ingestion rate limiting is unavailable.",
+                ) from exc
+            logger.warning("Redis rate limiting unavailable; using process-local limiter: %s", exc)
+
     now = time.time()
 
     tokens, last_time = _rate_limit_state[tenant_id]
@@ -45,6 +93,27 @@ def _check_rate_limit(tenant_id: str, count: int = 1) -> bool:
 
     _rate_limit_state[tenant_id] = (tokens - count, now)
     return True
+
+
+def _enqueue_async_event(event: CanonicalEvent, tenant_id: str) -> bool:
+    if not getattr(settings, "ASYNC_INGESTION_ENABLED", False) or not settings.REDIS_URL:
+        return False
+    try:
+        import redis
+        from backend.detection.worker import TelemetryWorker
+
+        client = redis.Redis.from_url(
+            settings.REDIS_URL,
+            socket_timeout=0.2,
+            socket_connect_timeout=0.2,
+        )
+        return TelemetryWorker(
+            redis_client=client,
+            queue_key=settings.ASYNC_QUEUE_KEY,
+        ).enqueue(event.model_dump(mode="json"), tenant_id)
+    except Exception as exc:
+        logger.warning("Could not enqueue event asynchronously; falling back to synchronous detection: %s", exc)
+        return False
 
 def evaluate_event_containment(event: CanonicalEvent, tenant_id: str) -> None:
     """
@@ -258,7 +327,10 @@ async def ingest_event(
     evaluate_event_containment(event, auth.tenant_id)
 
     # Check for existing event (idempotency / duplicate check)
-    existing = db.query(EventModel.event_id).filter(EventModel.event_id == event.event_id).first()
+    existing = db.query(EventModel.event_id).filter(
+        EventModel.event_id == event.event_id,
+        EventModel.tenant_id == auth.tenant_id,
+    ).first()
     if existing:
         metrics_registry.record_event(tenant_id=auth.tenant_id, service_id=event.service_id, status="duplicate")
         ops_bus.publish(
@@ -328,29 +400,18 @@ async def ingest_event(
         )
 
     # Optional Asynchronous Queue Decoupling
-    if getattr(settings, "ASYNC_INGESTION_ENABLED", False):
-        from backend.detection.worker import TelemetryWorker
-        import redis
-        enqueued = False
-        if getattr(settings, "REDIS_URL", None):
-            try:
-                r_client = redis.Redis.from_url(settings.REDIS_URL, socket_timeout=0.2)
-                worker = TelemetryWorker(redis_client=r_client, queue_key=settings.ASYNC_QUEUE_KEY)
-                enqueued = worker.enqueue(event.model_dump(mode="json"), auth.tenant_id)
-            except Exception as e:
-                logger.warning("Could not enqueue event asynchronously, falling back to sync: %s", e)
-        if enqueued:
-            metrics_registry.record_event(tenant_id=auth.tenant_id, service_id=event.service_id, status="accepted")
-            metrics_registry.record_latency(time.time() - t_start)
-            return IngestResponse(
-                accepted=1,
-                rejected=0,
-                duplicates=0,
-                event_ids=[event.event_id],
-                errors=[],
-                correlation_status="queued",
-                correlation_degraded_reason=None,
-            )
+    if _enqueue_async_event(event, auth.tenant_id):
+        metrics_registry.record_event(tenant_id=auth.tenant_id, service_id=event.service_id, status="accepted")
+        metrics_registry.record_latency(time.time() - t_start)
+        return IngestResponse(
+            accepted=1,
+            rejected=0,
+            duplicates=0,
+            event_ids=[event.event_id],
+            errors=[],
+            correlation_status="queued",
+            correlation_degraded_reason=None,
+        )
 
     # Continuous evaluation across active declarative rules and native safety net
     corr_status, corr_reason = evaluate_and_persist_findings(event, auth.tenant_id, db)
@@ -378,8 +439,21 @@ async def ingest_events_batch(
     Ingest a batch of canonical telemetry events.
     Atomic or best-effort safe persistence with duplicate detection and rate limiting.
     """
-    batch_count = len(payload.events)
     t_batch_start = time.time()
+    errors = []
+    scoped_events = []
+    for event in payload.events:
+        # Reject app-scope mismatches before rate limiting and containment checks.
+        if auth.auth_type != "jwt" and event.app_id != auth.app_id:
+            errors.append({
+                "event_id": event.event_id,
+                "error": f"Mismatched app_id scope: expected {auth.app_id}, got {event.app_id}",
+            })
+            continue
+        event.tenant_id = auth.tenant_id
+        scoped_events.append(event)
+
+    batch_count = len(scoped_events)
     if not _check_rate_limit(auth.tenant_id, count=batch_count):
         ops_bus.publish(
             component="ingest",
@@ -394,32 +468,41 @@ async def ingest_events_batch(
             headers={"Retry-After": "10"}
         )
 
-    # Active Defense containment evaluation across batch events
-    # An active containment block (403) or exhausted rate limit (429) fails the batch atomically
-    for event in payload.events:
-        evaluate_event_containment(event, auth.tenant_id)
-
     accepted = 0
     duplicates = 0
     event_ids = []
     errors = []
     batch_corr_status = "ok"
     batch_corr_reason = None
+    queued_any = False
 
-    for event in payload.events:
-        event.tenant_id = auth.tenant_id
-        # Machine API keys enforce per-app scope; operator JWTs are tenant-scoped
-        if auth.auth_type != 'jwt' and event.app_id != auth.app_id:
-            errors.append({
-                "event_id": event.event_id,
-                "error": f"Mismatched app_id scope: expected {auth.app_id}, got {event.app_id}"
-            })
-            continue
+    # Preflight all valid events before committing any of them so a blocked event
+    # rejects the batch without partial persistence.
+    for event in scoped_events:
+        evaluate_event_containment(event, auth.tenant_id)
 
-        existing = db.query(EventModel.event_id).filter(EventModel.event_id == event.event_id).first()
+    for event in scoped_events:
+        existing = db.query(EventModel.event_id).filter(
+            EventModel.event_id == event.event_id,
+            EventModel.tenant_id == auth.tenant_id,
+        ).first()
         if existing:
             duplicates += 1
             event_ids.append(event.event_id)
+            metrics_registry.record_event(
+                tenant_id=auth.tenant_id,
+                service_id=event.service_id,
+                status="duplicate",
+            )
+            ops_bus.publish(
+                component="ingest",
+                event_type="ingest.duplicate_filtered",
+                level="info",
+                message=f"Duplicate event '{event.event_id}' filtered",
+                tenant_id=auth.tenant_id,
+                service_id=event.service_id,
+                trace_id=event.trace_id,
+            )
             continue
 
         db_event = EventModel(
@@ -444,24 +527,46 @@ async def ingest_events_batch(
             db.commit()
             accepted += 1
             event_ids.append(event.event_id)
+            ops_bus.publish(
+                component="ingest",
+                event_type="ingest.event_received",
+                level="info",
+                message=f"Ingested {event.event_type} from {event.service_id} (trace: {event.trace_id or 'none'})",
+                tenant_id=auth.tenant_id,
+                service_id=event.service_id,
+                trace_id=event.trace_id,
+                metadata={"event_id": event.event_id, "severity": event.severity.value, "target": event.target_resource},
+            )
 
-            # Continuous evaluation across active declarative rules and native safety net
-            corr_status, corr_reason = evaluate_and_persist_findings(event, auth.tenant_id, db)
-            if corr_status == "degraded":
-                batch_corr_status = "degraded"
-                batch_corr_reason = corr_reason
+            metrics_registry.record_event(
+                tenant_id=auth.tenant_id,
+                service_id=event.service_id,
+                status="accepted",
+            )
+            if _enqueue_async_event(event, auth.tenant_id):
+                queued_any = True
+            else:
+                # Continuous evaluation across active declarative rules and native safety net
+                corr_status, corr_reason = evaluate_and_persist_findings(event, auth.tenant_id, db)
+                if corr_status == "degraded":
+                    batch_corr_status = "degraded"
+                    batch_corr_reason = corr_reason
 
         except IntegrityError:
             db.rollback()
             duplicates += 1
             event_ids.append(event.event_id)
+            metrics_registry.record_event(
+                tenant_id=auth.tenant_id,
+                service_id=event.service_id,
+                status="duplicate",
+            )
         except Exception as e:
             db.rollback()
             errors.append({"event_id": event.event_id, "error": "Database error"})
 
-    metrics_registry.record_event(tenant_id=auth.tenant_id, service_id="batch", status="accepted", count=accepted)
-    if duplicates > 0:
-        metrics_registry.record_event(tenant_id=auth.tenant_id, service_id="batch", status="duplicate", count=duplicates)
+    if queued_any and batch_corr_status == "ok":
+        batch_corr_status = "queued"
     metrics_registry.record_latency(time.time() - t_batch_start)
 
     return IngestResponse(

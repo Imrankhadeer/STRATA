@@ -12,12 +12,14 @@ Validates:
 
 import pytest
 from backend.ops.metrics import metrics_registry
+from backend.ops.metrics import MetricsRegistry
 from tests.conftest import TEST_TENANT_ID, TEST_APP_ID
 
 
-def test_prometheus_metrics_endpoints_available(client):
+def test_prometheus_metrics_endpoints_available(client, auth_headers):
     # Test root /metrics endpoint
-    res = client.get("/metrics")
+    assert client.get("/metrics").status_code == 401
+    res = client.get("/metrics", headers=auth_headers)
     assert res.status_code == 200
     assert "text/plain" in res.headers["content-type"]
     text = res.text
@@ -26,7 +28,7 @@ def test_prometheus_metrics_endpoints_available(client):
     assert "# HELP cyber_engine_db_healthy" in text
 
     # Test /api/v1/ops/metrics endpoint
-    res_ops = client.get("/api/v1/ops/metrics")
+    res_ops = client.get("/api/v1/ops/metrics", headers=auth_headers)
     assert res_ops.status_code == 200
     assert "text/plain" in res_ops.headers["content-type"]
     assert "cyber_engine_ingest_latency_seconds" in res_ops.text
@@ -49,7 +51,7 @@ def test_metrics_updated_on_telemetry_and_findings(client, auth_headers):
         assert resp.status_code == 202
 
     # Query metrics endpoint
-    res = client.get("/metrics")
+    res = client.get("/metrics", headers=auth_headers)
     assert res.status_code == 200
     text = res.text
 
@@ -59,3 +61,20 @@ def test_metrics_updated_on_telemetry_and_findings(client, auth_headers):
     # Verify finding counter was incremented
     assert "cyber_engine_findings_total" in text
     assert f'tenant_id="{TEST_TENANT_ID}"' in text
+
+
+def test_prometheus_labels_escape_quotes_and_newlines():
+    registry = MetricsRegistry()
+    registry.record_event('tenant"one', "svc\nservice", status='accepted"')
+
+    output = registry.export_prometheus()
+
+    assert 'tenant_id="tenant\\"one"' in output
+    assert 'service_id="svc\\nservice"' in output
+    assert 'status="accepted\\""' in output
+
+
+def test_password_hash_verification_rejects_unbounded_iterations():
+    from backend.core.security import verify_password
+
+    assert not verify_password("CorrectPassword1!", "pbkdf2_sha256$999999999999$00$00")

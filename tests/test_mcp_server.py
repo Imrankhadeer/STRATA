@@ -335,7 +335,11 @@ def test_tool_provision_key(mock_client_cls):
     mock_instance.post.return_value = mock_resp
     mock_client_cls.return_value.__enter__.return_value = mock_instance
 
-    res = provision_key(app_id="worker-service", endpoint="http://localhost:8000")
+    res = provision_key(
+        app_id="worker-service",
+        endpoint="http://localhost:8000",
+        admin_key="admin-test-key",
+    )
     assert res["isError"] is False
     data = json.loads(res["content"][0]["text"])
     assert data["success"] is True
@@ -353,7 +357,7 @@ def test_tool_query_findings(mock_client_cls):
     mock_instance.get.return_value = mock_resp
     mock_client_cls.return_value.__enter__.return_value = mock_instance
 
-    res = query_findings(severity="high")
+    res = query_findings(severity="high", api_key="tenant-test-key")
     assert res["isError"] is False
     data = json.loads(res["content"][0]["text"])
     assert data["success"] is True
@@ -371,7 +375,7 @@ def test_tool_query_incidents(mock_client_cls):
     mock_instance.get.return_value = mock_resp
     mock_client_cls.return_value.__enter__.return_value = mock_instance
 
-    res = query_incidents(status="open")
+    res = query_incidents(status="open", api_key="tenant-test-key")
     assert res["isError"] is False
     data = json.loads(res["content"][0]["text"])
     assert data["success"] is True
@@ -393,7 +397,10 @@ def test_tool_deep_search(mock_client_cls):
     mock_instance.post.return_value = mock_resp
     mock_client_cls.return_value.__enter__.return_value = mock_instance
 
-    res = run_deep_search(query="Investigate exfiltration across api-service and worker-service")
+    res = run_deep_search(
+        query="Investigate exfiltration across api-service and worker-service",
+        api_key="tenant-test-key",
+    )
     assert res["isError"] is False
     data = json.loads(res["content"][0]["text"])
     assert data["success"] is True
@@ -462,4 +469,3 @@ def test_tool_list_detection_rules(mock_client_cls):
     data = json.loads(res["content"][0]["text"])
     assert data["success"] is True
     assert data["count"] == 1
-

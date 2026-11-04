@@ -1,6 +1,21 @@
 import logging
+import os
+import sys
 import uuid
-from cyber_engine import CyberEngine
+from pathlib import Path
+
+# Ensure workspace root and SDK directory are in sys.path
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SDK_DIR = REPO_ROOT / "sdk"
+for p in (str(REPO_ROOT), str(SDK_DIR)):
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+try:
+    from cyber_engine import CyberEngine
+except ImportError:
+    from sdk.cyber_engine import CyberEngine
+
 from scenarios.synthetic_services import (
     ApiServiceSimulator,
     WorkerServiceSimulator,

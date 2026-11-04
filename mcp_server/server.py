@@ -14,6 +14,7 @@ from mcp_server.tools import (
     contain_incident,
     emit_test_event,
     generate_middleware,
+    get_defense_policy,
     get_sdk_instructions,
     list_detection_rules,
     match_threat_intel,
@@ -219,7 +220,7 @@ TOOLS_REGISTRY: List[Dict[str, Any]] = [
                 },
                 "limit": {
                     "type": "integer",
-                    "description": "Maximum incidents to return (default: 20)"
+                    "description": "Maximum incidents to return (default: 20, maximum: 200)"
                 },
                 "endpoint": {"type": "string", "description": "Ternline engine endpoint URL"},
                 "api_key": {"type": "string", "description": "Tenant API key"}
@@ -268,7 +269,7 @@ TOOLS_REGISTRY: List[Dict[str, Any]] = [
     },
     {
         "name": "ternline_contain_incident",
-        "description": "Trigger coordinated active defense containment for an incident across all attacker IPs and compromised credentials.",
+        "description": "Propose coordinated active defense actions for an incident. Each action requires separate dual-custody approval before execution.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -304,6 +305,17 @@ TOOLS_REGISTRY: List[Dict[str, Any]] = [
                 "api_key": {"type": "string", "description": "Tenant API key"}
             }
         }
+    },
+    {
+        "name": "ternline_get_defense_policy",
+        "description": "Read the authenticated tenant's current Active Defense policy.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "endpoint": {"type": "string", "description": "Ternline engine endpoint URL"},
+                "api_key": {"type": "string", "description": "Tenant API key"}
+            }
+        }
     }
 ]
 
@@ -325,13 +337,13 @@ RESOURCES_REGISTRY: List[Dict[str, Any]] = [
         "uri": "ternline://mitre/coverage",
         "name": "MITRE ATT&CK Matrix Coverage",
         "mimeType": "application/json",
-        "description": "Real-time MITRE ATT&CK detection coverage across detectors, rules, and active findings."
+        "description": "Static baseline MITRE ATT&CK technique references; not tenant-specific runtime coverage."
     },
     {
         "uri": "ternline://defense/policy",
         "name": "Active Defense Protection Policy",
         "mimeType": "application/json",
-        "description": "Tenant Active Defense containment configuration and protection mode."
+        "description": "Static default-policy reference. Use ternline_get_defense_policy for the authenticated tenant's current settings."
     }
 ]
 
@@ -523,6 +535,11 @@ class MCPServer:
                 )
             elif name == "ternline_list_rules":
                 res = list_detection_rules(
+                    endpoint=args.get("endpoint"),
+                    api_key=args.get("api_key")
+                )
+            elif name == "ternline_get_defense_policy":
+                res = get_defense_policy(
                     endpoint=args.get("endpoint"),
                     api_key=args.get("api_key")
                 )
@@ -721,4 +738,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -32,6 +32,7 @@ from backend.api.threat_intel import router as threat_intel_router
 from backend.api.auth import router as auth_router
 from backend.api.workspaces import router as workspaces_router
 from backend.api.apps import router as apps_router
+from backend.core.auth import AuthContext, Permission, require_permission
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -62,7 +63,7 @@ cors_kwargs = {
     "allow_methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
     "allow_headers": ["Authorization", "Content-Type", "Accept", "X-Tenant-ID", "X-Operator-Token"],
 }
-if getattr(settings, "CORS_ALLOW_VERCEL", True):
+if getattr(settings, "CORS_ALLOW_VERCEL", False):
     cors_kwargs["allow_origin_regex"] = r"^https://.*\.vercel\.app$"
 
 app.add_middleware(
@@ -118,7 +119,6 @@ app.include_router(apps_router)
 def startup_db_init():
     if getattr(app.state, "_db_initialized", False):
         return
-    app.state._db_initialized = True
 
     from backend.config import validate_production_settings as _validate_prod
     _validate_prod()
@@ -131,10 +131,36 @@ def startup_db_init():
         logger.critical("Failed to connect to PostgreSQL database: %s", e)
         raise RuntimeError(f"PostgreSQL connection failed. Ternline requires a reachable PostgreSQL database: {e}") from e
 
+    # In production and staging, verify that required Alembic database migrations have succeeded
+    if settings.ENVIRONMENT in ("production", "staging"):
+        from alembic.runtime.migration import MigrationContext
+        from alembic.script import ScriptDirectory
+        from alembic.config import Config
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        alembic_cfg = Config(os.path.join(base_dir, "alembic.ini"))
+        script = ScriptDirectory.from_config(alembic_cfg)
+        head_rev = script.get_current_head()
+        with engine.connect() as conn:
+            ctx = MigrationContext.configure(conn)
+            curr_rev = ctx.get_current_revision()
+            if curr_rev != head_rev:
+                logger.critical(
+                    "Production startup blocked: database migration head mismatch. "
+                    "Current revision is '%s', expected head is '%s'. "
+                    "Run 'alembic upgrade head' before starting the application.",
+                    curr_rev, head_rev
+                )
+                raise RuntimeError(
+                    f"Production startup blocked: database migration head mismatch. "
+                    f"Current revision is '{curr_rev}', expected head is '{head_rev}'. "
+                    "Run 'alembic upgrade head' before starting the application."
+                )
+
     try:
         from backend.models import Tenant, ApiKey
         from backend.core.auth import hash_api_key
-        Base.metadata.create_all(bind=engine)
+        if settings.ENVIRONMENT == "development":
+            Base.metadata.create_all(bind=engine)
         
         # Security Boundary: Never auto-seed predictable demo keys in production or staging
         if settings.ENVIRONMENT == "development":
@@ -155,6 +181,7 @@ def startup_db_init():
                         key_hash=h,
                         key_prefix="ce_live_",
                         is_active=True,
+                        scopes=[Permission.EVENTS_INGEST],
                     ))
                     session.commit()
 
@@ -178,13 +205,11 @@ def startup_db_init():
                 if tenant_count == 0:
                     tenant_id = settings.INITIAL_TENANT_ID or "tenant-alpha"
                     admin_key = settings.INITIAL_ADMIN_API_KEY
-                    auto_generated = False
                     if not admin_key:
-                        from backend.core.auth import generate_api_key
-                        admin_key, key_hash = generate_api_key(tenant_id, "admin-console")
-                        auto_generated = True
-                    else:
-                        key_hash = hash_api_key(admin_key)
+                        raise RuntimeError(
+                            "INITIAL_ADMIN_API_KEY is required to bootstrap the first production tenant."
+                        )
+                    key_hash = hash_api_key(admin_key)
 
                     t = Tenant(id=tenant_id, name="Default Organization", is_active=True)
                     session.add(t)
@@ -211,23 +236,14 @@ def startup_db_init():
                     session.add(pol)
                     session.commit()
 
-                    if auto_generated:
-                        logger.warning(
-                            "\n====================================================================\n"
-                            "FIRST-TIME INITIALIZATION: No tenants found in database.\n"
-                            "Generated Initial Production Admin API Key:\n"
-                            f"  Tenant ID: {tenant_id}\n"
-                            f"  API Key:   {admin_key}\n"
-                            "STORE THIS KEY SECURELY. IT CANNOT BE RETRIEVED AFTER LOGGING.\n"
-                            "===================================================================="
-                        )
-                    else:
-                        logger.info("Production bootstrap: Seeded initial organization and admin key from INITIAL_ADMIN_API_KEY.")
+                    logger.info("Production bootstrap: Seeded initial organization and admin key.")
                 else:
                     logger.info("Production mode: Database verified and operational.")
-    except Exception as e:
-        logger.warning(f"Database auto-init on startup skipped or deferred: {e}")
+    except Exception:
+        logger.exception("Database initialization failed during startup")
+        raise
 
+    app.state._db_initialized = True
 
 
 @app.get("/", include_in_schema=False)
@@ -282,7 +298,7 @@ async def documentation():
 @app.get("/api/v1/ops/health", tags=["health"])
 async def health_check(db: Session = Depends(get_db)):
     """
-    Health check endpoint verifying backend liveness and database connectivity.
+    Health check endpoint verifying backend liveness, database connectivity, and Redis availability.
     """
     db_status = "connected"
     try:
@@ -291,7 +307,23 @@ async def health_check(db: Session = Depends(get_db)):
         logger.error("Health check DB query failure: %s", str(e))
         db_status = "unhealthy"
 
-    overall_status = "ok" if db_status == "connected" else "degraded"
+    redis_status = "not_configured"
+    if settings.REDIS_URL:
+        try:
+            import redis
+            r = redis.from_url(settings.REDIS_URL, socket_timeout=1.0)
+            if r.ping():
+                redis_status = "connected"
+            else:
+                redis_status = "unhealthy"
+        except Exception as e:
+            logger.error("Health check Redis ping failure: %s", str(e))
+            redis_status = "unhealthy"
+
+    is_db_ok = db_status == "connected"
+    is_redis_ok = (redis_status == "connected") if (settings.REDIS_REQUIRED or settings.ENVIRONMENT in ("production", "staging")) else True
+
+    overall_status = "ok" if (is_db_ok and is_redis_ok) else "degraded"
     status_code = status.HTTP_200_OK if overall_status == "ok" else status.HTTP_503_SERVICE_UNAVAILABLE
 
     return JSONResponse(
@@ -300,17 +332,21 @@ async def health_check(db: Session = Depends(get_db)):
             "status": overall_status,
             "version": "0.1.0",
             "environment": settings.ENVIRONMENT,
-            "database": db_status
+            "database": db_status,
+            "redis": redis_status,
         }
     )
 
 
 @app.get("/metrics", tags=["observability"])
-def get_root_metrics(db: Session = Depends(get_db)):
+def get_root_metrics(
+    auth: AuthContext = Depends(require_permission(Permission.METRICS_READ)),
+    db: Session = Depends(get_db),
+):
     """
     Standard Prometheus exposition format metrics scrape target.
     Exposes ingestion rate, detection latency, finding counters, and rule counts.
     """
     from backend.ops.metrics import metrics_registry
-    content = metrics_registry.export_prometheus(db)
+    content = metrics_registry.export_prometheus(db, tenant_id=auth.tenant_id)
     return Response(content=content, media_type="text/plain; version=0.0.4; charset=utf-8")

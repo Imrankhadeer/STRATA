@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 import datetime
 
 from backend.db.session import get_db
-from backend.core.auth import get_current_auth, AuthContext
+from backend.core.auth import get_current_auth, AuthContext, Permission, require_permission
 from backend.models import DeclarativeRuleModel
 from backend.schemas.rules import (
     DeclarativeRule,
@@ -48,7 +48,7 @@ class ApprovalRequest(BaseModel):
 async def propose_candidate_rule(
     payload: CreateRuleRequest,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.RULES_WRITE)),
 ):
     """
     Proposes a new declarative detection rule.
@@ -111,7 +111,7 @@ async def propose_candidate_rule(
 async def validate_candidate_rule(
     rule_id: str,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.RULES_VALIDATE)),
 ):
     """
     Replays the candidate rule against the standard incident evaluation suite.
@@ -169,7 +169,7 @@ async def approve_rule(
     rule_id: str,
     payload: ApprovalRequest,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.RULES_APPROVE)),
 ):
     """
     Human/Policy approval gate.
@@ -235,7 +235,7 @@ async def approve_rule(
 async def activate_rule(
     rule_id: str,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.RULES_ACTIVATE)),
 ):
     """
     Promotes an approved rule to active status.
@@ -328,7 +328,7 @@ async def disable_rule(
     rule_id: str,
     payload: DisableRuleRequest,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.RULES_DISABLE)),
 ):
     """
     Disables an active rule, withdrawing it from runtime evaluation immediately.
@@ -402,7 +402,7 @@ async def rollback_rule(
     rule_id: str,
     payload: RollbackRuleRequest,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.RULES_ROLLBACK)),
 ):
     """
     Rolls back a rule to a previously approved version or safely reverts it.
@@ -604,4 +604,3 @@ async def get_rule(
         validation_metrics=ReplayValidationMetrics(**db_rule.validation_metrics) if db_rule.validation_metrics else None,
         approval=ApprovalRecord(**db_rule.approval_metadata) if db_rule.approval_metadata else None,
     )
-

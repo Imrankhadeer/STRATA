@@ -76,13 +76,7 @@ class ResponseExecutor:
         if not model:
             raise ValueError(f"Defense action '{action_id}' not found for tenant '{tenant_id}'")
 
-        # Invariant: Action must be in an executable state (approved or autonomous enforced)
-        valid_states = (
-            ActionStatus.APPROVED.value,
-            ActionStatus.PROPOSED.value,
-            ActionStatus.AWAITING_APPROVAL.value,
-        )
-        if model.status not in valid_states:
+        if model.status != ActionStatus.APPROVED.value:
             raise ValueError(
                 f"Action '{action_id}' cannot be executed from status '{model.status}'. "
                 f"Must be approved prior to dispatch."

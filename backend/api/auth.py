@@ -21,6 +21,7 @@ from backend.core.security import (
     validate_password_strength,
     generate_verification_token,
     auth_rate_limiter,
+    auth_email_rate_limiter,
 )
 from backend.core.email import email_service
 from backend.ops.bus import ops_bus
@@ -200,6 +201,7 @@ def verify_email(
         scopes=scopes,
         is_human=True,
         role=user.role or "owner",
+        auth_version=user.auth_version,
     )
 
     ops_bus.publish(
@@ -227,6 +229,13 @@ def resend_verification(
     db: Session = Depends(get_db),
 ):
     email = req.email.strip().lower()
+    rate_key = f"resend-verification:{email}"
+    if auth_email_rate_limiter.is_rate_limited(rate_key):
+        return MessageResponse(
+            message="If an account with this email exists and is pending verification, a new verification link has been dispatched.",
+            success=True,
+        )
+    auth_email_rate_limiter.record_attempt(rate_key)
     user = db.query(UserModel).filter(UserModel.email == email).first()
 
     # Anti-enumeration safeguard: return generic success even if user not found or already verified
@@ -303,6 +312,7 @@ def login(
         scopes=scopes,
         is_human=True,
         role=user.role or "owner",
+        auth_version=user.auth_version,
     )
 
     ops_bus.publish(
@@ -378,6 +388,7 @@ def change_password(
             detail=err_msg or "New password does not meet complexity requirements.",
         )
     user.hashed_password = hash_password(req.new_password)
+    user.auth_version += 1
     user.updated_at = datetime.datetime.now(datetime.timezone.utc)
     db.commit()
     ops_bus.publish(
@@ -402,6 +413,13 @@ def forgot_password(
     db: Session = Depends(get_db),
 ):
     email = req.email.strip().lower()
+    rate_key = f"forgot-password:{email}"
+    if auth_email_rate_limiter.is_rate_limited(rate_key):
+        return MessageResponse(
+            message="If an account with this email exists, a password reset link has been dispatched.",
+            success=True,
+        )
+    auth_email_rate_limiter.record_attempt(rate_key)
     user = db.query(UserModel).filter(UserModel.email == email).first()
 
     # Anti-enumeration safeguard: always return generic success
@@ -459,6 +477,7 @@ def reset_password(
         )
 
     user.hashed_password = hash_password(req.new_password)
+    user.auth_version += 1
     user.reset_token = None
     user.reset_token_expires_at = None
     user.updated_at = now

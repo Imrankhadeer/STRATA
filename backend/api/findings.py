@@ -95,20 +95,17 @@ async def get_finding(
     """
     Retrieves full details and evidence for a specific finding.
     """
+    # Scope lookup by tenant_id in the query so cross-tenant UUIDs return 404
+    # rather than 403 — preventing existence oracle / enumeration attacks.
     finding = db.query(SecurityFinding).filter(
-        SecurityFinding.finding_id == finding_id
+        SecurityFinding.finding_id == finding_id,
+        SecurityFinding.tenant_id == auth.tenant_id,
     ).first()
 
     if not finding:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Security finding '{finding_id}' not found.",
-        )
-
-    if finding.tenant_id != auth.tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: Cannot view findings across tenant boundaries.",
         )
 
     inv_ids = [inv.investigation_id for inv in finding.investigations] if finding.investigations else []
@@ -141,20 +138,16 @@ async def submit_finding_feedback(
     Records human-in-the-loop analyst feedback on a finding (resolved, false positive, reopened).
     Preserves audit history directly within evidence metadata.
     """
+    # Same tenant-scoped query: always 404 for findings the caller cannot own.
     finding = db.query(SecurityFinding).filter(
-        SecurityFinding.finding_id == finding_id
+        SecurityFinding.finding_id == finding_id,
+        SecurityFinding.tenant_id == auth.tenant_id,
     ).first()
 
     if not finding:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Security finding '{finding_id}' not found.",
-        )
-
-    if finding.tenant_id != auth.tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: Cannot modify findings across tenant boundaries.",
         )
 
     finding.status = payload.status

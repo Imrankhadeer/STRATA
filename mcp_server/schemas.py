@@ -198,7 +198,8 @@ const axios = require('axios');
 const crypto = require('crypto');
 
 const TERNLINE_ENDPOINT = process.env.TERNLINE_ENDPOINT || 'http://localhost:8000';
-const TERNLINE_API_KEY = process.env.TERNLINE_API_KEY || 'ce_live_test_api_key_secret_12345';
+const TERNLINE_API_KEY = process.env.TERNLINE_API_KEY;
+if (!TERNLINE_API_KEY) { console.error('[Ternline] TERNLINE_API_KEY is not set. Telemetry will be rejected.'); }
 const APP_ID = process.env.TERNLINE_APP_ID || 'payments-api';
 const SERVICE_ID = process.env.TERNLINE_SERVICE_ID || 'api-service';
 

@@ -203,7 +203,12 @@ async def search_events_historical(
 
     if min_severity:
         sev_target = min_severity.strip().lower()
-        target_rank = SEVERITY_RANKS.get(sev_target, 1)
+        target_rank = SEVERITY_RANKS.get(sev_target)
+        if target_rank is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown severity '{min_severity}'.",
+            )
         allowed_sevs = [s for s, rank in SEVERITY_RANKS.items() if rank >= target_rank]
         base_query = base_query.filter(EventModel.severity.in_(allowed_sevs))
 
@@ -212,12 +217,7 @@ async def search_events_historical(
 
     # Breakdown by severity
     sev_counts = (
-        db.query(EventModel.severity, func.count(EventModel.event_id))
-        .filter(
-            EventModel.tenant_id == auth.tenant_id,
-            EventModel.timestamp >= from_time,
-            EventModel.timestamp <= to_time,
-        )
+        base_query.with_entities(EventModel.severity, func.count(EventModel.event_id))
         .group_by(EventModel.severity)
         .all()
     )
@@ -225,12 +225,7 @@ async def search_events_historical(
 
     # Breakdown by service
     svc_counts = (
-        db.query(EventModel.service_id, func.count(EventModel.event_id))
-        .filter(
-            EventModel.tenant_id == auth.tenant_id,
-            EventModel.timestamp >= from_time,
-            EventModel.timestamp <= to_time,
-        )
+        base_query.with_entities(EventModel.service_id, func.count(EventModel.event_id))
         .group_by(EventModel.service_id)
         .all()
     )

@@ -13,10 +13,37 @@ from backend.core.security import (
     validate_password_strength,
     auth_rate_limiter,
 )
+from backend.core.auth import _validate_human_session
+from fastapi import HTTPException
 from backend.core.email import email_service
 
 
 client = TestClient(app)
+
+
+def test_password_change_version_invalidates_existing_human_session(db_session):
+    email = f"auth-version-{uuid.uuid4().hex}@test-ternline.io"
+    user = UserModel(
+        id=f"user-{uuid.uuid4().hex[:12]}",
+        tenant_id="tenant-alpha",
+        email=email,
+        hashed_password="test-hash",
+        auth_version=1,
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    revoked_payload = {
+        "sub": email,
+        "tenant_id": "tenant-alpha",
+        "is_human": True,
+        "auth_version": 0,
+    }
+    with pytest.raises(HTTPException) as exc_info:
+        _validate_human_session(revoked_payload, db_session)
+    assert exc_info.value.status_code == 401
+
+    _validate_human_session({**revoked_payload, "auth_version": 1}, db_session)
 
 
 @pytest.fixture(autouse=True)

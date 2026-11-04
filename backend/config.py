@@ -72,7 +72,7 @@ class Settings(BaseSettings):
 
     ALLOW_SIMULATION_API: bool = Field(default=False, description="Allow simulation API strictly when explicitly enabled (disabled in production)")
     ALLOWED_CORS_ORIGINS: str = Field(default="http://localhost:8000,http://127.0.0.1:8000", description="Comma-separated CORS allowlist")
-    CORS_ALLOW_VERCEL: bool = Field(default=True, description="Allow requests from *.vercel.app domains")
+    CORS_ALLOW_VERCEL: bool = Field(default=False, description="Allow requests from *.vercel.app domains")
     FRONTEND_URL: str = Field(default="http://localhost:8000", description="Base URL of frontend (e.g. https://ternline.vercel.app)")
     
     # Email Delivery Configuration (AWS SES / SMTP)
@@ -106,7 +106,11 @@ def validate_production_settings() -> None:
         raise RuntimeError("SQLite is prohibited in Ternline. Set DATABASE_URL to a valid PostgreSQL connection string.")
     if settings.ENVIRONMENT.lower() in ("production", "staging"):
         insecure = "cyber-engine-dev-insecure-secret-key-32chars"
-        if settings.SECRET_KEY == insecure or len(settings.SECRET_KEY) < 32:
+        if (
+            settings.SECRET_KEY == insecure
+            or "generate_with_" in settings.SECRET_KEY.lower()
+            or len(settings.SECRET_KEY) < 32
+        ):
             raise RuntimeError("SECRET_KEY must be set to a strong value (>=32 chars) in production/staging.")
         if (settings.REDIS_REQUIRED or settings.WORKERS > 1) and not settings.REDIS_URL:
             raise RuntimeError(
@@ -115,5 +119,32 @@ def validate_production_settings() -> None:
             )
         if settings.ALLOW_SIMULATION_API:
             raise RuntimeError("ALLOW_SIMULATION_API must be false in production/staging.")
+        if settings.CORS_ALLOW_VERCEL:
+            raise RuntimeError(
+                "CORS_ALLOW_VERCEL must be false in production/staging; configure explicit ALLOWED_CORS_ORIGINS."
+            )
         if settings.INVESTIGATOR_PROVIDER == "mock":
             raise RuntimeError("INVESTIGATOR_PROVIDER cannot be 'mock' in production/staging. Configure 'muse', 'meta', or 'openai_compatible'.")
+        if not settings.INVESTIGATOR_API_KEY or "your_" in settings.INVESTIGATOR_API_KEY.lower():
+            raise RuntimeError("INVESTIGATOR_API_KEY must be configured in production/staging.")
+        db_url_lower = settings.DATABASE_URL.lower()
+        insecure_db_patterns = [
+            "postgres_prod_password_change_me",
+            ":password@",
+            ":changeme@",
+            ":123456@",
+            ":admin@",
+            ":secret@",
+        ]
+        if any(pat in db_url_lower for pat in insecure_db_patterns):
+            raise RuntimeError("DATABASE_URL contains an insecure default or placeholder password.")
+        if settings.INITIAL_ADMIN_API_KEY:
+            admin_key_lower = settings.INITIAL_ADMIN_API_KEY.lower()
+            if (
+                "replace_me" in admin_key_lower
+                or "change_me" in admin_key_lower
+                or "test_api_key" in admin_key_lower
+                or settings.INITIAL_ADMIN_API_KEY == "ce_live_test_api_key_secret_12345"
+                or len(settings.INITIAL_ADMIN_API_KEY) < 32
+            ):
+                raise RuntimeError("INITIAL_ADMIN_API_KEY must be a non-placeholder value of at least 32 characters and cannot use test defaults.")

@@ -106,6 +106,9 @@ class _StreamTicket(BaseModel):
     ticket_id: str
     tenant_id: str
     app_id: str
+    key_id: Optional[str] = None
+    auth_type: str = "api_key"
+    operator_principal: Optional[str] = None
     expires_at: float
 
 
@@ -121,7 +124,14 @@ class OpsEventBus:
         self._tickets: Dict[str, _StreamTicket] = {}
         self._lock = asyncio.Lock()
 
-    def create_stream_ticket(self, tenant_id: str, app_id: str) -> str:
+    def create_stream_ticket(
+        self,
+        tenant_id: str,
+        app_id: str,
+        key_id: Optional[str] = None,
+        auth_type: str = "api_key",
+        operator_principal: Optional[str] = None,
+    ) -> str:
         """
         Creates a short-lived (60s), single-use stream ticket for SSE connections.
         Prevents long-lived API keys from appearing in browser URL query strings.
@@ -132,20 +142,29 @@ class OpsEventBus:
             ticket_id=ticket_id,
             tenant_id=tenant_id,
             app_id=app_id,
+            key_id=key_id,
+            auth_type=auth_type,
+            operator_principal=operator_principal,
             expires_at=time.time() + self.ticket_ttl,
         )
         return ticket_id
 
-    def validate_and_consume_ticket(self, ticket_id: str) -> Optional[tuple[str, str]]:
+    def consume_stream_ticket(self, ticket_id: str) -> Optional[_StreamTicket]:
         """
         Validates and single-use consumes a stream ticket.
-        Returns (tenant_id, app_id) if valid, None otherwise.
         """
         self._purge_expired_tickets()
         ticket = self._tickets.pop(ticket_id, None)
         if not ticket:
             return None
         if time.time() > ticket.expires_at:
+            return None
+        return ticket
+
+    def validate_and_consume_ticket(self, ticket_id: str) -> Optional[tuple[str, str]]:
+        """Compatibility helper returning the tenant and app for a valid ticket."""
+        ticket = self.consume_stream_ticket(ticket_id)
+        if not ticket:
             return None
         return ticket.tenant_id, ticket.app_id
 
@@ -202,7 +221,7 @@ class OpsEventBus:
             # Dispatch to active subscribers matching tenant
             dead_queues = []
             for queue, sub_tenant in list(self._subscribers):
-                if sub_tenant == target_tenant or target_tenant is None:
+                if sub_tenant == target_tenant:
                     try:
                         queue.put_nowait(event)
                     except asyncio.QueueFull:
@@ -222,15 +241,14 @@ class OpsEventBus:
         """Alias for get_buffered_events."""
         return self.get_buffered_events(tenant_id, limit)
 
-    def unsubscribe(self, *args, **kwargs) -> None:
-        """Gracefully handle test unsubscribe cleanup."""
-        pass
+    def unsubscribe(self, queue: asyncio.Queue, tenant_id: str) -> None:
+        self._subscribers.discard((queue, tenant_id))
 
     def get_buffered_events(self, tenant_id: str, limit: int = 50) -> List[OpsEvent]:
         """Returns recent buffered events for a tenant, up to limit."""
         matching = [
             e for e in self._buffer
-            if e.tenant_id == tenant_id or e.tenant_id is None
+            if e.tenant_id == tenant_id
         ]
         return matching[-limit:]
 
@@ -259,7 +277,7 @@ class OpsEventBus:
                     # Timeout produces heartbeat ping via caller or SSE comment
                     yield None
         finally:
-            self._subscribers.discard(sub_pair)
+            self.unsubscribe(queue, tenant_id)
 
     def subscriber_count(self, tenant_id: Optional[str] = None) -> int:
         """Returns number of active subscriber connections."""
@@ -275,4 +293,3 @@ class OpsEventBus:
 
 # Global singleton instance
 ops_bus = OpsEventBus()
-

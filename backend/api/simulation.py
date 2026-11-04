@@ -15,7 +15,7 @@ import datetime
 
 from backend.config import settings
 from backend.db.session import get_db
-from backend.core.auth import get_current_auth, AuthContext
+from backend.core.auth import AuthContext, Permission, require_permission
 from backend.models import EventModel, SecurityFinding, ApiKey, Tenant
 from backend.schemas.events import CanonicalEvent
 from backend.api.ingest import fast_detectors
@@ -198,7 +198,7 @@ class _InProcessEngineEmitter:
 async def run_simulation(
     payload: SimulationRequest,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_current_auth),
+    auth: AuthContext = Depends(require_permission(Permission.SIMULATION_RUN)),
 ):
     """
     Triggers a controlled synthetic attack scenario.
@@ -336,4 +336,3 @@ async def get_demo_session(db: Session = Depends(get_db)):
         tenant_id=tenant_id,
         app_id=app_id,
     )
-

@@ -40,8 +40,10 @@ services:
         value: "false"
       - key: ALLOWED_CORS_ORIGINS
         value: https://ternline-cyber-engine.onrender.com,https://ternline.vercel.app
+      # CORS_ALLOW_VERCEL must be false in production (startup validator enforces this).
+      # Frontend origin is covered by ALLOWED_CORS_ORIGINS above.
       - key: CORS_ALLOW_VERCEL
-        value: "true"
+        value: "false"
       - key: FRONTEND_URL
         value: https://ternline.vercel.app
 

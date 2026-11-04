@@ -30,6 +30,7 @@ def test_telemetry_worker_enqueue_and_process(db_session):
         "event_type": "auth.login_failed",
         "severity": "medium",
         "source_resource": "203.0.113.199",
+        "tenant_id": TEST_TENANT_ID,
     }
     enqueued = worker.enqueue(event_dict, TEST_TENANT_ID)
     assert enqueued is True
@@ -39,6 +40,33 @@ def test_telemetry_worker_enqueue_and_process(db_session):
     processed = worker.process_one(db_session)
     assert processed is True
     assert fake_redis.llen("test:telemetry_queue") == 0
+    assert fake_redis.llen("test:telemetry_queue:processing") == 0
+
+
+def test_telemetry_worker_retries_tenant_mismatch(db_session):
+    fake_redis = fakeredis.FakeRedis(decode_responses=True)
+    worker = TelemetryWorker(
+        redis_client=fake_redis,
+        queue_key="test:tenant_mismatch_queue",
+        max_retries=2,
+    )
+    worker.enqueue(
+        {
+            "event_id": "ev-worker-tenant-mismatch",
+            "schema_version": "1.0.0",
+            "app_id": TEST_APP_ID,
+            "service_id": "auth-service",
+            "event_type": "auth.login_failed",
+            "severity": "medium",
+            "tenant_id": "tenant-beta",
+        },
+        TEST_TENANT_ID,
+    )
+
+    assert worker.process_one(db_session) is False
+    assert fake_redis.llen(worker.queue_key) == 1
+    assert fake_redis.llen(worker.processing_key) == 0
+    assert fake_redis.llen(worker.dead_letter_key) == 0
 
 
 def test_async_ingestion_mode_queues_and_processes(client, auth_headers, db_session, monkeypatch):

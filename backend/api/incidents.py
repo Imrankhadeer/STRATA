@@ -203,6 +203,13 @@ async def create_incident(
             )
             .all()
         )
+        found_ids = {finding.finding_id for finding in findings}
+        missing_ids = sorted(set(payload.finding_ids) - found_ids)
+        if missing_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="One or more finding IDs do not exist in this tenant.",
+            )
         for f in findings:
             ev = f.evidence or {}
             if ev.get("service_id"):
@@ -372,7 +379,6 @@ async def contain_incident(
 
     # 2. Delegate to Phase 1 DefensePlanner & ResponseExecutor
     from backend.defense.planner import compute_action_fingerprint
-    from backend.defense.executor import ResponseExecutor
     from backend.models import DefenseActionModel
     from backend.schemas.defense import (
         ActionScope,
@@ -382,8 +388,6 @@ async def contain_incident(
         ProtectionMode,
         TargetEntityType,
     )
-
-    executor = ResponseExecutor(db)
 
     # Contain IPs
     if payload.contain_ips:
@@ -423,29 +427,22 @@ async def contain_incident(
                         scope=ActionScope.TERNLINE_INGEST.value,
                         target_entity_type=TargetEntityType.IP_ADDRESS.value,
                         target_entity_id=ip,
-                        status=ActionStatus.APPROVED.value,
-                        protection_mode=ProtectionMode.ENFORCED.value,
+                        status=ActionStatus.PROPOSED.value,
+                        protection_mode=ProtectionMode.ASSISTED.value,
                         deduplication_fingerprint=fp,
                         parameters={"block_duration_minutes": 60},
                         ttl_seconds=3600,
                         requested_by=auth.operator_principal or f"key:{auth.app_id}",
-                        approved_by=auth.operator_principal or f"key:{auth.app_id}",
-                        approval_rationale=f"Incident containment for '{incident_id}': {payload.rationale}",
                         created_at=now,
                     )
                     db.add(action_to_exec)
                     db.commit()
 
-                executed = executor.execute_action(
-                    action_id=action_to_exec.action_id,
-                    tenant_id=auth.tenant_id,
-                    actor=auth.operator_principal or f"key:{auth.app_id}",
-                )
                 actions_triggered.append({
-                    "action_id": executed.action_id,
+                    "action_id": action_to_exec.action_id,
                     "type": "temporary_ip_block",
                     "target": ip,
-                    "status": executed.status.value,
+                    "status": action_to_exec.status,
                 })
             except Exception as ex:
                 logger.warning("Containment execution error for IP %s: %s", ip, ex)
@@ -489,43 +486,36 @@ async def contain_incident(
                         credential_authority=CredentialAuthority.TERNLINE_MANAGED.value,
                         target_entity_type=TargetEntityType.API_KEY.value,
                         target_entity_id=key,
-                        status=ActionStatus.APPROVED.value,
-                        protection_mode=ProtectionMode.ENFORCED.value,
+                        status=ActionStatus.PROPOSED.value,
+                        protection_mode=ProtectionMode.ASSISTED.value,
                         deduplication_fingerprint=fp,
                         parameters={},
                         ttl_seconds=3600,
                         requested_by=auth.operator_principal or f"key:{auth.app_id}",
-                        approved_by=auth.operator_principal or f"key:{auth.app_id}",
-                        approval_rationale=f"Incident credential revocation for '{incident_id}': {payload.rationale}",
                         created_at=now,
                     )
                     db.add(action_to_exec)
                     db.commit()
 
-                executed = executor.execute_action(
-                    action_id=action_to_exec.action_id,
-                    tenant_id=auth.tenant_id,
-                    actor=auth.operator_principal or f"key:{auth.app_id}",
-                )
                 actions_triggered.append({
-                    "action_id": executed.action_id,
+                    "action_id": action_to_exec.action_id,
                     "type": "api_key_revocation",
                     "target": key,
-                    "status": executed.status.value,
+                    "status": action_to_exec.status,
                 })
             except Exception as ex:
                 logger.warning("Containment execution error for key %s: %s", key, ex)
 
-    # 3. Transition incident status to CONTAINED
-    incident.status = IncidentStatus.CONTAINED.value
+    # Proposed actions require the separate dual-custody approval workflow.
+    incident.status = IncidentStatus.INVESTIGATING.value
     incident.updated_at = now
     db.commit()
 
     ops_bus.publish(
         component="incidents",
-        event_type="incident.contained",
+        event_type="incident.containment_requested",
         level="warning",
-        message=f"Incident '{incident_id}' contained: {len(actions_triggered)} active defense action(s) triggered",
+        message=f"Incident '{incident_id}' has {len(actions_triggered)} containment action(s) awaiting approval",
         tenant_id=auth.tenant_id,
         metadata={
             "incident_id": incident_id,

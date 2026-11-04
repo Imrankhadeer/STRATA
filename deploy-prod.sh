@@ -43,18 +43,28 @@ try:
             content += f'\nSECRET_KEY={new_secret}\n'
         print("[i] Automatically provisioned a secure 64-character SECRET_KEY in .env.production")
 
+    # Ensure a cryptographically secure POSTGRES_PASSWORD
+    pw_match = re.search(r'^POSTGRES_PASSWORD=(.*)$', content, re.MULTILINE)
+    current_pw = pw_match.group(1).strip() if pw_match else ""
+    if not current_pw or current_pw == "postgres_prod_password_change_me" or "password" in current_pw.lower():
+        new_pw = secrets.token_hex(24)
+        if pw_match:
+            content = re.sub(r'^POSTGRES_PASSWORD=.*$', f'POSTGRES_PASSWORD={new_pw}', content, flags=re.MULTILINE)
+        else:
+            content += f'\nPOSTGRES_PASSWORD={new_pw}\n'
+        print("[i] Automatically provisioned a secure POSTGRES_PASSWORD in .env.production")
+        current_pw = new_pw
+
     # Detect dummy AWS RDS placeholder in DATABASE_URL and route to compose db service
     db_match = re.search(r'^DATABASE_URL=(.*)$', content, re.MULTILINE)
-    if db_match and ("xxxxxxxxx" in db_match.group(1) or "ternline-db" in db_match.group(1)):
-        pw_match = re.search(r'^POSTGRES_PASSWORD=(.*)$', content, re.MULTILINE)
-        pg_pw = pw_match.group(1).strip() if pw_match else "postgres_prod_password_change_me"
+    if not db_match or not db_match.group(1).strip() or "xxxxxxxxx" in db_match.group(1) or "ternline-db" in db_match.group(1):
         content = re.sub(
             r'^DATABASE_URL=.*$',
-            f'DATABASE_URL=postgresql+psycopg2://postgres:{pg_pw}@db:5432/cyber_engine',
+            f'DATABASE_URL=postgresql+psycopg2://postgres:{current_pw}@db:5432/cyber_engine',
             content,
             flags=re.MULTILINE
-        )
-        print("[i] Detected unconfigured RDS placeholder; routed DATABASE_URL to local compose PostgreSQL service (db:5432)")
+        ) if db_match else content + f'\nDATABASE_URL=postgresql+psycopg2://postgres:{current_pw}@db:5432/cyber_engine\n'
+        print("[i] Routed DATABASE_URL to local compose PostgreSQL service (db:5432)")
 
     # Detect dummy AWS ElastiCache placeholder in REDIS_URL and route to compose redis service
     redis_match = re.search(r'^REDIS_URL=(.*)$', content, re.MULTILINE)
