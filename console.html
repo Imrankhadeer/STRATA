@@ -436,32 +436,32 @@
  <aside class="sidebar" id="sidebar">
   <div class="brand"><div class="brandmark">T</div><div><b>TERNLINE</b><small>SECURITY INTELLIGENCE</small></div></div>
   <div class="tenantbox"><label>Authenticated Tenant</label><div id="tenantDisplay" style="font-weight:700;color:var(--lime);font-size:12px;margin:2px 0 3px">Unauthenticated</div><div class="tiny muted" id="tenantSub">Bound server-side to API key</div></div>
-  <div><div class="navgroup">1 · Real-Time Operations</div>
-   <button class="nav active" data-page="overview"><span class="ico">&#9639;</span>Operations Overview</button>
-   <button class="nav" data-page="events"><span class="ico">&#8779;</span>Live Event Stream<span class="nav-badge hide" id="badge-events">0</span></button>
-   <button class="nav" data-page="findings"><span class="ico">&#9873;</span>Fast-Track Detections<span class="nav-badge hide" id="badge-findings">0</span></button>
-   <button class="nav" data-page="incidents"><span class="ico">&#9672;</span>Active Incidents<span class="nav-badge hide" id="badge-incidents">0</span></button>
+  <div><div class="navgroup">Operations</div>
+   <button class="nav active" data-page="overview"><span class="ico">&#9639;</span>Overview</button>
+   <button class="nav" data-page="events"><span class="ico">&#8779;</span>Events<span class="nav-badge hide" id="badge-events">0</span></button>
+   <button class="nav" data-page="findings"><span class="ico">&#9873;</span>Findings<span class="nav-badge hide" id="badge-findings">0</span></button>
+   <button class="nav" data-page="incidents"><span class="ico">&#9672;</span>Incidents<span class="nav-badge hide" id="badge-incidents">0</span></button>
   </div>
-  <div><div class="navgroup">2 · Investigation & Search</div>
-   <button class="nav" data-page="investigations"><span class="ico">&#8984;</span>AI Deep Search & RCA<span class="nav-badge hide" id="badge-investigations">0</span></button>
-   <button class="nav" data-page="hunting"><span class="ico">&#8981;</span>Threat Hunting (Hypothesis Search)</button>
-   <button class="nav" data-page="threatIntel"><span class="ico">&#10035;</span>Threat Intelligence (Known IOCs)</button>
-   <button class="nav" data-page="historical"><span class="ico">&#9719;</span>Historical Analytics</button>
-   <button class="nav" data-page="entities"><span class="ico">&#9678;</span>Microservice Topology Graph</button>
-   <button class="nav" data-page="correlation"><span class="ico">&#8961;</span>Distributed Trace Correlation</button>
+  <div><div class="navgroup">Investigation</div>
+   <button class="nav" data-page="investigations"><span class="ico">&#8984;</span>Deep Search<span class="nav-badge hide" id="badge-investigations">0</span></button>
+   <button class="nav" data-page="hunting"><span class="ico">&#8981;</span>Threat Hunting</button>
+   <button class="nav" data-page="threatIntel"><span class="ico">&#10035;</span>Threat Intel</button>
+   <button class="nav" data-page="historical"><span class="ico">&#9719;</span>History</button>
+   <button class="nav" data-page="entities"><span class="ico">&#9678;</span>Service Graph</button>
+   <button class="nav" data-page="correlation"><span class="ico">&#8961;</span>Correlation</button>
   </div>
-  <div><div class="navgroup">3 · Detection & Defense</div>
-   <button class="nav" data-page="rules"><span class="ico">&#9107;</span>Rule Registry (Declarative Logic)<span class="nav-badge hide" id="badge-rules">0</span></button>
-   <button class="nav" data-page="coverage"><span class="ico">&#9638;</span>MITRE ATT&CK Matrix</button>
-   <button class="nav" data-page="defense"><span class="ico">&#9960;</span>Active Response & Containment<span class="nav-badge hide" id="badge-defense">0</span></button>
-   <button class="nav" data-page="governance"><span class="ico">&#9878;</span>AI Grounding & Citation Audit</button>
+  <div><div class="navgroup">Detection & Rules</div>
+   <button class="nav" data-page="rules"><span class="ico">&#9107;</span>Rules<span class="nav-badge hide" id="badge-rules">0</span></button>
+   <button class="nav" data-page="coverage"><span class="ico">&#9638;</span>ATT&CK Matrix</button>
+   <button class="nav" data-page="defense"><span class="ico">&#9960;</span>Active Defense<span class="nav-badge hide" id="badge-defense">0</span></button>
+   <button class="nav" data-page="governance"><span class="ico">&#9878;</span>Governance</button>
   </div>
-  <div><div class="navgroup">4 · Infrastructure & Setup</div>
-   <button class="nav" data-page="integrations"><span class="ico">&#8646;</span>Connect Applications & SDK<span class="nav-badge" style="background:rgba(197,243,107,.15);color:var(--lime);">SDK</span></button>
-   <button class="nav" data-page="assets"><span class="ico">&#11041;</span>API Keys & Identity</button>
-   <button class="nav" data-page="health"><span class="ico">&#8961;</span>Engine Ingestion & Health</button>
-   <button class="nav" data-page="audit"><span class="ico">&#9719;</span>Tamper-Evident Event Bus</button>
-   <button class="nav" data-page="settings"><span class="ico">&#9881;</span>Platform Settings</button>
+  <div><div class="navgroup">Platform</div>
+   <button class="nav" data-page="integrations"><span class="ico">&#8646;</span>Connect SDK<span class="nav-badge" style="background:rgba(197,243,107,.15);color:var(--lime);">SDK</span></button>
+   <button class="nav" data-page="assets"><span class="ico">&#11041;</span>API Keys</button>
+   <button class="nav" data-page="health"><span class="ico">&#8961;</span>Health</button>
+   <button class="nav" data-page="audit"><span class="ico">&#9719;</span>Audit Log</button>
+   <button class="nav" data-page="settings"><span class="ico">&#9881;</span>Settings</button>
   </div>
   <div class="sidefoot">
     <div class="row"><span class="dot" id="sideDot" style="background:var(--amber)"></span><b id="sideStatus" style="color:var(--amber)">Not connected</b></div>
@@ -1159,7 +1159,7 @@ async function triggerDeepInvestigation(findingId) {
 // C. Deep Investigations & AI Deep Search Page
 function investigations() {
   const rows = records('investigations');
-  return head('Deep Investigations & AI Deep Search', 'Evidence-grounded AI investigator with mathematically audited citations, benign counter-theories, and candidate detector proposals.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
+  return head('Deep Search & AI Investigation', 'AI Root Cause Analysis (RCA) — Reconstructs multi-hop attack graphs across microservices and verifies evidence citations against PostgreSQL.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
     + errPanel()
     + `<div class="panel pad" style="margin-bottom:18px;border-color:#435b46;background:radial-gradient(800px 240px at 50% -40px,#1a2d21,#111a16)">
         <div class="between" style="margin-bottom:10px">
@@ -1503,7 +1503,7 @@ async function runHistorical() {
 
 // Threat Hunting Workspace
 function hunting() {
-  return head('Threat Hunting', 'Form threat hypotheses and query telemetry across services, identities, and time windows.', '')
+  return head('Threat Hunting', 'Proactive Hypothesis Workspace — Query and filter stored telemetry across microservices, identities, and timeframes to discover unflagged suspicious activity.', '')
     + `<div class="grid g2">
         <div class="panel pad">
           <div class="panelhead"><h3>Hunt Workspace</h3></div>
@@ -1584,7 +1584,7 @@ async function runHunt() {
 
 // F. Threat Intelligence Page — Active IOC Scanner & ATT&CK Matrix
 function threatIntel() {
-  return head('Threat Intelligence', 'Real-time Indicator of Compromise (IOC) telemetry search, threat signature mappings, and MITRE ATT&CK coverage.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
+  return head('Threat Intelligence', 'Known IOC & Signature Scanner — Cross-reference external threat indicators (malicious IPs, bad user-agents, exfil endpoints) against stored microservice events.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
     + errPanel()
     + `<div class="panel pad" style="margin-bottom:16px;border-color:#435b46;background:radial-gradient(800px 240px at 50% -40px,#1a2d21,#111a16)">
         <div class="between" style="margin-bottom:10px">
