@@ -436,30 +436,32 @@
  <aside class="sidebar" id="sidebar">
   <div class="brand"><div class="brandmark">T</div><div><b>TERNLINE</b><small>SECURITY INTELLIGENCE</small></div></div>
   <div class="tenantbox"><label>Authenticated Tenant</label><div id="tenantDisplay" style="font-weight:700;color:var(--lime);font-size:12px;margin:2px 0 3px">Unauthenticated</div><div class="tiny muted" id="tenantSub">Bound server-side to API key</div></div>
-  <div><div class="navgroup">Operate</div>
-   <button class="nav active" data-page="overview"><span class="ico">◫</span>Overview</button>
-   <button class="nav" data-page="incidents"><span class="ico">◈</span>Incidents<span class="nav-badge hide" id="badge-incidents">0</span></button>
-   <button class="nav" data-page="findings"><span class="ico">⚑</span>Findings<span class="nav-badge hide" id="badge-findings">0</span></button>
-   <button class="nav" data-page="events"><span class="ico">≋</span>Event Explorer<span class="nav-badge hide" id="badge-events">0</span></button>
-   <button class="nav" data-page="hunting"><span class="ico">⌕</span>Threat Hunting</button>
-   <button class="nav" data-page="historical"><span class="ico">◷</span>Historical Analysis</button>
-   <button class="nav" data-page="threatIntel"><span class="ico">✳</span>Threat Intelligence</button>
-   <button class="nav" data-page="investigations"><span class="ico">⌘</span>Deep Investigations<span class="nav-badge hide" id="badge-investigations">0</span></button>
-   <button class="nav" data-page="entities"><span class="ico">◎</span>Entity Explorer</button>
-   <button class="nav" data-page="correlation"><span class="ico">⌁</span>Correlation Engine</button>
+  <div><div class="navgroup">1 · Real-Time Operations</div>
+   <button class="nav active" data-page="overview"><span class="ico">&#9639;</span>Operations Overview</button>
+   <button class="nav" data-page="events"><span class="ico">&#8779;</span>Live Event Stream<span class="nav-badge hide" id="badge-events">0</span></button>
+   <button class="nav" data-page="findings"><span class="ico">&#9873;</span>Fast-Track Detections<span class="nav-badge hide" id="badge-findings">0</span></button>
+   <button class="nav" data-page="incidents"><span class="ico">&#9672;</span>Active Incidents<span class="nav-badge hide" id="badge-incidents">0</span></button>
   </div>
-  <div><div class="navgroup">Engineer</div>
-   <button class="nav" data-page="rules"><span class="ico">⎇</span>Rule Registry<span class="nav-badge hide" id="badge-rules">0</span></button>
-   <button class="nav" data-page="coverage"><span class="ico">▦</span>Detection Coverage</button>
-   <button class="nav" data-page="assets"><span class="ico">⬡</span>Assets & Identity</button>
-   <button class="nav" data-page="health"><span class="ico">⌁</span>Ingestion & Health</button>
-   <button class="nav" data-page="audit"><span class="ico">◷</span>Audit & Evidence</button>
+  <div><div class="navgroup">2 · Investigation & Search</div>
+   <button class="nav" data-page="investigations"><span class="ico">&#8984;</span>AI Deep Search & RCA<span class="nav-badge hide" id="badge-investigations">0</span></button>
+   <button class="nav" data-page="hunting"><span class="ico">&#8981;</span>Threat Hunting (Hypothesis Search)</button>
+   <button class="nav" data-page="threatIntel"><span class="ico">&#10035;</span>Threat Intelligence (Known IOCs)</button>
+   <button class="nav" data-page="historical"><span class="ico">&#9719;</span>Historical Analytics</button>
+   <button class="nav" data-page="entities"><span class="ico">&#9678;</span>Microservice Topology Graph</button>
+   <button class="nav" data-page="correlation"><span class="ico">&#8961;</span>Distributed Trace Correlation</button>
   </div>
-  <div><div class="navgroup">Govern & connect</div>
-   <button class="nav" data-page="defense"><span class="ico">⛨</span>Active Defense<span class="nav-badge hide" id="badge-defense">0</span></button>
-   <button class="nav" data-page="integrations"><span class="ico">⇄</span>Connect Application<span class="nav-badge" style="background:rgba(197,243,107,.15);color:var(--lime);">SDK</span></button>
-   <button class="nav" data-page="governance"><span class="ico">⚖</span>AI Governance</button>
-   <button class="nav" data-page="settings"><span class="ico">⚙</span>Platform Settings</button>
+  <div><div class="navgroup">3 · Detection & Defense</div>
+   <button class="nav" data-page="rules"><span class="ico">&#9107;</span>Rule Registry (Declarative Logic)<span class="nav-badge hide" id="badge-rules">0</span></button>
+   <button class="nav" data-page="coverage"><span class="ico">&#9638;</span>MITRE ATT&CK Matrix</button>
+   <button class="nav" data-page="defense"><span class="ico">&#9960;</span>Active Response & Containment<span class="nav-badge hide" id="badge-defense">0</span></button>
+   <button class="nav" data-page="governance"><span class="ico">&#9878;</span>AI Grounding & Citation Audit</button>
+  </div>
+  <div><div class="navgroup">4 · Infrastructure & Setup</div>
+   <button class="nav" data-page="integrations"><span class="ico">&#8646;</span>Connect Applications & SDK<span class="nav-badge" style="background:rgba(197,243,107,.15);color:var(--lime);">SDK</span></button>
+   <button class="nav" data-page="assets"><span class="ico">&#11041;</span>API Keys & Identity</button>
+   <button class="nav" data-page="health"><span class="ico">&#8961;</span>Engine Ingestion & Health</button>
+   <button class="nav" data-page="audit"><span class="ico">&#9719;</span>Tamper-Evident Event Bus</button>
+   <button class="nav" data-page="settings"><span class="ico">&#9881;</span>Platform Settings</button>
   </div>
   <div class="sidefoot">
     <div class="row"><span class="dot" id="sideDot" style="background:var(--amber)"></span><b id="sideStatus" style="color:var(--amber)">Not connected</b></div>
@@ -4986,25 +4988,25 @@ async function promoteCandidateRule(btn) {
 }
 
 const navTips = {
-  overview: 'Operations overview & telemetry health',
-  incidents: 'Correlated multi-service incident cases',
-  findings: 'Real-time threat detections (<1ms Fast Track)',
-  events: 'Raw telemetry stream & trace JSON',
-  hunting: 'Query & hunt across microservice telemetry',
-  historical: 'Long-term trend & baseline analysis',
-  threatIntel: 'Cross-reference IOCs against telemetry',
-  investigations: 'AI Deep Search & threat investigations',
-  entities: 'Microservice topology & entity graph',
-  correlation: 'Distributed Redis trace correlation graph',
-  rules: 'Declarative Fast Track rule registry',
-  coverage: 'MITRE ATT&CK detection coverage matrix',
-  assets: 'Protected services & API key lifecycle',
-  health: 'Pipeline throughput, worker & database metrics',
-  audit: 'Tamper-evident operational event bus',
-  defense: 'Autonomous & gated containment actions',
-  integrations: 'PostgreSQL, Redis & AI model connectivity',
-  governance: 'Citation audit rules & hallucination guards',
-  settings: 'API routes, health probes & Bearer token'
+  overview: 'High-level SOC dashboard & telemetry throughput gauges',
+  events: 'Raw incoming event stream & distributed trace inspection',
+  findings: 'Deterministic <1ms rule violations & suspicious signals',
+  incidents: 'Multi-service correlated attack campaigns',
+  investigations: 'AI Root Cause Analysis & automated forensic audits',
+  hunting: 'Proactively search & filter logs by hypothesis or service',
+  threatIntel: 'Scan telemetry for known blacklisted IPs & MITRE ATT&CK patterns',
+  historical: 'Long-term analytics, attack trends & volume spikes',
+  entities: 'Interactive dependency map of microservices & databases',
+  correlation: 'Live Redis cross-service trace graph & causal paths',
+  rules: 'Manage & deploy deterministic Fast Track detection rules',
+  coverage: 'Coverage heatmap mapped to MITRE ATT&CK framework',
+  defense: 'Automated & manual response actions (quarantine, rate-limit)',
+  governance: 'Mathematical verification of AI citations against DB records',
+  integrations: 'Install Python SDK, Node.js snippet, or cURL integration',
+  assets: 'Manage microservice identities & provision hashed API keys',
+  health: 'EC2 engine status, PostgreSQL pool & Redis worker metrics',
+  audit: 'Tamper-evident append-only operational log of engine actions',
+  settings: 'Workspace settings, team members & engine connection host'
 };
 
 function initSidebarTooltips() {
