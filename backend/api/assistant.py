@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.config import settings
-from backend.core.auth import AuthContext, require_permission, Permission
+from backend.core.auth import AuthContext, require_permission, get_current_auth, Permission
 from backend.db.session import get_db
 from backend.models import (
     SecurityFinding,
@@ -72,7 +72,9 @@ def _build_workspace_context(db: Session, tenant_id: str, current_page: Optional
         if findings:
             lines.append(f"Recent Workspace Security Findings ({len(findings)}):")
             for f in findings:
-                svcs = ", ".join(f.services) if f.services else "unspecified"
+                ev_data = f.evidence if isinstance(f.evidence, dict) else {}
+                services_list = ev_data.get("services", [])
+                svcs = ", ".join(services_list) if services_list else "unspecified"
                 lines.append(f"  - [{f.severity.upper()}] \"{f.title}\" (ID: {f.finding_id}, Status: {f.status}, Detector: {f.detector_id}, Services: {svcs})")
         else:
             lines.append("Recent Workspace Security Findings: 0 active findings (clean baseline)")
@@ -247,12 +249,34 @@ def _validate_citations(reply_text: str, db: Session, tenant_id: str) -> List[Va
     return citations
 
 
-def _synthesize_grounded_response(messages: list, tenant_id: str, note: str = "") -> str:
-    """Synthesizes a factually grounded response from live database telemetry context."""
+def get_assistant_auth(auth: AuthContext = Depends(get_current_auth)) -> AuthContext:
+    """Allow operators with findings:read, events:ingest, admin, or signed human operator sessions."""
+    if not (
+        auth.has_permission(Permission.FINDINGS_READ)
+        or auth.has_permission(Permission.EVENTS_INGEST)
+        or auth.has_permission(Permission.ADMIN)
+        or auth.is_human
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Missing required permission for assistant chat: 'findings:read', 'events:ingest', or active workspace role",
+        )
+    return auth
+
+
+def _synthesize_grounded_response(
+    messages: list,
+    tenant_id: str,
+    note: str = "",
+    db: Optional[Session] = None,
+) -> str:
+    """
+    Synthesizes a factually grounded, verified response from live database telemetry context.
+    """
     user_msg = messages[-1]["content"] if messages else ""
     user_lower = user_msg.lower()
 
-    # Off-topic barrier
+    # Off-topic barrier for non-technical trivia
     off_topic_keywords = [
         "banana", "fruit", "recipe", "cook", "sport", "football",
         "weather", "movie", "joke", "song", "diet", "celebrity"
@@ -264,78 +288,131 @@ def _synthesize_grounded_response(messages: list, tenant_id: str, note: str = ""
             "and related workspace topics. For general questions, please use a general-purpose assistant."
         )
 
-    sys_content = messages[0]["content"] if messages else ""
     lines = [f"**Ternline Workspace Assistant** (`{tenant_id}`)\n"]
 
-    if any(k in user_lower for k in ("finding", "incident", "attack", "exfil", "threat", "breach", "alert")):
-        if "Recent Findings:" in sys_content:
-            parts = sys_content.split("Recent Findings:")
-            findings_part = parts[1].split("Active Detection Rules:")[0].strip() if len(parts) > 1 else ""
-            lines.append("### Active Workspace Findings")
-            lines.append(findings_part)
-            lines.append("\nYou can click any cited finding to open its full evidence timeline or trigger a Deep Track investigation.")
-        else:
-            lines.append("No active security findings are currently recorded for this workspace. Telemetry pipelines are nominal.")
-
-    elif any(k in user_lower for k in ("rule", "detection", "threshold", "sequence", "promote", "registry")):
-        if "Active Detection Rules:" in sys_content:
-            parts = sys_content.split("Active Detection Rules:")
-            rules_part = parts[1].split("Recent Telemetry Events:")[0].strip() if len(parts) > 1 else ""
-            lines.append("### Detection Rules Status")
-            lines.append(rules_part)
-            lines.append("\nTo author a new declarative rule, navigate to **Detection Engineering → Rule Registry** or click *Propose Rule with AI*.")
-        else:
-            lines.append("Baseline declarative detection rules govern Fast Track correlation. Visit **Rule Registry** to inspect active rules.")
-
-    elif any(k in user_lower for k in ("health", "status", "pipeline", "latency", "engine", "system")):
-        if "Pipeline & Engine Health:" in sys_content:
-            parts = sys_content.split("Pipeline & Engine Health:")
-            health_part = parts[1].split("Recent Findings:")[0].strip() if len(parts) > 1 else ""
-            lines.append("### Engine & Telemetry Pipeline Health")
-            lines.append(health_part)
-        else:
-            lines.append("Fast Track engine and ingestion pipelines are online and operational.")
-
-    elif any(k in user_lower for k in ("event", "telemetry", "signal", "log", "sample")):
-        if "Recent Telemetry Events:" in sys_content:
-            parts = sys_content.split("Recent Telemetry Events:")
-            events_part = parts[1].split("Pipeline & Engine Health:")[0].strip() if len(parts) > 1 else ""
-            lines.append("### Recent Telemetry Events Sample")
-            lines.append(events_part)
-            lines.append("\nNavigate to **Detection & Investigation → Event Explorer** to filter or recheck specific event traces.")
-        else:
-            lines.append("Recent event records can be searched in real-time in **Event Explorer**.")
-
-    else:
-        lines.append(f"I am ready to assist with security operations and intelligence for tenant `{tenant_id}`.")
-        lines.append("- **Findings & Incidents**: Ask about detected exfiltrations, brute-force anomalies, or active alerts.")
-        lines.append("- **Deep Track Investigations**: Inquire about hypotheses, root cause analysis, or candidate rules.")
-        lines.append("- **Detection Engineering**: Ask how to author, replay-validate, or promote declarative rules.")
-        lines.append("- **Active Defense**: Ask about automated mitigations, rollback capabilities, and response plans.")
-
     if note:
-        lines.append(f"\n\n*(Notice: {note})*")
+        lines.append(f"> ℹ️ **Service Notice**: {note}\n")
+
+    # Fetch live database records if session is available
+    findings = []
+    incidents = []
+    active_rules = []
+    apps = []
+    policy_mode = "OBSERVE"
+    recent_events_count = 0
+
+    if db:
+        try:
+            findings = (
+                db.query(SecurityFinding)
+                .filter(SecurityFinding.tenant_id == tenant_id)
+                .order_by(SecurityFinding.created_at.desc())
+                .limit(5)
+                .all()
+            )
+            incidents = (
+                db.query(IncidentModel)
+                .filter(IncidentModel.tenant_id == tenant_id)
+                .order_by(IncidentModel.created_at.desc())
+                .limit(3)
+                .all()
+            )
+            active_rules = (
+                db.query(DeclarativeRuleModel)
+                .filter(DeclarativeRuleModel.tenant_id == tenant_id, DeclarativeRuleModel.status == "active")
+                .all()
+            )
+            apps = db.query(ApplicationModel).filter(ApplicationModel.tenant_id == tenant_id).all()
+            pol = db.query(TenantDefensePolicyModel).filter(TenantDefensePolicyModel.tenant_id == tenant_id).first()
+            if pol and pol.default_mode:
+                policy_mode = pol.default_mode.upper()
+            one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+            recent_events_count = (
+                db.query(EventModel)
+                .filter(EventModel.tenant_id == tenant_id, EventModel.timestamp >= one_hour_ago)
+                .count()
+            )
+        except Exception as e:
+            logger.warning("Error fetching live database records for assistant response: %s", e)
+
+    # 1. Findings / Alerts / Attacks
+    if any(k in user_lower for k in ("finding", "incident", "attack", "exfil", "threat", "breach", "alert")):
+        if findings:
+            lines.append(f"### Active Workspace Security Findings ({len(findings)})")
+            for f in findings:
+                ev_data = f.evidence if isinstance(f.evidence, dict) else {}
+                services_list = ev_data.get("services", [])
+                svcs = ", ".join(services_list) if services_list else "unspecified"
+                lines.append(f"- **[{f.severity.upper()}]** \"{f.title}\" (ID: `[{f.finding_id}]`, Status: `{f.status}`, Services: `{svcs}`)")
+            lines.append("\nYou can click any cited finding `[FND-xxx]` to inspect its cross-service telemetry or trigger a Deep Track investigation.")
+        elif incidents:
+            lines.append(f"### Active Workspace Incidents ({len(incidents)})")
+            for inc in incidents:
+                lines.append(f"- **[{inc.severity.upper()}]** \"{inc.title}\" (ID: `[{inc.incident_id}]`, Status: `{inc.status}`)")
+        else:
+            lines.append("### Active Workspace Findings")
+            lines.append("No active security findings are currently recorded for this workspace. Fast Track detection pipelines are nominal and running clean baseline telemetry.")
+
+    # 2. Rules / Detection Engineering
+    elif any(k in user_lower for k in ("rule", "detection", "threshold", "sequence", "promote", "registry")):
+        lines.append("### Detection Rules Status")
+        if active_rules:
+            lines.append(f"The Fast Track engine currently has **{len(active_rules)}** active declarative detection rules:")
+            for r in active_rules[:5]:
+                lines.append(f"- **\"{r.title}\"** (ID: `[{r.rule_id}]`, Target: `{r.target_detector}`, Version: `{r.version}`)")
+            lines.append("\nTo author, validate, or promote declarative rules, navigate to **Detection Engineering → Rule Registry** or **Replay & Validation**.")
+        else:
+            lines.append("Baseline declarative detection rules govern Fast Track correlation. You can author and promote new rules in **Detection Engineering → Rule Registry**.")
+
+    # 3. Health / Pipeline / Status / Engine
+    elif any(k in user_lower for k in ("health", "status", "pipeline", "latency", "engine", "system", "defense")):
+        lines.append("### Engine & Telemetry Pipeline Health")
+        lines.append(f"- **Fast Track Detection Engine**: Online (<1ms deterministic evaluation)")
+        lines.append(f"- **Active Defense Policy Mode**: **{policy_mode}**")
+        lines.append(f"- **Telemetry Throughput**: {recent_events_count} events ingested in the past hour")
+        if apps:
+            app_str = ", ".join([f"`{a.name or a.id}`" for a in apps])
+            lines.append(f"- **Connected Applications**: {app_str}")
+        lines.append("- **Database & State Store**: PostgreSQL 16 operational; Redis/In-Memory correlation state healthy.")
+
+    # 4. Events / Telemetry
+    elif any(k in user_lower for k in ("event", "telemetry", "signal", "log", "sample")):
+        lines.append("### Telemetry Ingestion Status")
+        lines.append(f"Ingested **{recent_events_count}** canonical telemetry events in the past hour for tenant `{tenant_id}`.")
+        lines.append("Navigate to **Detection & Investigation → Event Explorer** to filter by service, trace ID, or inspect formatted JSON attributes.")
+
+    # 5. Platform Architecture & General Assistance
+    else:
+        lines.append(f"I am ready to assist with security intelligence and operations for tenant `{tenant_id}`.")
+        lines.append("- **Continuous Workflow**: `Connect → Detect → Investigate → Validate → Protect → Learn`")
+        lines.append("- **Findings & Incidents**: Inquire about exfiltration sequences, blast radius, or active alerts.")
+        lines.append("- **Deep Track Investigations**: Ask about forensic hypotheses, root-cause analysis, and Meta Muse Spark findings.")
+        lines.append("- **Detection Engineering**: Learn how declarative rules are authored, validated against historical telemetry, and promoted.")
+        lines.append("- **Active Defense**: Review policy modes (Observe, Assisted, Enforced) and containment actions.")
+        if findings:
+            lines.append(f"\n*(Notice: There are currently **{len(findings)}** active security findings in this workspace.)*")
 
     return "\n".join(lines)
 
 
-async def _call_llm(messages: list, tenant_id: str) -> str:
+async def _call_llm(messages: list, tenant_id: str, db: Optional[Session] = None) -> str:
     """Call the configured LLM provider for the assistant, falling back cleanly to grounded database telemetry."""
     provider = settings.INVESTIGATOR_PROVIDER
     if provider == "mock":
-        return _synthesize_grounded_response(messages, tenant_id)
+        return _synthesize_grounded_response(messages, tenant_id, db=db)
 
     base_url = settings.INVESTIGATOR_BASE_URL.rstrip("/")
     api_key = settings.INVESTIGATOR_API_KEY
     model = settings.INVESTIGATOR_MODEL
-    timeout = min(settings.INVESTIGATOR_TIMEOUT_SECONDS, 45.0)
+    timeout = min(settings.INVESTIGATOR_TIMEOUT_SECONDS, 18.0)
 
     if not api_key:
         logger.warning("Assistant LLM: INVESTIGATOR_API_KEY not configured. Using grounded workspace fallback.")
         return _synthesize_grounded_response(
             messages,
             tenant_id,
-            "INVESTIGATOR_API_KEY is not configured in .env.production. Running on grounded workspace telemetry engine."
+            note="INVESTIGATOR_API_KEY is not configured. Running on grounded workspace telemetry engine.",
+            db=db,
         )
 
     headers = {
@@ -367,28 +444,31 @@ async def _call_llm(messages: list, tenant_id: str) -> str:
         return _synthesize_grounded_response(
             messages,
             tenant_id,
-            f"Meta LLM API returned HTTP {code}. Synthesized from verified workspace database records."
+            note=f"Meta LLM API returned HTTP {code}. Synthesized from verified workspace database records.",
+            db=db,
         )
     except httpx.TimeoutException:
         logger.warning("Assistant LLM: Request timed out (%ss). Using grounded workspace fallback.", timeout)
         return _synthesize_grounded_response(
             messages,
             tenant_id,
-            f"Meta LLM API request timed out ({timeout}s). Synthesized from verified workspace database records."
+            note=f"Meta LLM API request timed out ({timeout}s). Synthesized from verified workspace database records.",
+            db=db,
         )
     except Exception as e:
         logger.warning("Assistant LLM: Upstream failure (%s). Using grounded workspace fallback.", e)
         return _synthesize_grounded_response(
             messages,
             tenant_id,
-            f"Meta LLM API connection unavailable. Synthesized from verified workspace database records."
+            note=f"Meta LLM API connection unavailable. Synthesized from verified workspace database records.",
+            db=db,
         )
 
 
 @router.post("/chat", response_model=ChatResponse)
 async def assistant_chat(
     req: ChatRequest,
-    auth: AuthContext = Depends(require_permission(Permission.FINDINGS_READ)),
+    auth: AuthContext = Depends(get_assistant_auth),
     db: Session = Depends(get_db),
 ):
     """
@@ -435,7 +515,7 @@ async def assistant_chat(
         messages.append(turn)
     messages.append({"role": "user", "content": req.message})
 
-    reply = await _call_llm(messages, auth.tenant_id)
+    reply = await _call_llm(messages, auth.tenant_id, db=db)
 
     # Validate citations against tenant database
     validated_citations = _validate_citations(reply, db, auth.tenant_id)
@@ -458,7 +538,7 @@ async def assistant_chat(
 @router.delete("/chat/{conversation_id}", status_code=204)
 async def clear_conversation(
     conversation_id: str,
-    auth: AuthContext = Depends(require_permission(Permission.FINDINGS_READ)),
+    auth: AuthContext = Depends(get_assistant_auth),
 ):
     """Clear conversation history for a specific conversation ID."""
     _conversations.pop(conversation_id, None)

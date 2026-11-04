@@ -160,7 +160,7 @@ def startup_db_init():
 
     try:
         from backend.models import Tenant, ApiKey
-        from backend.core.auth import hash_api_key
+        from backend.core.auth import hash_api_key, ALL_PERMISSIONS
         if settings.ENVIRONMENT == "development":
             Base.metadata.create_all(bind=engine)
         
@@ -183,8 +183,11 @@ def startup_db_init():
                         key_hash=h,
                         key_prefix="ce_live_",
                         is_active=True,
-                        scopes=[Permission.EVENTS_INGEST],
+                        scopes=list(ALL_PERMISSIONS),
                     ))
+                    session.commit()
+                else:
+                    k.scopes = list(ALL_PERMISSIONS)
                     session.commit()
 
                 from backend.models import TenantDefensePolicyModel

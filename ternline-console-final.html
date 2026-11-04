@@ -1188,6 +1188,10 @@ async function sendTernlineChatMessage(event) {
     const messageText = String(error?.message || error);
     if (/404|not found/i.test(messageText)) {
       appendTernlineChatMessage('system', 'The chat interface is ready, but the backend assistant route is not implemented yet. Add POST /api/v1/assistant/chat and connect it to your configured LLM provider to enable answers.');
+    } else if (/403|forbidden/i.test(messageText)) {
+      appendTernlineChatMessage('system', 'Authentication / Permission error (HTTP 403): ' + messageText + '. Ensure your session or API key has active workspace permissions.');
+    } else if (/timeout|timed out/i.test(messageText)) {
+      appendTernlineChatMessage('system', 'Request timed out: ' + messageText + '. The platform backend or edge proxy took too long to return a response.');
     } else {
       appendTernlineChatMessage('system', 'I could not reach the assistant: ' + messageText);
     }
