@@ -17,7 +17,7 @@ import jsonschema
 
 from mcp_server.schemas import CANONICAL_EVENT_SCHEMA, TEMPLATES, RECOMMENDED_EVENT_TYPES
 
-DEFAULT_ENDPOINT = os.getenv("TERNLINE_ENDPOINT", "http://localhost:8000")
+DEFAULT_ENDPOINT = os.getenv("TERNLINE_ENDPOINT", "https://ternline.vercel.app")
 DEFAULT_API_KEY = os.getenv("TERNLINE_API_KEY")
 
 

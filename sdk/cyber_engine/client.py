@@ -48,7 +48,7 @@ class CyberEngine:
         api_key: str,
         app: str,
         service: Optional[str] = None,
-        endpoint: str = "http://localhost:8000",
+        endpoint: str = "https://ternline.vercel.app",
         timeout_seconds: float = 5.0,
         buffered: bool = False,
         buffer_size: int = 1000,
