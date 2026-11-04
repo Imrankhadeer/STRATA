@@ -4252,6 +4252,41 @@ async function refresh() {
   }
 }
 
+async function testConnection() {
+  const el = $('#connectionTest');
+  if (el) el.textContent = 'Probing backend health…';
+  try {
+    const d = await request(endpoint('health') || '/health');
+    cache.health = d;
+    if (el) el.textContent = '✓ Backend health probe succeeded: ' + JSON.stringify(d).slice(0, 300);
+    setConnection(true);
+    toast('Backend connection verified.');
+  } catch (err) {
+    if (el) el.textContent = '✕ Probe failed: ' + err.message;
+    setConnection(false);
+    toast('Backend connection failed: ' + err.message);
+  }
+}
+
+function setConnection(ok, label) {
+  const p = $('#connectionPill');
+  const s = $('#sideStatus');
+  const d = $('#sideDot');
+  if (ok) {
+    if (p) { p.textContent = 'BACKEND CONNECTED'; p.className = 'pill good'; }
+    if (s) { s.textContent = 'API reachable'; if (s.style) s.style.color = 'var(--green)'; }
+    if (d && d.style) d.style.background = 'var(--green)';
+  } else {
+    if (p) { p.textContent = label || 'BACKEND DISCONNECTED'; p.className = 'pill warn'; }
+    if (s) { s.textContent = label || 'Not connected'; if (s.style) s.style.color = 'var(--amber)'; }
+    if (d && d.style) d.style.background = 'var(--amber)';
+  }
+}
+
+function updateConnectionPill() {
+  setConnection(!lastError);
+}
+
 function saveSettings(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
