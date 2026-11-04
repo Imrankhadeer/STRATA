@@ -86,7 +86,14 @@ if [ "$FORCE_LOCAL" = true ] || [ "$HAS_DOCKER" = false ]; then
   fi
 
   echo "==> Activating virtual environment..."
-  source .venv/bin/activate
+  if [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
+  elif [ -f ".venv/Scripts/activate" ]; then
+    source .venv/Scripts/activate
+  else
+    echo "❌ Error: Could not find virtual environment activation script in .venv/bin or .venv/Scripts."
+    exit 1
+  fi
 
   # 4. Dependency installation
   echo "==> Ensuring required dependencies are installed..."
