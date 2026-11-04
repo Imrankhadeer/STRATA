@@ -8,8 +8,8 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https: http:; base-uri 'self'; form-action 'self'">
 <title>TERNLINE — Security Intelligence for Distributed Applications</title>
 <style>
-:root{--bg:#090e0c;--side:#0d1411;--panel:#111a16;--panel2:#16211b;--panel3:#1b2921;--line:#293a30;--text:#e7f0e9;--muted:#9aaba0;--dim:#6e8074;--lime:#c5f36b;--green:#75d6a3;--red:#ff7777;--amber:#f3c16e;--blue:#8ebcff;--purple:#c1a2ff;--radius:13px;--shadow:0 16px 48px #0007}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:13px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--lime);outline-offset:2px}a{color:var(--lime)}/* Sleek, Polished, Compact Sidebar with Dark Custom Scrollbars */
+:root{color-scheme:dark;--bg:#090e0c;--side:#0d1411;--panel:#111a16;--panel2:#16211b;--panel3:#1b2921;--line:#293a30;--text:#e7f0e9;--muted:#9aaba0;--dim:#6e8074;--lime:#c5f36b;--green:#75d6a3;--red:#ff7777;--amber:#f3c16e;--blue:#8ebcff;--purple:#c1a2ff;--radius:13px;--shadow:0 16px 48px #0007}
+*{box-sizing:border-box}html,body{color-scheme:dark;margin:0;min-height:100%;background:var(--bg);color:var(--text);font:13px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--lime);outline-offset:2px}a{color:var(--lime)}/* Sleek, Polished, Compact Sidebar with Dark Custom Scrollbars */
 html {
   color-scheme: dark;
 }
@@ -34,13 +34,13 @@ html {
 
 .app {
   display: grid;
-  grid-template-columns: 216px minmax(0, 1fr);
+  grid-template-columns: 206px minmax(0, 1fr);
   min-height: 100vh;
 }
 .sidebar {
-  background: #090e0c;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 10px 7px;
+  background: #080d0b;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 10px 6px;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -48,23 +48,15 @@ html {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 5px;
   z-index: 5;
-  scrollbar-width: thin;
-  scrollbar-color: #243329 transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .sidebar::-webkit-scrollbar {
-  width: 4px;
-}
-.sidebar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.sidebar::-webkit-scrollbar-thumb {
-  background: #243329;
-  border-radius: 9999px;
-}
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(183, 243, 107, 0.4);
+  display: none;
+  width: 0px;
+  height: 0px;
 }
 
 .brand {
@@ -558,6 +550,22 @@ html {
         <div style="font-weight:800;letter-spacing:0.12em;font-size:16px;">TERNLINE</div>
         <div style="color:var(--lime);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;">Security Intelligence & Active Defense</div>
       </div>
+    </div>
+
+    <!-- 1-Click Judge & Demo Login Action -->
+    <div style="background:linear-gradient(135deg,rgba(197,243,107,0.12),rgba(117,214,163,0.05));border:1px solid rgba(197,243,107,0.3);border-radius:10px;padding:13px 15px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <span style="font-weight:700;font-size:12px;color:var(--lime);display:flex;align-items:center;gap:6px;">
+          ⚡ Hackathon Judge / Instant Evaluation
+        </span>
+        <span class="badge" style="background:rgba(197,243,107,0.22);color:var(--lime);font-size:9.5px;padding:2px 7px;border-radius:4px;font-weight:700;">1-Click</span>
+      </div>
+      <div class="tiny muted" style="margin-bottom:11px;line-height:1.45;">
+        Instantly enter the live authenticated workspace (<code>tenant-alpha</code>) with full permissions to inspect telemetry, run attack simulations, and audit AI investigations.
+      </div>
+      <button class="btn primary" type="button" onclick="loginAsDemoJudge()" style="width:100%;justify-content:center;padding:10px 14px;font-weight:800;background:var(--lime);color:#08100c;font-size:12px;border:none;box-shadow:0 0 14px rgba(197,243,107,0.25);">
+        ⚡ 1-Click Demo Login (Hackathon Judges)
+      </button>
     </div>
 
     <!-- Auth Mode Navigation Tabs -->
@@ -1442,7 +1450,7 @@ function overview() {
   const serviceCount = new Set(events.map(r=>field(r,'service_id','service','service_name','source_service')).filter(v=>v!=='—')).size;
   const healthState = String(pipe.fast_track_engine_status || 'unknown').toLowerCase();
 
-  return head('Overview', 'A live picture of telemetry, detection activity and investigation outcomes across your connected applications.', `<button class="btn small primary" data-action="refresh">↻ Refresh Data</button>`)
+  return head('Overview', 'A live picture of telemetry, detection activity and investigation outcomes across your connected applications.', `<button class="btn small primary" data-action="run-quick-simulation" style="background:var(--lime);color:#08100c;font-weight:800;border-color:var(--lime);">⚡ Trigger Attack Simulation</button> <button class="btn small" data-action="refresh">↻ Refresh Data</button>`)
     + errPanel()
     + (!bearerToken ? `<div class="callout warn" style="margin-bottom:14px"><b>Preview session:</b> Sign in to load tenant-specific operational data and enable protected actions. <a href="#" data-page="settings" style="text-decoration:underline">Backend & Settings</a></div>` : '')
     + `<div class="overview-sectionbar"><div><div class="eyebrow">OPERATIONAL SNAPSHOT</div><div class="overview-section-title">Your security at a glance</div></div><span class="overview-updated">${hasData ? 'Tenant data returned by API' : 'Waiting for tenant data'}</span></div>`
@@ -5356,6 +5364,9 @@ document.addEventListener('click', e => {
   const action = a.dataset.action;
 
   switch (action) {
+    case 'run-quick-simulation':
+      runLiveAttackSimulation();
+      break;
     case 'refresh':
       refresh();
       break;
@@ -6134,6 +6145,43 @@ window.handleResendVerification = handleResendVerification;
 window.handleGateForgot = handleGateForgot;
 window.handleGateReset = handleGateReset;
 window.handleGateKey = handleGateKey;
+
+async function loginAsDemoJudge() {
+  const directKeyInput = $('#gateDirectKey');
+  if (directKeyInput) directKeyInput.value = 'ce_live_test_api_key_secret_12345';
+  
+  // Set tab to key to ensure element presence if needed
+  switchGateTab('key');
+  const dummyEvent = new Event('submit', { cancelable: true });
+  await handleGateKey(dummyEvent);
+}
+window.loginAsDemoJudge = loginAsDemoJudge;
+
+async function runLiveAttackSimulation() {
+  if (!bearerToken) {
+    toast('⚠️ Please sign in with an API key or demo login before running simulations.');
+    return;
+  }
+  toast('⚡ Injecting multi-stage exfiltration attack telemetry across services...');
+  try {
+    const res = await fetch(apiUrl('/api/v1/simulation/run'), {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${bearerToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ scenario: 'exfiltration' })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.detail || 'Simulation execution failed');
+    toast(`✅ Attack sequence completed! ${result.events_emitted || 3} events emitted across services. Finding generated.`);
+    await refresh();
+  } catch (err) {
+    toast(`⚠️ Simulation error: ${err.message}`);
+  }
+}
+window.runLiveAttackSimulation = runLiveAttackSimulation;
+
 window.handleSwitchWorkspace = handleSwitchWorkspace;
 window.openCreateWorkspaceModal = openCreateWorkspaceModal;
 window.handleCreateWorkspaceSubmit = handleCreateWorkspaceSubmit;

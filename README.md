@@ -2,7 +2,60 @@
 
 > **Integrate once. Detect continuously. Investigate intelligently. Improve detection safely.**
 
-Ternline is an active security intelligence platform designed for microservices and distributed applications. It bridges sub-millisecond, deterministic threat detection (Fast Track) with evidence-grounded AI investigations (Deep Track) and self-hardening declarative rule authoring.
+Ternline is an active security intelligence platform designed for microservices and distributed applications. It bridges sub-millisecond, deterministic threat detection (**Fast Track**) with evidence-grounded AI investigations (**Deep Track**) and self-hardening declarative rule authoring.
+
+---
+
+## ⚡ 30-Second Quickstart (Judges & Evaluators)
+
+Anyone can clone the repository and boot the entire platform with a single command:
+
+### 1. Clone & Start
+```bash
+git clone https://github.com/Imrankhadeer/Ternline.git
+cd Ternline
+
+# Option A: Automatic startup (Mac / Linux / WSL)
+./start.sh
+
+# Option B: Automatic startup (Windows)
+start.bat
+# or in PowerShell: .\start.ps1
+
+# Option C: Docker Compose direct (Cross-Platform)
+docker compose up --build
+```
+> The startup script boots **PostgreSQL 16** (port `5433`), **Redis 7** (port `6379`), applies all Alembic database migrations, and launches the Ternline backend and Web Console on port `8000`.
+
+---
+
+### 2. Live 3-Click Evaluation Walkthrough
+
+1. **Open the Web Console:** Navigate to **`http://localhost:8000/console`**.
+2. **Instant 1-Click Login:** Click the prominent **`⚡ 1-Click Demo Login (Hackathon Judges)`** button at the top of the login gate. You are instantly authenticated into the pre-seeded `tenant-alpha` workspace with full administrator permissions.
+3. **Trigger Live Multi-Service Attack Simulation:** On the **Overview** dashboard, click **`⚡ Trigger Attack Simulation`**.
+   - Emits a real-time 3-stage exfiltration attack sequence: `api-service` → `worker-service` → `database-service`.
+   - The deterministic Fast Track engine processes the stream in pure Python/Redis Lua in **`<1ms`**.
+   - Immediate security findings appear on your dashboard!
+4. **Inspect & Run AI Deep Track:**
+   - Click **Findings & Incidents** on the sidebar.
+   - Click **`⌘ Deep Track`** on the detected exfiltration finding.
+   - Watch the live SSE investigation stream reconstruct the cross-service sequence, formulate hypotheses, and propose candidate declarative detection rules.
+5. **Promote Rule to Fast Track:** Click **`Promote Candidate Rule`** to push the AI-discovered rule directly into the active Fast Track engine.
+
+---
+
+## 🔑 Pre-Seeded Evaluation Credentials
+
+When running in development mode (`ENVIRONMENT=development`), the application seeds ready-to-use tenant credentials:
+
+* **Tenant ID:** `tenant-alpha`
+* **Application ID:** `payments-api`
+* **API Key:** `ce_live_test_api_key_secret_12345`
+* **HTTP Header:** `Authorization: Bearer ce_live_test_api_key_secret_12345`
+* **Console URL:** [http://localhost:8000/console](http://localhost:8000/console)
+* **Swagger API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+* **Prometheus Metrics:** [http://localhost:8000/metrics](http://localhost:8000/metrics)
 
 ---
 
@@ -53,8 +106,15 @@ Ternline is an active security intelligence platform designed for microservices 
 
 Ternline supports two operational modes:
 
-### Mode A: Local Development & Inspection
-Requires a running **PostgreSQL 16** database. Uses PostgreSQL for persistent relational state and in-memory or Redis correlation:
+### Mode A: Automated Startup Script or Docker Compose (Recommended)
+```bash
+./start.sh          # Linux/macOS
+start.bat           # Windows
+docker compose up --build
+```
+
+### Mode B: Local Development & Inspection (Without Docker)
+Requires a running **PostgreSQL 16** database:
 ```bash
 # 1. Clone & create virtual environment
 python -m venv .venv
@@ -70,21 +130,7 @@ cp .env.example .env
 alembic upgrade head
 
 # 5. Start the server (Single Worker)
-uvicorn backend.main:app --host 127.0.0.1 --port 8000
-```
-* Interactive API Documentation: `http://localhost:8000/docs`
-* Web Console & Landing Page: `http://localhost:8000/`
-
----
-
-### Mode B: Full Distributed Production Stack (Docker Compose)
-Runs **PostgreSQL 16**, **Redis 7 (AOF + Volatile-LRU)**, and the containerized backend:
-```bash
-# Boot complete production stack
-docker compose up -d
-
-# Check health
-docker compose ps
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ---
@@ -95,32 +141,32 @@ docker compose ps
 | :--- | :--- | :--- |
 | `ENVIRONMENT` | `development` | `development`, `testing`, `staging`, or `production`. |
 | `SECRET_KEY` | `dev-insecure...` | Internal JWT/API key signature. Must be $\ge 32$ chars in production. |
-| `DATABASE_URL` | `postgresql+psycopg2://...` | PostgreSQL connection string (mandatory; SQLite is prohibited). |
+| `DATABASE_URL` | `postgresql+psycopg2://...` | PostgreSQL connection string (mandatory; SQLite is strictly prohibited). |
 | `WORKERS` | `1` | Worker process count. If $>1$, `REDIS_URL` is mandatory. |
 | `REDIS_URL` | `redis://localhost:6379/0` | Redis 7+ connection URL for distributed state. |
 | `REDIS_REQUIRED` | `false` | When `true`, startup fails fast if Redis is unreachable. |
 | `REDIS_STATE_TIMEOUT_MS` | `500` | Redis socket timeout in milliseconds. |
-| `INVESTIGATOR_PROVIDER` | `mock` | `mock` (no API key required), `meta`, or `openai_compatible`. |
-| `INVESTIGATOR_MODEL` | `Llama-3.3-70B-Instruct` | Model identifier for Deep Track investigations. |
+| `INVESTIGATOR_PROVIDER` | `muse` | `muse` (Meta AI Spark), `mock` (deterministic local tests), or `openai_compatible`. |
+| `INVESTIGATOR_MODEL` | `muse-spark-1.3` | Model identifier for Deep Track investigations. |
 
 ---
 
 ## 4. Test Suite Execution
 
-All 166 backend tests can be verified with `pytest`:
+All 360 backend tests execute deterministically without external network services:
 
 ```bash
-# Run full automated regression suite (166 tests)
-python -m pytest tests/ --ignore=tests/test_milestone7_ops.py -k "not test_live_meta_model_inference" -v
+# Run full automated regression suite
+python -m pytest tests/ -k "not test_live_meta_model_inference" -q
 
-# Run Checkpoint 5 Distributed Correlation & Multi-Worker tests
+# Run Distributed Correlation & Redis State Store tests
 python -m pytest tests/test_checkpoint5_completion.py tests/test_distributed_correlation.py -v
 
-# Run Checkpoint 4 Runtime Migration & Clock-Skew tests
-python -m pytest tests/test_checkpoint4_runtime.py -v
+# Run Declarative Rule Lifecycle & Parity tests
+python -m pytest tests/test_checkpoint4_runtime.py tests/test_checkpoint3_parity.py -v
 
-# Run Checkpoint 3 Differential Parity tests
-python -m pytest tests/test_checkpoint3_parity.py -v
+# Run API Key Lifecycle & Metrics tests
+python -m pytest tests/test_api_keys.py tests/test_metrics.py -v
 ```
 
 ---
