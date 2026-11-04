@@ -62,3 +62,16 @@ class InvestigationFinding(BaseModel):
         default_factory=lambda: datetime.datetime.now(datetime.timezone.utc)
     )
 
+
+
+class FollowUpRequest(BaseModel):
+    query: str = Field(..., min_length=3, max_length=2000, description="Follow-up question, guidance, or additional context for the investigation")
+
+
+class FollowUpEntry(BaseModel):
+    entry_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
+    query: str
+    response: str
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )

@@ -334,3 +334,185 @@ async def get_event(
         attributes=event.attributes or {},
         provenance=event.provenance or {},
     )
+
+
+class EventTrendPoint(BaseModel):
+    interval_start: str
+    event_count: int
+    high_critical_count: int
+    top_services: List[str] = Field(default_factory=list)
+
+
+class EventTrendsReport(BaseModel):
+    window_hours: int
+    interval_minutes: int
+    total_events: int
+    anomaly_detected: bool
+    anomaly_reason: Optional[str] = None
+    timeline: List[EventTrendPoint] = Field(default_factory=list)
+    generated_at: datetime.datetime = Field(
+        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
+
+
+@router.get("/trends", response_model=EventTrendsReport)
+async def get_event_trends_report(
+    window_hours: int = Query(24, ge=1, le=168, description="Time window in hours"),
+    interval_minutes: int = Query(60, ge=15, le=360, description="Bucket interval in minutes"),
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_current_auth),
+):
+    """
+    Periodically groups and analyzes historical telemetry for burst anomalies,
+    detecting spikes in event rates or unalerted critical activity across microservices.
+    """
+    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    start_time = now - datetime.timedelta(hours=window_hours)
+
+    events = (
+        db.query(EventModel)
+        .filter(
+            EventModel.tenant_id == auth.tenant_id,
+            EventModel.timestamp >= start_time,
+            EventModel.timestamp <= now,
+        )
+        .order_by(EventModel.timestamp.asc())
+        .all()
+    )
+
+    total_events = len(events)
+    # Bucket into interval slices
+    buckets = {}
+    delta = datetime.timedelta(minutes=interval_minutes)
+    curr = start_time
+    while curr <= now:
+        key = curr.isoformat() + "Z"
+        buckets[key] = {"count": 0, "high_critical": 0, "services": set()}
+        curr += delta
+
+    bucket_keys = sorted(buckets.keys())
+    for ev in events:
+        ts = ev.timestamp
+        # find matching bucket
+        for i in range(len(bucket_keys)):
+            b_start = datetime.datetime.fromisoformat(bucket_keys[i].rstrip("Z"))
+            b_end = b_start + delta
+            if b_start <= ts < b_end:
+                b_key = bucket_keys[i]
+                buckets[b_key]["count"] += 1
+                if str(ev.severity).lower() in ("high", "critical"):
+                    buckets[b_key]["high_critical"] += 1
+                if ev.service_id:
+                    buckets[b_key]["services"].add(ev.service_id)
+                break
+
+    timeline = [
+        EventTrendPoint(
+            interval_start=k,
+            event_count=data["count"],
+            high_critical_count=data["high_critical"],
+            top_services=list(data["services"])[:3],
+        )
+        for k, data in buckets.items()
+    ]
+
+    # Heuristic for anomaly detection
+    counts = [p.event_count for p in timeline]
+    avg_count = (sum(counts) / len(counts)) if counts else 0
+    max_count = max(counts) if counts else 0
+    anomaly = False
+    reason = None
+    if max_count > 0 and avg_count > 0 and (max_count > (avg_count * 3)):
+        anomaly = True
+        reason = f"Burst anomaly detected: peak rate ({max_count}) exceeded 3x interval baseline ({round(avg_count, 1)})."
+
+    return EventTrendsReport(
+        window_hours=window_hours,
+        interval_minutes=interval_minutes,
+        total_events=total_events,
+        anomaly_detected=anomaly,
+        anomaly_reason=reason,
+        timeline=timeline,
+    )
+
+
+class EventFastTrackRecheckResponse(BaseModel):
+    event_id: str
+    evaluated_rules_count: int
+    findings_generated_count: int
+    matched_rules: List[str] = Field(default_factory=list)
+    findings: List[Dict[str, Any]] = Field(default_factory=list)
+    latency_microseconds: float
+
+
+@router.post("/{event_id}/recheck", response_model=EventFastTrackRecheckResponse)
+async def recheck_event_fast_track(
+    event_id: str,
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_current_auth),
+):
+    """
+    Deterministically replays an individual existing event against the current active
+    declarative rule set for the authenticated tenant.
+    Measures isolated Fast Track evaluation latency in microseconds.
+    Does not duplicate event ingestion.
+    """
+    import time
+    from backend.detection.registry import runtime_rule_registry
+    from backend.schemas.events import CanonicalEvent
+
+    ev = db.query(EventModel).filter(
+        EventModel.event_id == event_id,
+        EventModel.tenant_id == auth.tenant_id,
+    ).first()
+
+    if not ev:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Event '{event_id}' not found.")
+
+    canonical_ev = CanonicalEvent(
+        event_id=ev.event_id,
+        schema_version=ev.schema_version,
+        timestamp=ev.timestamp,
+        ingested_at=ev.ingested_at,
+        tenant_id=ev.tenant_id,
+        app_id=ev.app_id,
+        service_id=ev.service_id,
+        event_type=ev.event_type,
+        severity=ev.severity,
+        source_resource=ev.source_resource,
+        target_resource=ev.target_resource,
+        trace_id=ev.trace_id,
+        request_id=ev.request_id,
+        attributes=ev.attributes or {},
+        provenance=ev.provenance or {},
+    )
+
+    t0 = time.perf_counter()
+    findings = runtime_rule_registry.evaluate_event(canonical_ev, db)
+    t1 = time.perf_counter()
+    latency_us = round((t1 - t0) * 1_000_000.0, 2)
+
+    active_rules = db.query(DeclarativeRuleModel).filter(
+        DeclarativeRuleModel.tenant_id == auth.tenant_id,
+        DeclarativeRuleModel.status == "active",
+    ).count()
+
+    matched_rules = [f.detector_id for f in findings if f.detector_id]
+    formatted_findings = [
+        {
+            "finding_id": f.finding_id,
+            "title": f.title,
+            "severity": f.severity,
+            "detector_id": f.detector_id,
+        }
+        for f in findings
+    ]
+
+    return EventFastTrackRecheckResponse(
+        event_id=event_id,
+        evaluated_rules_count=active_rules,
+        findings_generated_count=len(findings),
+        matched_rules=matched_rules,
+        findings=formatted_findings,
+        latency_microseconds=latency_us,
+    )

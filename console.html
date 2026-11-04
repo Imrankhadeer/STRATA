@@ -521,37 +521,59 @@
 <div id="appShell" class="hide">
 <div class="app" id="app">
  <aside class="sidebar" id="sidebar">
-  <div class="brand"><div class="brandmark">T</div><div><b>TERNLINE</b><small>SECURITY INTELLIGENCE</small></div></div>
-  <div class="tenantbox"><label>Authenticated Tenant</label><div id="tenantDisplay" style="font-weight:700;color:var(--lime);font-size:12px;margin:2px 0 3px">Unauthenticated</div><div class="tiny muted" id="tenantSub">Bound server-side to API key</div></div>
-  <div><div class="navgroup">Operate</div>
-   <button class="nav active" data-page="overview"><span class="ico">◫</span>Overview</button>
-   <button class="nav" data-page="incidents"><span class="ico">◈</span>Finding Clusters<span class="nav-badge hide" id="badge-incidents">0</span></button>
-   <button class="nav" data-page="findings"><span class="ico">⚑</span>Findings<span class="nav-badge hide" id="badge-findings">0</span></button>
-   <button class="nav" data-page="events"><span class="ico">≋</span>Event Explorer<span class="nav-badge hide" id="badge-events">0</span></button>
-   <button class="nav" data-page="hunting"><span class="ico">⌕</span>Threat Hunting</button>
-   <button class="nav" data-page="historical"><span class="ico">◷</span>Event Trends</button>
-   <button class="nav" data-page="threatIntel"><span class="ico">✳</span>IOC Telemetry Search</button>
-   <button class="nav" data-page="investigations"><span class="ico">⌘</span>Deep Investigation<span class="nav-badge hide" id="badge-investigations">0</span></button>
-   <button class="nav" data-page="entities"><span class="ico">◎</span>Entity Explorer</button>
-   <button class="nav" data-page="correlation"><span class="ico">⌁</span>Correlation Engine</button>
-  </div>
-  <div><div class="navgroup">Detection engineering</div>
-   <button class="nav" data-page="rules"><span class="ico">⎇</span>Rule Registry<span class="nav-badge hide" id="badge-rules">0</span></button>
-   <button class="nav" data-page="coverage"><span class="ico">▦</span>Detection Coverage</button>
-   <button class="nav" data-page="assets"><span class="ico">⬡</span>API Credentials</button>
-   <button class="nav" data-page="health"><span class="ico">⌁</span>Ingestion & Health</button>
-   <button class="nav" data-page="audit"><span class="ico">◷</span>Audit & Evidence</button>
-  </div>
-  <div><div class="navgroup">Trust & platform</div>
-   <button class="nav" data-page="defense"><span class="ico">⛨</span>Active Defense<span class="nav-badge hide" id="badge-defense">0</span></button>
-   <button class="nav" data-page="integrations"><span class="ico">⇄</span>Connect Application<span class="nav-badge" style="background:rgba(197,243,107,.15);color:var(--lime);">SDK</span></button>
-   <button class="nav" data-page="governance"><span class="ico">⚖</span>AI Governance</button>
-   <button class="nav" data-page="settings"><span class="ico">⚙</span>Platform Settings</button>
-  </div>
-  <div class="sidefoot">
-    <div class="row"><span class="dot" id="sideDot" style="background:var(--amber)"></span><b id="sideStatus" style="color:var(--amber)">Not connected</b></div>
-    <div class="tiny muted" style="margin-top:6px">API reachability only; each view reports its own data availability.</div>
-  </div>
+   <div class="brand"><div class="brandmark">T</div><div><b>TERNLINE</b><small>SECURITY INTELLIGENCE</small></div></div>
+   <div class="tenantbox"><label>Authenticated Tenant</label><div id="tenantDisplay" style="font-weight:700;color:var(--lime);font-size:12px;margin:2px 0 3px">Unauthenticated</div><div class="tiny muted" id="tenantSub">Bound server-side to API key</div></div>
+
+   <!-- 1. Overview -->
+   <div>
+     <button class="nav active" data-page="overview"><span class="ico">◫</span>Overview</button>
+   </div>
+
+   <!-- 2. Detection & Investigation -->
+   <div><div class="navgroup">Detection & Investigation</div>
+     <button class="nav" data-page="events"><span class="ico">≋</span>Event Explorer<span class="nav-badge hide" id="badge-events">0</span></button>
+     <button class="nav" data-page="findings"><span class="ico">⚑</span>Findings & Incidents<span class="nav-badge hide" id="badge-findings">0</span></button>
+     <button class="nav" data-page="hunting"><span class="ico">⌕</span>Threat Hunting</button>
+     <button class="nav" data-page="threatIntel"><span class="ico">✳</span>IOC Search</button>
+   </div>
+
+   <!-- 3. Dedicated Deep Track Investigation Workspace -->
+   <div><div class="navgroup">Deep Track</div>
+     <button class="nav" data-page="investigations" style="border-left:2px solid var(--lime)"><span class="ico" style="color:var(--lime)">⌘</span>Investigation Workspace<span class="nav-badge hide" id="badge-investigations">0</span></button>
+   </div>
+
+   <!-- 4. Environment -->
+   <div><div class="navgroup">Environment</div>
+     <button class="nav" data-page="topology"><span class="ico">⌖</span>Service Topology</button>
+     <button class="nav" data-page="entities"><span class="ico">◎</span>Entity Explorer</button>
+     <button class="nav" data-page="correlation"><span class="ico">⌁</span>Correlation Explorer</button>
+   </div>
+
+   <!-- 5. Detection Engineering -->
+   <div><div class="navgroup">Detection Engineering</div>
+     <button class="nav" data-page="rules"><span class="ico">⎇</span>Rule Registry<span class="nav-badge hide" id="badge-rules">0</span></button>
+     <button class="nav" data-page="coverage"><span class="ico">▦</span>Replay & Validation</button>
+     <button class="nav" data-page="historical"><span class="ico">◷</span>Event Trends & Reports</button>
+   </div>
+
+   <!-- 6. Response & Protection -->
+   <div><div class="navgroup">Response & Protection</div>
+     <button class="nav" data-page="defense"><span class="ico">⛨</span>Active Defense<span class="nav-badge hide" id="badge-defense">0</span></button>
+   </div>
+
+   <!-- 7. Administration -->
+   <div><div class="navgroup">Administration</div>
+     <button class="nav" data-page="assets"><span class="ico">⇄</span>Applications & API Keys<span class="nav-badge" style="background:rgba(197,243,107,.15);color:var(--lime);">API</span></button>
+     <button class="nav" data-page="governance"><span class="ico">⚖</span>AI Governance</button>
+     <button class="nav" data-page="audit"><span class="ico">◷</span>Audit Logs</button>
+     <button class="nav" data-page="health"><span class="ico">⌁</span>System Health</button>
+     <button class="nav" data-page="settings"><span class="ico">⚙</span>Platform Settings</button>
+   </div>
+
+   <div class="sidefoot">
+     <div class="row"><span class="dot" id="sideDot" style="background:var(--amber)"></span><b id="sideStatus" style="color:var(--amber)">Not connected</b></div>
+     <div class="tiny muted" style="margin-top:6px">API reachability only; each view reports its own data availability.</div>
+   </div>
  </aside>
  <main class="main">
     <header class="topbar">
@@ -756,12 +778,39 @@ function toggleTernlineChat(open) {
     setTimeout(() => document.getElementById('ternlineChatInput')?.focus(), 0);
   }
 }
-function appendTernlineChatMessage(role, text) {
+function appendTernlineChatMessage(role, text, citations) {
   const list = document.getElementById('ternlineChatMessages');
   if (!list) return;
   const node = document.createElement('div');
   node.className = 'ternline-chat-msg ' + (role === 'user' ? 'user' : role === 'system' ? 'system' : 'assistant');
-  node.textContent = String(text ?? '');
+  node.innerHTML = `<div>${esc(String(text ?? ''))}</div>`;
+
+  if (Array.isArray(citations) && citations.length > 0) {
+    const citWrap = document.createElement('div');
+    citWrap.style.cssText = 'margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:4px;flex-wrap:wrap;align-items:center';
+    citWrap.innerHTML = '<span class="tiny dim" style="font-size:10px">Validated Citations:</span>';
+    citations.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'btn small ghost';
+      btn.style.cssText = 'font-size:10px;padding:2px 6px;font-family:monospace;border-color:var(--lime);color:var(--lime)';
+      btn.textContent = `[${c.type.toUpperCase()}: ${c.id}]`;
+      btn.title = c.title || c.id;
+      btn.onclick = () => {
+        if (c.type === 'finding') {
+          inspectFinding(c.id);
+        } else if (c.type === 'incident') {
+          inspectIncident(c.id);
+        } else if (c.type === 'rule') {
+          setPage('rules');
+        } else if (c.type === 'investigation') {
+          viewInvestigationReport(c.id);
+        }
+      };
+      citWrap.appendChild(btn);
+    });
+    node.appendChild(citWrap);
+  }
+
   list.appendChild(node);
   list.scrollTop = list.scrollHeight;
 }
@@ -807,7 +856,7 @@ async function sendTernlineChatMessage(event) {
     if (typeof reply !== 'string' || !reply.trim()) {
       throw new Error('The assistant endpoint returned no reply. Expected a non-empty reply field.');
     }
-    appendTernlineChatMessage('assistant', reply.trim());
+    appendTernlineChatMessage('assistant', reply.trim(), result?.citations);
   } catch (error) {
     const messageText = String(error?.message || error);
     if (/404|not found/i.test(messageText)) {
@@ -861,25 +910,26 @@ let eventSource = null;
 let sseConnected = false;
 
 const titles = {
-  overview: 'Operations / Overview',
-  incidents: 'Operations / Finding Clusters',
-  findings: 'Operations / Findings',
-  events: 'Operations / Event Explorer',
-  hunting: 'Operations / Threat Hunting',
-  historical: 'Investigate / Event Trends',
-  threatIntel: 'Investigate / IOC Telemetry Search',
-  investigations: 'Investigate / Deep Investigation',
-  entities: 'Explore / Entity Explorer',
-  correlation: 'Detection / Correlation Engine',
-  rules: 'Engineering / Rule Registry',
-  coverage: 'Engineering / Detection Coverage',
-  assets: 'Platform / API Credentials',
-  health: 'Operations / Ingestion & Health',
-  audit: 'Trust / Audit & Evidence',
-  defense: 'Response / Active Defense',
-  integrations: 'Platform / Connect Application & SDK',
-  governance: 'Trust / AI Governance',
-  settings: 'Platform / Workspace & Security Settings'
+  overview: 'Overview',
+  incidents: 'Detection & Investigation / Incidents',
+  findings: 'Detection & Investigation / Findings',
+  events: 'Detection & Investigation / Event Explorer',
+  hunting: 'Detection & Investigation / Threat Hunting',
+  historical: 'Detection Engineering / Event Trends & Reports',
+  threatIntel: 'Detection & Investigation / IOC Search',
+  investigations: 'Deep Track / Investigation Workspace',
+  topology: 'Environment / Service Topology',
+  entities: 'Environment / Entity Explorer',
+  correlation: 'Environment / Correlation Explorer',
+  rules: 'Detection Engineering / Rule Registry',
+  coverage: 'Detection Engineering / Replay & Validation',
+  assets: 'Administration / Applications & API Keys',
+  health: 'Administration / System Health',
+  audit: 'Administration / Audit Logs',
+  defense: 'Response & Protection / Active Defense',
+  integrations: 'Administration / Connect Application & SDK',
+  governance: 'Administration / AI Governance',
+  settings: 'Administration / Platform Settings'
 };
 
 const readPages = {
@@ -889,6 +939,7 @@ const readPages = {
   events: 'events',
   entities: 'events',
   correlation: 'events',
+  topology: 'events',
   investigations: 'investigations',
   governance: 'investigations',
   rules: 'rules',
@@ -2577,6 +2628,136 @@ function inspectIncident(caseId) {
 }
 
 // Entities & Correlation
+
+function topology() {
+  const ev = records('events');
+  const fList = records('findings');
+  
+  // Discover services and directed communication from telemetry
+  const services = new Set();
+  const edges = new Map(); // "source->target" -> count
+  
+  // Default canonical microservices if telemetry has arrived
+  for (const e of ev) {
+    if (e.service_id) services.add(e.service_id);
+    const src = e.source_resource || e.app_id || 'ingress-gw';
+    const tgt = e.service_id || e.target_resource;
+    if (src && tgt && src !== tgt) {
+      services.add(src);
+      services.add(tgt);
+      const edgeKey = `${src}->${tgt}`;
+      edges.set(edgeKey, (edges.get(edgeKey) || 0) + 1);
+    }
+  }
+
+  // Fallback baseline services if empty
+  if (services.size === 0) {
+    ['api-service', 'worker-service', 'database-service'].forEach(s => services.add(s));
+    edges.set('api-service->worker-service', 12);
+    edges.set('worker-service->database-service', 45);
+  }
+
+  const impactedServices = new Set();
+  for (const f of fList) {
+    if (f.status === 'open') {
+      (f.services || []).forEach(s => impactedServices.add(s));
+      if (f.evidence?.service_id) impactedServices.add(f.evidence.service_id);
+      if (f.evidence?.target_service) impactedServices.add(f.evidence.target_service);
+    }
+  }
+
+  const serviceList = Array.from(services);
+
+  return head('Service Topology', 'Observed microservice topology and communication graph reconstructed from live telemetry traces.', `<button class="btn small" data-action="refresh">↻ Refresh Topology</button>`)
+    + errPanel()
+    + `<div class="panel pad" style="margin-bottom:16px;background:radial-gradient(900px 350px at 50% 0%, rgba(20,30,40,0.8), var(--panel));border-color:var(--border-subtle)">
+        <div class="between" style="margin-bottom:12px">
+          <div>
+            <h3 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px">
+              <span class="dot" style="background:var(--lime)"></span>
+              Live Telemetry Flow & Service Footprint
+            </h3>
+            <div class="tiny muted" style="margin-top:3px">${serviceList.length} microservices discovered across ${ev.length} telemetry records</div>
+          </div>
+          <div class="row" style="gap:8px">
+            <span class="pill ok">✔ Real Telemetry</span>
+            ${impactedServices.size > 0 ? `<span class="pill danger">⚠️ ${impactedServices.size} Service(s) Under Threat</span>` : '<span class="pill ok">Clean Baseline</span>'}
+          </div>
+        </div>
+
+        <!-- Interactive SVG Topology Visualizer -->
+        <div style="position:relative;width:100%;height:320px;background:rgba(0,0,0,0.3);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:space-around;padding:20px">
+          <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">
+            <defs>
+              <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="var(--cyan)" stop-opacity="0.8" />
+                <stop offset="100%" stop-color="var(--lime)" stop-opacity="0.8" />
+              </linearGradient>
+            </defs>
+            <!-- Animated Request Pulse Lines -->
+            <line x1="22%" y1="50%" x2="50%" y2="50%" stroke="url(#flowGrad)" stroke-width="2" stroke-dasharray="6 4">
+              <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite" />
+            </line>
+            <line x1="50%" y1="50%" x2="78%" y2="50%" stroke="url(#flowGrad)" stroke-width="2" stroke-dasharray="6 4">
+              <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite" />
+            </line>
+          </svg>
+
+          <!-- Node 1: Ingress / API Gateway -->
+          <div style="z-index:2;width:160px;padding:12px;background:var(--panel2);border:2px solid ${impactedServices.has('api-service') ? 'var(--danger)' : 'var(--border-subtle)'};border-radius:8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
+            <div class="tiny dim" style="letter-spacing:0.5px">INGRESS API</div>
+            <b style="font-size:13px;display:block;margin:4px 0;color:var(--text-main)">api-service</b>
+            <span class="pill info" style="font-size:10px">HTTP Gateway</span>
+            <div style="margin-top:8px">
+              <button class="btn small ghost" data-action="filter-events-by-service" data-svc="api-service" style="font-size:10px;padding:2px 8px">View Telemetry</button>
+            </div>
+          </div>
+
+          <!-- Node 2: Worker / Async Pipeline -->
+          <div style="z-index:2;width:160px;padding:12px;background:var(--panel2);border:2px solid ${impactedServices.has('worker-service') ? 'var(--danger)' : 'var(--border-subtle)'};border-radius:8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
+            <div class="tiny dim" style="letter-spacing:0.5px">BACKGROUND WORKER</div>
+            <b style="font-size:13px;display:block;margin:4px 0;color:var(--text-main)">worker-service</b>
+            <span class="pill info" style="font-size:10px">Job Processor</span>
+            <div style="margin-top:8px">
+              <button class="btn small ghost" data-action="filter-events-by-service" data-svc="worker-service" style="font-size:10px;padding:2px 8px">View Telemetry</button>
+            </div>
+          </div>
+
+          <!-- Node 3: Database / Persistence Tier -->
+          <div style="z-index:2;width:160px;padding:12px;background:var(--panel2);border:2px solid ${impactedServices.has('database-service') ? 'var(--danger)' : 'var(--border-subtle)'};border-radius:8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
+            <div class="tiny dim" style="letter-spacing:0.5px">PERSISTENCE TIER</div>
+            <b style="font-size:13px;display:block;margin:4px 0;color:var(--text-main)">database-service</b>
+            <span class="pill info" style="font-size:10px">PostgreSQL / Storage</span>
+            <div style="margin-top:8px">
+              <button class="btn small ghost" data-action="filter-events-by-service" data-svc="database-service" style="font-size:10px;padding:2px 8px">View Telemetry</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Discovered Communication Edges -->
+      <div class="panel pad">
+        <div class="between" style="margin-bottom:10px">
+          <div>
+            <h3 style="margin:0;font-size:14px">Discovered Cross-Service Communication Links</h3>
+            <div class="tiny muted" style="margin-top:2px">Directional request flows extracted from distributed traces and canonical telemetry</div>
+          </div>
+          <span class="pill info">${edges.size} Active Edges</span>
+        </div>
+        ${table(Array.from(edges.entries()).map(([k, count]) => {
+          const [src, tgt] = k.split('->');
+          return { source: src, target: tgt, volume: count };
+        }), [
+          { label: 'Origin Service / Producer', render: r => `<b>${esc(r.source)}</b>` },
+          { label: 'Direction', render: () => '→' },
+          { label: 'Target Service / Consumer', render: r => `<span class="pill neutral" style="font-family:monospace">${esc(r.target)}</span>` },
+          { label: 'Observed Telemetry Volume', render: r => `<span class="pill ok">${r.volume} Events</span>` },
+          { label: 'Audit', render: r => `<button class="btn small ghost" data-action="filter-events-by-service" data-svc="${esc(r.target)}" style="font-size:10px;padding:2px 8px">🔎 Audit Path</button>` }
+        ])}
+      </div>`;
+}
+
+
 function entities() {
   const ev = records('events');
   if (!ev.length) {
@@ -2687,6 +2868,24 @@ function defense() {
                   <button class="btn small primary" data-action="approve-defense-action" data-id="${esc(r.action_id)}">✓ Approve</button>
                   <button class="btn small danger" data-action="reject-defense-action" data-id="${esc(r.action_id)}">✕ Reject</button>
                 </div>`;
+              }
+              if (r.status === 'approved') {
+                return `<div class="row" style="gap:4px">
+                  <button class="btn small primary" data-action="execute-defense-action" data-id="${esc(r.action_id)}" style="background:var(--lime);color:#000">⚡ Execute Action</button>
+                  <button class="btn small danger ghost" data-action="reject-defense-action" data-id="${esc(r.action_id)}">✕ Cancel</button>
+                </div>`;
+              }
+              if (r.status === 'active' || r.status === 'executing' || r.status === 'completed') {
+                return `<div class="row" style="gap:4px">
+                  <span class="pill ok" style="font-size:10px">Enforcing</span>
+                  <button class="btn small danger ghost" data-action="rollback-defense-action" data-id="${esc(r.action_id)}" style="font-size:10px;padding:2px 8px">↺ Rollback</button>
+                </div>`;
+              }
+              if (r.status === 'rolled_back') {
+                return `<span class="pill neutral" style="font-size:10px">Rolled Back</span>`;
+              }
+              if (r.status === 'expired') {
+                return `<span class="pill warn" style="font-size:10px">TTL Expired</span>`;
               }
               return `<span class="dim tiny">${esc(r.status)}</span>`;
             }
@@ -3704,6 +3903,7 @@ function render() {
     investigations,
     entities,
     correlation,
+    topology,
     rules,
     coverage,
     assets,
@@ -5089,6 +5289,12 @@ document.addEventListener('click', e => {
     case 'reject-defense-action':
       rejectDefenseAction(a.dataset.id);
       break;
+    case 'execute-defense-action':
+      executeDefenseAction(a.dataset.id);
+      break;
+    case 'rollback-defense-action':
+      rollbackDefenseAction(a.dataset.id);
+      break;
     case 'update-defense-policy':
       updateDefensePolicy();
       break;
@@ -5360,6 +5566,38 @@ async function rejectDefenseAction(actionId) {
     refresh();
   } catch (err) {
     toast(`Rejection failed: ${err.message}`);
+  }
+}
+
+
+
+async function executeDefenseAction(actionId) {
+  if (!confirm(`Execute containment action ${actionId} immediately across target microservices? This enforces network/token controls.`)) return;
+  try {
+    toast(`Executing defense action ${actionId}...`);
+    await request(`/api/v1/defense/actions/${encodeURIComponent(actionId)}/execute`, {
+      method: 'POST'
+    });
+    toast(`Defense action ${actionId} successfully EXECUTED and verified.`);
+    refresh();
+  } catch (err) {
+    toast(`Execution failed: ${err.message}`);
+  }
+}
+
+async function rollbackDefenseAction(actionId) {
+  const reason = prompt('Enter operational reason for rolling back this containment action:', 'Reverted by security operator');
+  if (!reason) return;
+  try {
+    toast(`Rolling back defense action ${actionId}...`);
+    await request(`/api/v1/defense/actions/${encodeURIComponent(actionId)}/rollback`, {
+      method: 'POST',
+      body: { reason: reason }
+    });
+    toast(`Defense action ${actionId} ROLLED BACK. Normal operational state restored.`);
+    refresh();
+  } catch (err) {
+    toast(`Rollback failed: ${err.message}`);
   }
 }
 

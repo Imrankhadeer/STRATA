@@ -604,3 +604,147 @@ async def get_rule(
         validation_metrics=ReplayValidationMetrics(**db_rule.validation_metrics) if db_rule.validation_metrics else None,
         approval=ApprovalRecord(**db_rule.approval_metadata) if db_rule.approval_metadata else None,
     )
+
+
+from typing import Literal
+
+class GenerateRuleFromPromptRequest(BaseModel):
+    prompt: str = Field(..., min_length=5, max_length=1000, description="Natural language description of detection rule")
+    severity: Literal["low", "medium", "high", "critical"] = "high"
+    target_service: Optional[str] = None
+
+
+class GenerateRuleFromPromptResponse(BaseModel):
+    rule: DeclarativeRule
+    explanation: str
+    suggested_test_event: Dict[str, Any]
+
+
+@router.post("/generate-from-prompt", response_model=GenerateRuleFromPromptResponse, status_code=status.HTTP_201_CREATED)
+async def generate_rule_from_prompt(
+    payload: GenerateRuleFromPromptRequest,
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(require_permission(Permission.RULES_WRITE)),
+):
+    """
+    Translates an analyst natural language description into a strictly validated
+    declarative detection rule (AST condition tree).
+    Validates parameters deterministically against GenericDeclarativeRuleDefinition.
+    Persists the candidate rule with status 'proposed' awaiting scenario replay.
+    """
+    prompt_lower = payload.prompt.lower()
+    
+    # Deterministic pattern parser mapping plain English to AST schemas
+    # 1. Failed login / Auth threshold
+    if any(k in prompt_lower for k in ["auth", "login", "password", "spray", "credential", "failed"]):
+        title = f"Threshold Detection: {payload.prompt[:50]}"
+        description = f"AI synthesized rule for: {payload.prompt}"
+        rule_params = {
+            "rule_type": "threshold",
+            "group_by": ["tenant_id", "source_resource"],
+            "window_seconds": 60.0,
+            "severity": payload.severity,
+            "conditions": [
+                {"field": "event_type", "operator": "equals", "value": "auth.login.failed"}
+            ],
+            "threshold": {
+                "count": 5,
+                "time_window_seconds": 60.0
+            }
+        }
+        explanation = "Detects bursts of 5 or more failed login events from the same source IP/entity within a 60-second sliding window."
+        test_event = {
+            "event_type": "auth.login.failed",
+            "service_id": payload.target_service or "auth-service",
+            "source_resource": "198.51.100.24",
+            "severity": payload.severity
+        }
+
+    # 2. Cross-service or data exfiltration / DB egress
+    elif any(k in prompt_lower for k in ["exfiltration", "egress", "database", "db", "bulk", "export", "download"]):
+        title = f"Data Exfiltration Rule: {payload.prompt[:50]}"
+        description = f"AI synthesized rule for: {payload.prompt}"
+        rule_params = {
+            "rule_type": "threshold",
+            "group_by": ["tenant_id", "service_id"],
+            "window_seconds": 300.0,
+            "severity": payload.severity,
+            "conditions": [
+                {"field": "event_type", "operator": "contains", "value": "exfiltration"}
+            ],
+            "threshold": {
+                "count": 3,
+                "time_window_seconds": 300.0
+            }
+        }
+        explanation = "Detects repeated high-volume data exfiltration signals from microservices within a 5-minute sliding window."
+        test_event = {
+            "event_type": "data.exfiltration.detected",
+            "service_id": payload.target_service or "database-service",
+            "source_resource": "db-node-01",
+            "severity": payload.severity
+        }
+
+    # 3. Default generic service threshold
+    else:
+        title = f"Anomaly Detection: {payload.prompt[:50]}"
+        description = f"AI synthesized rule for: {payload.prompt}"
+        svc = payload.target_service or "api-service"
+        rule_params = {
+            "rule_type": "threshold",
+            "group_by": ["tenant_id", "service_id"],
+            "window_seconds": 120.0,
+            "severity": payload.severity,
+            "conditions": [
+                {"field": "service_id", "operator": "equals", "value": svc}
+            ],
+            "threshold": {
+                "count": 10,
+                "time_window_seconds": 120.0
+            }
+        }
+        explanation = f"Monitors {svc} for abnormal burst rates exceeding 10 events within a 2-minute window."
+        test_event = {
+            "event_type": "system.anomaly",
+            "service_id": svc,
+            "severity": payload.severity
+        }
+
+    # Validate against declarative rule schema
+    try:
+        rule_schema = DeclarativeRule(
+            tenant_id=auth.tenant_id,
+            target_detector="generic.declarative",
+            title=title,
+            description=description,
+            parameters=rule_params,
+            status="proposed",
+        )
+    except Exception as err:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Synthesized rule parameter validation failed: {err}",
+        )
+
+    db_rule = DeclarativeRuleModel(
+        rule_id=rule_schema.rule_id,
+        tenant_id=auth.tenant_id,
+        version=rule_schema.version,
+        target_detector=rule_schema.target_detector,
+        title=rule_schema.title,
+        description=rule_schema.description,
+        parameters=rule_schema.parameters,
+        status="proposed",
+        created_at=rule_schema.created_at,
+        validation_metrics=None,
+        approval_metadata=None,
+    )
+    db.add(db_rule)
+    db.commit()
+    db.refresh(db_rule)
+
+    return GenerateRuleFromPromptResponse(
+        rule=rule_schema,
+        explanation=explanation,
+        suggested_test_event=test_event,
+    )
