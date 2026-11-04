@@ -286,8 +286,8 @@ async def stream_query_investigator(
             db.add(db_report)
             db.commit()
 
-            yield f"data: {json.dumps({'stage': 'scope_rejected', 'reason': reason, 'verdict': 'inconclusive', 'report': out_of_scope_finding.model_dump()}, default=str)}\n\n"
-            yield f"data: {json.dumps({'stage': 'complete', 'verdict': 'inconclusive', 'report': out_of_scope_finding.model_dump()}, default=str)}\n\n"
+            yield f"data: {json.dumps({'stage': 'scope_rejected', 'reason': reason, 'verdict': 'inconclusive', 'report': out_of_scope_finding.model_dump(mode='json')}, default=str)}\n\n"
+            yield f"data: {json.dumps({'stage': 'complete', 'verdict': 'inconclusive', 'report': out_of_scope_finding.model_dump(mode='json')}, default=str)}\n\n"
             return
 
         yield f"data: {json.dumps({'stage': 'scope_verified', 'detail': 'Inquiry verified within cybersecurity domain.'})}\n\n"
@@ -340,7 +340,13 @@ async def stream_query_investigator(
         report = None
         async for chunk in investigator.stream_investigate(context):
             if chunk.get("stage") == "model_completed":
-                report = chunk.get("report")
+                raw_report = chunk.get("report")
+                if hasattr(raw_report, "model_dump"):
+                    report = raw_report
+                    chunk["report"] = raw_report.model_dump(mode="json")
+                elif isinstance(raw_report, dict):
+                    report = InvestigationFinding(**raw_report)
+                    chunk["report"] = raw_report
             yield f"data: {json.dumps(chunk, default=str)}\n\n"
 
         if not report:
@@ -352,7 +358,9 @@ async def stream_query_investigator(
         auditor = InvestigationQualityAuditor()
         audit_report = auditor.audit(context, report)
         if audit_report.hallucinated_event_ids or audit_report.citation_fidelity_errors:
-            yield f"data: {json.dumps({'stage': 'audit_failed', 'detail': 'Report failed evidence grounding audit', 'hallucinated': audit_report.hallucinated_event_ids})}\n\n"
+            err_msg = f"Report failed evidence grounding audit: {audit_report.hallucinated_event_ids or audit_report.citation_fidelity_errors}"
+            yield f"data: {json.dumps({'stage': 'audit_failed', 'detail': err_msg, 'hallucinated': audit_report.hallucinated_event_ids})}\n\n"
+            yield f"data: {json.dumps({'stage': 'error', 'detail': err_msg})}\n\n"
             return
 
         yield f"data: {json.dumps({'stage': 'audit_passed', 'detail': f'Audited {len(report.hypotheses)} hypotheses: 0 hallucinated events, all citations verified.'})}\n\n"
@@ -390,7 +398,7 @@ async def stream_query_investigator(
         )
 
         # Stage 5: Final Completed Event
-        yield f"data: {json.dumps({'stage': 'complete', 'verdict': report.verdict, 'report': report.model_dump()}, default=str)}\n\n"
+        yield f"data: {json.dumps({'stage': 'complete', 'verdict': report.verdict, 'report': report.model_dump(mode='json')}, default=str)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -656,7 +664,13 @@ async def stream_investigate_finding(
             report = None
             async for chunk in investigator.stream_investigate(context):
                 if chunk.get("stage") == "model_completed":
-                    report = chunk.get("report")
+                    raw_report = chunk.get("report")
+                    if hasattr(raw_report, "model_dump"):
+                        report = raw_report
+                        chunk["report"] = raw_report.model_dump(mode="json")
+                    elif isinstance(raw_report, dict):
+                        report = InvestigationFinding(**raw_report)
+                        chunk["report"] = raw_report
                 yield f"data: {json.dumps(chunk, default=str)}\n\n"
 
             if not report:
@@ -667,7 +681,9 @@ async def stream_investigate_finding(
             auditor = InvestigationQualityAuditor()
             audit_report = auditor.audit(context, report)
             if audit_report.hallucinated_event_ids or audit_report.citation_fidelity_errors:
-                yield f"data: {json.dumps({'stage': 'audit_failed', 'detail': 'Report failed evidence grounding audit', 'hallucinated': audit_report.hallucinated_event_ids})}\n\n"
+                err_msg = f"Report failed evidence grounding audit: {audit_report.hallucinated_event_ids or audit_report.citation_fidelity_errors}"
+                yield f"data: {json.dumps({'stage': 'audit_failed', 'detail': err_msg, 'hallucinated': audit_report.hallucinated_event_ids})}\n\n"
+                yield f"data: {json.dumps({'stage': 'error', 'detail': err_msg})}\n\n"
                 return
 
             yield f"data: {json.dumps({'stage': 'audit_passed', 'detail': f'Citation audit passed: 0 hallucinated events, {len(report.hypotheses)} verified hypotheses.'})}\n\n"
@@ -697,7 +713,7 @@ async def stream_investigate_finding(
                 investigation_id=report.investigation_id,
             )
 
-            yield f"data: {json.dumps({'stage': 'complete', 'verdict': report.verdict, 'report': report.model_dump()}, default=str)}\n\n"
+            yield f"data: {json.dumps({'stage': 'complete', 'verdict': report.verdict, 'report': report.model_dump(mode='json')}, default=str)}\n\n"
         finally:
             async with _in_flight_lock:
                 _in_flight_investigations.discard(flight_key)

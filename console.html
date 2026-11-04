@@ -22,7 +22,7 @@ html {
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #080d0b;
 }
 ::-webkit-scrollbar-thumb {
   background: #243329;
@@ -32,15 +32,16 @@ html {
   background: #39523f;
 }
 
+
 .app {
   display: grid;
-  grid-template-columns: 206px minmax(0, 1fr);
+  grid-template-columns: 215px minmax(0, 1fr);
   min-height: 100vh;
 }
 .sidebar {
-  background: #080d0b;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 10px 6px;
+  background: #090e0c;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 8px;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -48,15 +49,23 @@ html {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
   z-index: 5;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 .sidebar::-webkit-scrollbar {
-  display: none;
-  width: 0px;
-  height: 0px;
+  width: 4px;
+}
+.sidebar::-webkit-scrollbar-track {
+  background: #080d0b;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(183, 243, 107, 0.35);
 }
 
 .brand {
@@ -538,6 +547,85 @@ html {
 @media(max-width:1050px){.overview-main-grid,.overview-secondary-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.insight-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.overview-sectionbar{align-items:flex-start;flex-direction:column}.overview-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}.overview-main-grid,.overview-secondary-grid{grid-template-columns:1fr}.insight-grid{grid-template-columns:1fr}.health-grid{grid-template-columns:1fr 1fr}.metric-visual{min-height:82px}.kpi-spark{width:36%}}
 @media(max-width:420px){.overview-kpis{grid-template-columns:1fr!important}.health-grid{grid-template-columns:1fr 1fr}}
+
+
+/* Reference-matched layouts: Overview, Deep Track and Service Topology only. */
+#view .ref-overview-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:8px 0 12px}
+#view .ref-kpi{min-height:78px;display:flex;align-items:center;gap:12px;padding:11px 14px;position:relative;overflow:hidden}
+#view .ref-kpi-icon{font-size:22px;color:var(--lime);width:27px;text-align:center}
+#view .ref-kpi strong{font-size:24px;line-height:1.05;letter-spacing:-.04em}
+#view .ref-kpi label{display:block;font-size:11px;color:var(--text)}
+#view .ref-kpi small{display:block;color:var(--muted);font-size:9px;margin-top:3px}
+#view .ref-spark{margin-left:auto;width:68px;height:25px;border-bottom:2px solid var(--lime);opacity:.9;clip-path:polygon(0 80%,16% 70%,31% 77%,47% 48%,60% 60%,78% 17%,100% 0,100% 100%,0 100%);background:linear-gradient(180deg,#c5f36b25,transparent)}
+#view .ref-overview-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:12px;margin-bottom:12px}
+#view .ref-overview-panel{padding:12px;min-width:0}
+#view .ref-overview-panel h3{font-size:13px;margin:0 0 3px}
+#view .ref-overview-panel .ref-sub{font-size:10px;color:var(--muted);margin-bottom:8px}
+#view .ref-health-row{display:grid;grid-template-columns:22px minmax(100px,.8fr) minmax(0,1.4fr) 95px;gap:8px;align-items:center;padding:9px 10px;border-top:1px solid var(--line);font-size:10px}
+#view .ref-health-row:first-of-type{border-top:0}
+#view .ref-overview-bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#view .ref-overview-bottom .panel{overflow:hidden}
+#view .ref-donut{display:flex;align-items:center;gap:20px;padding:12px}
+#view .ref-donut .donut-svg{width:135px;max-width:42%}
+#view .ref-overview-kpis .metric-visual{min-height:78px}
+#view .ref-deep-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:12px}
+#view .ref-deep-layout{display:grid;grid-template-columns:260px minmax(0,1fr) 265px;gap:11px;align-items:stretch}
+#view .ref-queue{overflow:hidden}
+#view .ref-queue-list{max-height:570px;overflow:auto}
+#view .ref-queue-item{display:block;width:100%;text-align:left;padding:11px 12px;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--text)}
+#view .ref-queue-item:hover,#view .ref-queue-item.active{background:#17251b}
+#view .ref-queue-item.active{box-shadow:inset 3px 0 var(--lime)}
+#view .ref-queue-item strong{font-size:10px}
+#view .ref-queue-item p{font-size:10px;color:#c4d0c8;margin:5px 0}
+#view .ref-queue-item small{font-size:9px;color:var(--muted)}
+#view .ref-deep-center{display:grid;gap:11px;min-width:0}
+#view .ref-deep-prompt{padding:13px;border:1px solid #526d3a;background:radial-gradient(800px 180px at 50% 0,#26391c,#111a15);box-shadow:0 0 25px #b9ed5c0a}
+#view .ref-deep-prompt h3{margin:0 0 9px;font-size:15px}
+#view .ref-deep-prompt .prompt-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+#view .ref-deep-prompt textarea{min-height:43px;max-height:120px;resize:vertical}
+#view .ref-deep-report{overflow:hidden}
+#view .ref-report-grid{display:grid;grid-template-columns:minmax(0,1fr) 230px}
+#view .ref-report-main{padding:13px;min-width:0}
+#view .ref-report-side{padding:12px;border-left:1px solid var(--line);background:#0c1510}
+#view .ref-report-summary{padding:11px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;font-size:10px;line-height:1.65;color:#cbd7ce;margin:8px 0 12px}
+#view .ref-evidence-row{display:flex;align-items:center;gap:7px;padding:8px 0;border-bottom:1px solid var(--line);font-size:9px}
+#view .ref-evidence-row:last-child{border-bottom:0}
+#view .ref-topology-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:12px}
+#view .ref-topology-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:11px}
+#view .ref-topology-graph{height:405px;position:relative;overflow:hidden;background-color:#09120e;background-image:radial-gradient(#2c4033 .8px,transparent .8px);background-size:19px 19px}
+#view .ref-graph-tools{position:absolute;z-index:2;left:12px;right:12px;top:11px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#view .ref-graph-tabs{display:flex;gap:3px;padding:3px;border:1px solid var(--line);background:#0b1510;border-radius:8px}
+#view .ref-graph-tabs button{border:0;background:transparent;color:var(--muted);padding:6px 9px;border-radius:6px;font-size:9px}
+#view .ref-graph-tabs button.active{background:var(--lime);color:#17200f;font-weight:800}
+#view .ref-graph-svg{position:absolute;inset:0;width:100%;height:100%}
+#view .ref-node{cursor:pointer}
+#view .ref-node rect{fill:#122018;stroke:#8ebd55;stroke-width:1.6}
+#view .ref-node.risk rect{stroke:var(--red);filter:drop-shadow(0 0 7px #ff777755)}
+#view .ref-node text{fill:var(--text);text-anchor:middle;font-size:11px;font-weight:700}
+#view .ref-node .node-kind{fill:#1b2a21;stroke:#3c5545;stroke-width:1}
+#view .ref-node .node-kind-text{font-size:8px;font-weight:500;fill:#dbe6dd}
+#view .ref-edge{fill:none;stroke:#91cf5c;stroke-width:1.7;opacity:.9}
+#view .ref-edge.risk{stroke:var(--red);stroke-width:2}
+#view .ref-graph-legend{position:absolute;left:12px;bottom:12px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#0c1712eF;font-size:9px;display:grid;gap:4px}
+#view .ref-inspector{padding:12px;min-width:0}
+#view .ref-inspector-head{display:flex;align-items:center;gap:9px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+#view .ref-inspector-tabs{display:flex;gap:12px;border-bottom:1px solid var(--line);margin:8px -12px 11px;padding:0 12px;overflow:auto}
+#view .ref-inspector-tabs button{white-space:nowrap;border:0;background:transparent;color:var(--muted);padding:8px 0;font-size:9px}
+#view .ref-inspector-tabs button.active{color:var(--lime);border-bottom:2px solid var(--lime)}
+#view .ref-inspector-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+#view .ref-inspector-metrics>div{background:var(--panel2);padding:8px}
+#view .ref-inspector-metrics small{display:block;color:var(--muted);font-size:8px}
+#view .ref-inspector-metrics b{display:block;font-size:17px;margin-top:3px}
+#view .ref-topology-bottom{display:grid;grid-template-columns:1.1fr .9fr;gap:11px;margin-top:11px}
+#view .ref-topo-link{display:grid;grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr) 75px 78px;gap:6px;align-items:center;padding:8px 10px;border-top:1px solid var(--line);font-size:9px}
+#view .ref-topo-link.header{background:var(--panel2);color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+#view .ref-topo-timeline{margin:10px 12px 4px 18px;border-left:1px solid #86a94d;padding-left:15px}
+#view .ref-topo-time{position:relative;padding:0 0 14px;font-size:9px}
+#view .ref-topo-time:before{content:'';position:absolute;left:-20px;top:4px;width:8px;height:8px;border-radius:50%;background:var(--lime)}
+#view .ref-topo-time.risk:before{background:var(--red)}
+@media(max-width:1150px){#view .ref-deep-layout{grid-template-columns:235px minmax(0,1fr)}#view .ref-deep-layout>.ref-deep-side{grid-column:1/-1}#view .ref-topology-layout{grid-template-columns:minmax(0,1fr) 310px}}
+@media(max-width:900px){#view .ref-overview-grid,#view .ref-overview-bottom,#view .ref-topology-layout,#view .ref-topology-bottom{grid-template-columns:1fr}#view .ref-deep-layout{grid-template-columns:1fr}#view .ref-deep-layout>.ref-deep-side{grid-column:auto}#view .ref-report-grid{grid-template-columns:1fr}#view .ref-report-side{border-left:0;border-top:1px solid var(--line)}#view .ref-overview-kpis,#view .ref-deep-stats,#view .ref-topology-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){#view .ref-overview-kpis,#view .ref-deep-stats,#view .ref-topology-stats{grid-template-columns:1fr 1fr}#view .ref-deep-prompt .prompt-row{grid-template-columns:1fr}#view .ref-topology-graph{height:350px}#view .ref-topo-link{grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr)}#view .ref-topo-link>*:nth-child(n+4){display:none}}
 </style><body>
 <div id="sidebarTooltip" class="sidebar-tooltip hide"></div>
 
@@ -1431,65 +1519,52 @@ function closeProfileMenu() {
 // A. Overview / Dashboard
 function overview() {
   const d = obj(cache.overview);
-  const sec = obj(d.security_posture);
-  const pipe = obj(d.pipeline_health);
-  const inv = obj(d.investigations);
-  const rls = obj(d.rules);
+  const sec = obj(d.security_posture), pipe = obj(d.pipeline_health), inv = obj(d.investigations), rls = obj(d.rules);
   const recent = Array.isArray(d.recent_findings) ? d.recent_findings : [];
-  const events = records('events');
-  const investigationsRows = records('investigations');
-  const sev = obj(sec.by_severity);
+  const events = records('events'), investigationsRows = records('investigations'), sev = obj(sec.by_severity);
   const hasData = !!d.tenant_id;
   const totalFindings = Number(sec.total_findings ?? recent.length) || 0;
   const infoCount = Number(sev.info) || recent.filter(r => String(r.severity).toLowerCase()==='info').length;
   const severityTotal = ['critical','high','medium','low','info'].reduce((n,k)=>n+(Number(sev[k])||0),0);
-  const eventSpark = sparkline(events);
-  const findingSpark = sparkline(recent);
-  const investigationSpark = sparkline(investigationsRows);
   const openFindings = Number(sec.open_findings ?? 0);
-  const serviceCount = new Set(events.map(r=>field(r,'service_id','service','service_name','source_service')).filter(v=>v!=='—')).size;
-  const healthState = String(pipe.fast_track_engine_status || 'unknown').toLowerCase();
-
-  return head('Overview', 'A live picture of telemetry, detection activity and investigation outcomes across your connected applications.', `<button class="btn small primary" data-action="run-quick-simulation" style="background:var(--lime);color:#08100c;font-weight:800;border-color:var(--lime);">⚡ Trigger Attack Simulation</button> <button class="btn small" data-action="refresh">↻ Refresh Data</button>`)
+  const serviceCount = new Set(events.map(r=>field(r,'service','service_name','source_service')).filter(v=>v!=='—')).size;
+  const healthRows = [
+    ['▤','PostgreSQL','Database and persistent storage',pipe.database_status,pipe.database_latency_ms],
+    ['ϟ','Fast Track','Deterministic detection engine',pipe.fast_track_engine_status,pipe.fast_track_detection_latency],
+    ['✣','Deep Track','AI investigation engine',inv.status,inv.average_duration_ms],
+    ['◈','Redis','Caching and runtime state',pipe.redis_status,pipe.redis_latency_ms]
+  ];
+  return head('Overview','A live picture of telemetry, detection activity and investigation outcomes across your connected applications.',`<button class="btn small primary" data-action="run-quick-simulation" style="background:var(--lime);color:#08100c;font-weight:800;border-color:var(--lime);">⚡ Trigger Attack Simulation</button> <button class="btn small" data-action="refresh">⟳ Refresh Data</button>`)
     + errPanel()
-    + (!bearerToken ? `<div class="callout warn" style="margin-bottom:14px"><b>Preview session:</b> Sign in to load tenant-specific operational data and enable protected actions. <a href="#" data-page="settings" style="text-decoration:underline">Backend & Settings</a></div>` : '')
-    + `<div class="overview-sectionbar"><div><div class="eyebrow">OPERATIONAL SNAPSHOT</div><div class="overview-section-title">Your security at a glance</div></div><span class="overview-updated">${hasData ? 'Tenant data returned by API' : 'Waiting for tenant data'}</span></div>`
-    + `<div class="grid g4 overview-kpis">
-        ${compactMetric('Events ingested', hasData ? (pipe.total_events_ingested ?? 0) : '—', hasData ? `${pipe.recent_events_1h ?? 0} received in the past hour` : 'No tenant data', eventSpark)}
-        ${compactMetric('Open findings', hasData ? openFindings : '—', hasData ? `${totalFindings} total findings` : 'Awaiting findings', findingSpark)}
-        ${compactMetric('Active rules', hasData ? (rls.active_count ?? 0) : '—', hasData ? `${rls.total_rules ?? 0} registered · Fast Track` : 'Awaiting rule data')}
-        ${compactMetric('Deep investigations', hasData ? (inv.total_investigations ?? investigationsRows.length) : '—', hasData ? `${inv.provider || 'AI provider'} · ${inv.model || 'model not reported'}` : 'Awaiting reports', investigationSpark)}
-      </div>`
-    + `<div class="overview-main-grid">
-        <section class="panel overview-panel overview-activity"><div class="overview-panel-head"><div><div class="eyebrow">TELEMETRY</div><h3>Signals over time</h3><p>Latest returned event records · 12-hour window</p></div><span class="pill info">12-hour sample</span></div>${eventVolumeChart(events)}</section>
-        <section class="panel overview-panel overview-coverage"><div class="overview-panel-head"><div><div class="eyebrow">DISTRIBUTION</div><h3>Activity across services</h3><p>Top services in the returned event sample</p></div><span class="pill info">${serviceCount} services</span></div>${serviceDistributionChart(events)}</section>
-      </div>`
-    + `<div class="overview-secondary-grid">
-        <section class="panel overview-panel"><div class="overview-panel-head"><div><div class="eyebrow">DETECTION POSTURE</div><h3>Finding severity</h3><p>All reported severities, including informational findings</p></div><span class="pill info">${totalFindings} total</span></div>${severityChart({...sev,info:infoCount}, totalFindings)}${severityTotal && severityTotal!==totalFindings ? `<div class="chart-footnote">Severity buckets total ${severityTotal}; API total is ${totalFindings}. Counts may use different scopes.</div>` : ''}</section>
-        <section class="panel overview-panel"><div class="overview-panel-head"><div><div class="eyebrow">ENGINE STATUS</div><h3>Pipeline & engine health</h3><p>Reported component health, not a synthetic score</p></div>${pill(healthState)}</div>
-          <div class="health-grid">
-            <div class="health-cell"><span>Database</span><b>${esc(pipe.database_status || 'Not reported')}</b><small>${pipe.database_latency_ms !== undefined ? `${esc(pipe.database_latency_ms)} ms reported latency` : 'Latency unavailable'}</small></div>
-            <div class="health-cell"><span>Fast Track</span><b>${esc(pipe.fast_track_engine_status || 'Not reported')}</b><small>${pipe.fast_track_detection_latency !== undefined ? `Detection latency: ${esc(pipe.fast_track_detection_latency)}` : 'Latency unavailable'}</small></div>
-            <div class="health-cell"><span>Active rules</span><b>${esc(rls.active_count ?? '—')}</b><small>Registered with the engine</small></div>
-            <div class="health-cell"><span>Live subscribers</span><b>${esc(pipe.live_subscribers_connected ?? '—')}</b><small>Real-time stream connections</small></div>
-          </div>
-        </section>
-      </div>`
-    + `<section class="panel overview-insights"><div class="overview-panel-head"><div><div class="eyebrow">DEEP TRACK</div><h3>Investigation insights</h3><p>Recent AI investigation reports and their review state</p></div><button class="btn small" data-page="investigations">View all investigations →</button></div>${investigationInsightCards(investigationsRows)}</section>`
-    + `<section class="panel overview-findings"><div class="panelhead"><div><h3>Recent security findings</h3><small class="overview-table-sub">${recent.length} returned by the overview endpoint</small></div><button class="btn small" data-page="findings">Open findings →</button></div>
-        ${recent.length ? table(recent, [
-          { label: 'Finding', render: r => `<b>${esc(r.title)}</b><div class="tiny dim">${esc(r.finding_id)}</div>` },
-          { label: 'Severity', render: r => pill(r.severity) },
-          { label: 'Status', render: r => pill(r.status) },
-          { label: 'Detector', keys: ['detector_id'] },
-          { label: 'Services', render: r => (r.services && r.services.length) ? r.services.map(s => `<span class="pill info">${esc(s)}</span>`).join(' ') : '—' },
-          { label: 'Detected', render: r => formatLocalTime(r.created_at) },
-          { label: 'Action', render: r => `<button class="btn small" data-action="inspect-finding" data-id="${esc(r.finding_id)}">Inspect</button>` }
-        ]) : `<div class="pad">${empty('No recent findings', 'No findings were returned for this tenant. This does not necessarily mean no telemetry is arriving.')}</div>`}
-      </section>`;
+    + (!bearerToken ? `<div class="callout warn" style="margin-bottom:12px"><b>Preview session:</b> Sign in to load tenant-specific operational data and enable protected actions. <a href="#" data-page="settings" style="text-decoration:underline">Backend & Settings</a></div>` : '')
+    + `<div class="between" style="margin:3px 0 8px"><div><div class="eyebrow">OPERATIONAL SNAPSHOT</div><div style="font-size:14px;font-weight:750">Security activity at a glance</div></div><span class="tiny dim">${hasData?'Tenant data returned by API':'Waiting for tenant data'}</span></div>`
+    + `<div class="ref-overview-kpis">
+      <div class="panel ref-kpi"><span class="ref-kpi-icon">▤</span><div><strong>${hasData?esc(pipe.total_events_ingested??events.length):'—'}</strong><label>Events</label><small>${hasData?`${esc(pipe.recent_events_1h??0)} received in the past hour`:'No tenant data'}</small></div><i class="ref-spark"></i></div>
+      <div class="panel ref-kpi"><span class="ref-kpi-icon">⚠</span><div><strong>${hasData?esc(openFindings):'—'}</strong><label>Open findings</label><small>${hasData?`${totalFindings} total findings`:'Awaiting findings'}</small></div><i class="ref-spark"></i></div>
+      <div class="panel ref-kpi"><span class="ref-kpi-icon">⌘</span><div><strong>${hasData?esc(rls.active_count??'—'):'—'}</strong><label>Active rules</label><small>${hasData?`${esc(rls.total_rules??0)} registered · Fast Track`:'Awaiting rule data'}</small></div><i class="ref-spark"></i></div>
+      <div class="panel ref-kpi"><span class="ref-kpi-icon">✣</span><div><strong>${hasData?esc(inv.total_investigations??investigationsRows.length):'—'}</strong><label>Deep investigations</label><small>${hasData?`${esc(inv.provider||'Meta AI')} · ${esc(inv.model||'model not reported')}`:'Awaiting reports'}</small></div><i class="ref-spark"></i></div>
+    </div>`
+    + `<div class="ref-overview-grid">
+      <section class="panel ref-overview-panel"><div class="between"><div><div class="eyebrow">TELEMETRY ACTIVITY</div><h3>Signals over time</h3><div class="ref-sub">Event volume across the selected time window</div></div><span class="pill info">12-hour sample</span></div>${eventVolumeChart(events)}</section>
+      <section class="panel ref-overview-panel"><div class="eyebrow">DISTRIBUTION</div><h3>Activity by service</h3><div class="ref-sub">Events in the returned telemetry sample · ${serviceCount} services</div>${serviceDistributionChart(events)}</section>
+    </div>`
+    + `<div class="ref-overview-grid">
+      <section class="panel ref-overview-panel"><div class="eyebrow">DETECTION POSTURE</div><h3>Finding severity</h3><div class="ref-sub">All open findings in the workspace</div><div class="ref-donut">${severityChart({...sev,info:infoCount},totalFindings)}</div>${severityTotal&&severityTotal!==totalFindings?`<div class="chart-footnote">Severity buckets total ${severityTotal}; API total is ${totalFindings}. Counts may use different scopes.</div>`:''}</section>
+      <section class="panel ref-overview-panel"><div class="eyebrow">ENGINE STATUS</div><h3>Pipeline health</h3><div class="ref-sub">Reported platform components and detection pipeline</div>${healthRows.map(([ico,name,desc,status,latency])=>`<div class="ref-health-row"><b>${ico}</b><b>${esc(name)}</b><span class="tiny dim">${esc(desc)}</span><span>${status?pill(status):'<span class="dim">Not reported</span>'}</span></div>`).join('')}</section>
+    </div>`
+    + `<div class="ref-overview-bottom">
+      <section class="panel"><div class="panelhead"><div><h3>Recent investigations</h3><small>Latest reports and investigation outcomes</small></div><button class="btn small" data-page="investigations">View all →</button></div>${investigationInsightCards(investigationsRows)}</section>
+      <section class="panel"><div class="panelhead"><div><h3>Recent findings</h3><small>${recent.length} returned by the overview endpoint</small></div><button class="btn small" data-page="findings">View all →</button></div>${recent.length?table(recent.slice(0,5),[
+        {label:'Finding',render:r=>`<b>${esc(r.title||r.finding_id)}</b><div class="tiny dim">${esc(r.finding_id)}</div>`},
+        {label:'Severity',render:r=>pill(r.severity)},
+        {label:'Service',render:r=>(r.services||[]).map(x=>esc(x)).join(', ')||'—'},
+        {label:'Detected',render:r=>formatLocalTime(r.created_at)}
+      ]):empty('No recent findings','No findings were returned for this tenant.')}</section>
+    </div>`;
 }
 
 // B. Findings Page
+
 function findings() {
   const rows = records('findings');
   return head('Security Findings', 'Real-time threat detections produced deterministically by the Fast Track engine with full provenance.', `<button class="btn small primary" data-action="refresh">↻ Refresh Findings</button>`)
@@ -1668,52 +1743,41 @@ async function triggerDeepInvestigation(findingId) {
 // C. Deep Investigation workspace
 function investigations() {
   const rows = records('investigations');
-  return head('Deep Investigation', 'Investigate a specific finding, trace, service or incident. Review the evidence, competing hypotheses, uncertainty and candidate detector proposals returned by the investigation backend.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
+  const events = records('events');
+  const running = rows.filter(r=>['running','pending','in_progress'].includes(String(r.status||'').toLowerCase())).length;
+  const completed = rows.filter(r=>['completed','confirmed_threat','likely_benign','inconclusive'].includes(String(r.status||r.verdict||'').toLowerCase())).length;
+  const review = rows.filter(r=>['needs_review','inconclusive','needs_more_data'].includes(String(r.status||r.verdict||'').toLowerCase())).length;
+  const failed = rows.filter(r=>String(r.status||'').toLowerCase()==='failed').length;
+  const selected = rows[0] || null;
+  const hypotheses = Array.isArray(selected?.hypotheses)?selected.hypotheses:[];
+  const candidates = Array.isArray(selected?.candidate_rules)?selected.candidate_rules:[];
+  const evidence = hypotheses.flatMap(h=>Array.isArray(h.supporting_evidence)?h.supporting_evidence:[]).slice(0,5);
+  const summary = selected?.summary || selected?.description || 'Select an investigation report to review its returned summary, evidence citations, hypotheses and candidate rules. Start a new investigation using the prompt above.';
+  return head('Deep Track','Evidence-led security investigations across findings, traces and connected services.',`<button class="btn small" data-action="refresh">↻</button><button class="btn small primary" onclick="document.getElementById('deepSearchInput')?.focus()">＋ New Investigation</button>`)
     + errPanel()
-    + `<div class="panel pad" style="margin-bottom:13px"><div class="between" style="margin-bottom:8px"><div><h3 class="chart-panel-title">Investigation verdicts</h3><div class="chart-subtitle">Verdicts from returned investigation reports</div></div><span class="pill purple">${rows.length} reports</span></div>${distributionChart(rows,'verdict',['confirmed_threat','likely_benign','inconclusive','needs_more_data'])}</div>`
-    + `<div class="panel pad" style="margin-bottom:18px;border-color:#435b46;background:radial-gradient(800px 240px at 50% -40px,#1a2d21,#111a16)">
-        <div class="between" style="margin-bottom:10px">
-          <div>
-            <div class="eyebrow" style="color:var(--lime)">DEEP TRACK · EVIDENCE-LED INVESTIGATION</div>
-            <h3 style="margin:3px 0 0">Investigate a specific security concern</h3>
-          </div>
-          <span class="pill purple">AI DEEP TRACK</span>
-        </div>
-        <p class="muted tiny" style="margin:0 0 12px;line-height:1.6">
-          Provide a finding, trace ID, affected service or concrete question. The investigation backend is responsible for retrieving evidence and returning its hypotheses and citations; this console displays the returned report.
-        </p>
-        <div class="field" style="margin-bottom:10px">
-          <textarea id="deepSearchInput" class="control" rows="3" style="width:100%;font-size:12px;font-family:inherit;line-height:1.5" placeholder="Tell AI what to investigate (e.g. 'Investigate anomalous activity on worker-service and draft detection rules', 'Analyze exfiltration patterns in your payment service', 'Scan database queries for bulk table extraction')..."></textarea>
-        </div>
-        <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:12px">
-          <span class="tiny dim">Quick Prompts:</span>
-          <button class="btn small ghost" data-action="fill-deep-search" data-query="Investigate cross-service exfiltration pattern across api-service and worker-service">⚡ Multi-Service Exfiltration</button>
-          <button class="btn small ghost" data-action="fill-deep-search" data-query="Audit credential brute-force and password spray attempts from untrusted IPs">🔒 Credential Brute Force</button>
-          <button class="btn small ghost" data-action="fill-deep-search" data-query="Analyze bulk database table harvesting and unauthorized queries">🔍 Bulk DB Harvesting</button>
-          <button class="btn small ghost" data-action="fill-deep-search" data-query="Synthesize declarative Fast Track detection rules for anomalous worker jobs">⛨ Generate Fast Track Rules</button>
-        </div>
-        <div class="row" style="gap:10px">
-          <button class="btn primary small" data-action="execute-deep-search" id="btnExecDeepSearch">⌘ Start Investigation</button>
-          <button class="btn small ghost" data-action="refresh">↻ Refresh Reports</button>
-        </div>
-        <div id="deepSearchStatus" class="callout hide" style="margin-top:12px;border-color:var(--lime);background:#122116">
-          <div class="row"><span class="dot" style="background:var(--lime)"></span><span id="deepSearchStatusText">Analyzing telemetry across microservices... Grounding evidence citations...</span></div>
-        </div>
-        <div id="deepSearchResult" style="margin-top:14px"></div>
-      </div>`
-    + (rows.length
-      ? table(rows, [
-          { label: 'Investigation ID', render: r => `<b>${esc(r.investigation_id)}</b>` },
-          { label: 'Target Finding', keys: ['finding_id'] },
-          { label: 'Verdict', render: r => pill(r.verdict) },
-          { label: 'Model Provider', render: r => `${esc(r.investigator_provider)} / <span class="tiny dim">${esc(r.investigator_model)}</span>` },
-          { label: 'Hypotheses', render: r => `${(r.hypotheses || []).length} cited` },
-          { label: 'Proposed Rules', render: r => `${(r.candidate_rules || []).length} proposals` },
-          { label: 'Completed', render: r => formatLocalTime(r.completed_at) },
-          { label: 'Report', render: r => `<button class="btn small" data-action="view-investigation" data-id="${esc(r.investigation_id)}">View Report</button>` }
-        ])
-      : empty('No prior investigation reports', 'No deep investigations recorded for this tenant. Enter an inquiry above to prompt Deep Track AI on live microservice telemetry.')
-    );
+    + `<div class="ref-deep-stats">
+      ${compactMetric('Running',running,'Active investigations')}${compactMetric('Completed',completed,'Reports returned')}${compactMetric('Needs review',review,'Require analyst attention')}${compactMetric('Failed',failed,'Unsuccessful runs')}
+    </div>`
+    + `<div class="ref-deep-layout">
+      <section class="panel ref-queue"><div class="panelhead"><div><h3>Investigation Queue (${rows.length})</h3><small>Recent reports and active work</small></div></div><div class="pad" style="padding-bottom:8px"><input class="control" style="width:100%" placeholder="⌕ Search investigations…" oninput="filterDeepQueue(this.value)"></div><div class="ref-queue-list" id="deepQueueList">${rows.length?rows.slice(0,30).map((r,i)=>{
+        const id=field(r,'investigation_id'); const title=field(r,'title','query','summary','finding_id'); const verdict=field(r,'verdict','status');
+        const cls=/threat|failed/i.test(verdict)?'danger':/benign|complete/i.test(verdict)?'ok':'warn';
+        return `<button class="ref-queue-item ${i===0?'active':''}" data-search="${esc(`${id} ${title} ${verdict}`.toLowerCase())}" data-action="view-investigation" data-id="${esc(id)}"><div class="between"><strong>${esc(id||'Investigation')}</strong>${pill(verdict,cls)}</div><p>${esc(title)}</p><small>▣ ${formatLocalTime(r.completed_at||r.created_at)} &nbsp; · &nbsp; ${(r.hypotheses||[]).length} hypotheses</small></button>`;
+      }).join(''):`<div class="pad">${empty('No investigations yet','Start an evidence-led investigation using the prompt. Completed reports will appear in this queue.')}</div>`}</div></section>
+      <div class="ref-deep-center">
+        <section class="panel ref-deep-prompt"><div class="eyebrow" style="color:var(--lime)">✣ &nbsp;META MUSE SPARK · DEEP TRACK</div><h3>Ask Deep Track</h3><div class="prompt-row"><textarea id="deepSearchInput" class="control" rows="2" style="width:100%;font-size:11px;line-height:1.5" placeholder="Investigate a finding, trace, service or describe a security concern…"></textarea><button class="btn primary" data-action="execute-deep-search" id="btnExecDeepSearch">▷ Investigate</button></div><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn small ghost" data-action="fill-deep-search" data-query="Investigate this finding and cite the supporting telemetry">♧ Analyze this finding</button><button class="btn small ghost" data-action="fill-deep-search" data-query="Investigate cross-service activity and reconstruct the event sequence">⌁ Check cross-service activity</button><button class="btn small ghost" data-action="fill-deep-search" data-query="Look for unusual outbound data transfer and possible exfiltration">♧ Find data exfiltration</button><button class="btn small ghost" data-action="fill-deep-search" data-query="Investigate suspicious activity in the selected time window">◷ Review time window</button></div><div id="deepSearchStatus" class="callout hide" style="margin-top:10px"><div class="row"><span class="dot"></span><span id="deepSearchStatusText">Investigating telemetry and grounding evidence citations…</span></div></div><div id="deepSearchResult" style="margin-top:10px"></div></section>
+        <section class="panel ref-deep-report"><div class="panelhead"><div><h3>${selected?esc(field(selected,'investigation_id'))+' — '+esc(field(selected,'title','query','finding_id')):'Investigation workspace'}</h3><small>${selected?`Finding: ${esc(field(selected,'finding_id'))} · ${formatLocalTime(selected.completed_at||selected.created_at)}`:'Select a report or start a new investigation'}</small></div>${selected?pill(field(selected,'verdict','status')):''}</div>
+          <div class="tabs" style="padding:0 13px"><button class="tab active" type="button">Overview</button><button class="tab" type="button" data-action="view-investigation" data-id="${esc(selected?.investigation_id||'')}">Full report</button><button class="tab" type="button" data-page="findings">Related findings</button></div>
+          <div class="ref-report-grid"><div class="ref-report-main"><b style="font-size:12px">▤ &nbsp;Investigation summary</b><div class="ref-report-summary">${esc(summary)}</div><div class="between" style="margin:12px 0 7px"><b style="font-size:11px">Hypotheses (${hypotheses.length})</b><span class="tiny dim">Evidence-backed reasoning</span></div>${hypotheses.length?hypotheses.slice(0,4).map(h=>`<div class="panel pad" style="margin-bottom:7px"><div class="between"><b class="tiny">${esc(h.title||'Hypothesis')}</b>${pill(h.likelihood||h.confidence||'Unrated')}</div><p class="tiny muted" style="margin:5px 0 0">${esc(h.description||'No description returned.')}</p></div>`).join(''):`<div class="chart-empty">Hypotheses will appear when the selected report includes them.</div>`}<div class="between" style="margin:12px 0 7px"><b style="font-size:11px">Event context</b><span class="tiny dim">${events.length} loaded event records</span></div>${events.slice(0,4).map(e=>`<div class="ref-evidence-row"><span class="dot"></span><code>${esc(field(e,'event_id','id'))}</code><span class="pill info">${esc(field(e,'service_id','service_name','service'))}</span><span class="dim">${esc(field(e,'event_type','event_name','type'))}</span></div>`).join('')||'<div class="chart-empty">No event context is currently loaded.</div>'}</div>
+          <aside class="ref-report-side"><b style="font-size:11px">Evidence (${evidence.length})</b>${evidence.length?evidence.map(e=>`<div class="ref-evidence-row"><span>▤</span><b>${esc(e.event_id||'Event')}</b><span class="pill good">${esc(e.service_id||'Service')}</span></div>`).join(''):'<p class="tiny dim">Evidence citations from the selected report appear here.</p>'}<div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><b style="font-size:11px">Investigation outcome</b><p class="tiny muted">${esc(field(selected||{},'verdict','status')||'Awaiting report')}</p>${selected?pill(field(selected,'verdict','status')):'<span class="pill info">No report selected</span>'}</div><div style="border-top:1px solid var(--line);padding-top:11px"><b style="font-size:11px">Candidate rules (${candidates.length})</b>${candidates.slice(0,3).map(r=>`<div style="margin-top:8px"><b class="tiny">${esc(r.title||r.name||'Candidate rule')}</b><p class="tiny dim">${esc(r.description||'Proposal returned by Deep Track')}</p></div>`).join('')||'<p class="tiny dim">No candidate rules returned for this report.</p>'}</div></aside></div></section>
+      </div>
+      <aside class="panel ref-deep-side"><div class="panelhead"><div><h3>Investigation details</h3><small>Model provenance and review state</small></div></div><div class="pad"><div class="eyebrow">MODEL</div><b style="font-size:12px">${esc(selected?.investigator_model||inv.model||'Meta Muse Spark')}</b><p class="tiny dim">${esc(selected?.investigator_provider||inv.provider||'Meta')}</p><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">SOURCE FINDING</div><b class="tiny">${esc(selected?.finding_id||'Not linked')}</b></div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">CANDIDATE DETECTIONS</div><b style="font-size:21px">${candidates.length}</b><p class="tiny dim">Proposals only · review and validate before activation</p><button class="btn small" data-page="rules">Open Rule Registry →</button></div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">NEXT STEP</div><p class="tiny muted">Review evidence, inspect hypotheses, then validate candidate rules in Replay & Validation.</p><button class="btn small" data-page="replay">Open Replay & Validation →</button></div></div></aside>
+    </div>`;
+}
+
+function filterDeepQueue(query) {
+  const q=String(query||'').toLowerCase();
+  document.querySelectorAll('#deepQueueList .ref-queue-item').forEach(el=>el.classList.toggle('hide',!String(el.dataset.search||'').includes(q)));
 }
 
 // View Investigation Report Modal/Drawer
@@ -2862,131 +2926,47 @@ function inspectIncident(caseId) {
 // Entities & Correlation
 
 function topology() {
-  const ev = records('events');
-  const fList = records('findings');
-  
-  // Discover services and directed communication from telemetry
-  const services = new Set();
-  const edges = new Map(); // "source->target" -> count
-  
-  // Default canonical microservices if telemetry has arrived
-  for (const e of ev) {
-    if (e.service_id) services.add(e.service_id);
-    const src = e.source_resource || e.app_id || 'ingress-gw';
-    const tgt = e.service_id || e.target_resource;
-    if (src && tgt && src !== tgt) {
-      services.add(src);
-      services.add(tgt);
-      const edgeKey = `${src}->${tgt}`;
-      edges.set(edgeKey, (edges.get(edgeKey) || 0) + 1);
-    }
+  const ev=records('events'), fList=records('findings');
+  const serviceCounts=new Map(), edgeCounts=new Map(), serviceMeta=new Map();
+  for(const e of ev){
+    const target=field(e,'service_id','service_name','service');
+    const source=field(e,'source_service','source_resource','app_id');
+    if(target!=='—'){serviceCounts.set(target,(serviceCounts.get(target)||0)+1);serviceMeta.set(target,e);}
+    if(source!=='—'&&target!=='—'&&source!==target){serviceCounts.set(source,(serviceCounts.get(source)||0)+0);const key=`${source}→${target}`;edgeCounts.set(key,(edgeCounts.get(key)||0)+1);}
   }
-
-  // Fallback baseline services if empty
-  if (services.size === 0) {
-    ['api-service', 'worker-service', 'database-service'].forEach(s => services.add(s));
-    edges.set('api-service->worker-service', 12);
-    edges.set('worker-service->database-service', 45);
-  }
-
-  const impactedServices = new Set();
-  for (const f of fList) {
-    if (f.status === 'open') {
-      (f.services || []).forEach(s => impactedServices.add(s));
-      if (f.evidence?.service_id) impactedServices.add(f.evidence.service_id);
-      if (f.evidence?.target_service) impactedServices.add(f.evidence.target_service);
-    }
-  }
-
-  const serviceList = Array.from(services);
-
-  return head('Service Topology', 'Observed microservice topology and communication graph reconstructed from live telemetry traces.', `<button class="btn small" data-action="refresh">↻ Refresh Topology</button>`)
+  const impacted=new Set();
+  for(const f of fList){if(String(f.status||'').toLowerCase()==='open'){(f.services||[]).forEach(x=>impacted.add(x));if(f.evidence?.service_id)impacted.add(f.evidence.service_id);}}
+  const names=[...serviceCounts.keys()].sort((a,b)=>(serviceCounts.get(b)||0)-(serviceCounts.get(a)||0)).slice(0,8);
+  const selected=names.find(n=>impacted.has(n))||names[0]||'';
+  const positions=[[105,190],[285,190],[470,190],[655,90],[655,290],[820,190],[285,330],[470,330]];
+  const nodes=names.map((name,i)=>({name,x:positions[i][0],y:positions[i][1],count:serviceCounts.get(name)||0,risk:impacted.has(name)}));
+  const edgeList=[...edgeCounts.entries()].map(([k,count])=>{const [source,target]=k.split('→');return {source,target,count};});
+  const nodeIndex=new Map(nodes.map(n=>[n.name,n]));
+  const edgeSvg=edgeList.filter(e=>nodeIndex.has(e.source)&&nodeIndex.has(e.target)).map(e=>{const a=nodeIndex.get(e.source),b=nodeIndex.get(e.target);const sx=a.x+45,sy=a.y+20,tx=b.x+45,ty=b.y+20;const risk=impacted.has(e.source)||impacted.has(e.target);return `<path class="ref-edge ${risk?'risk':''}" d="M${sx} ${sy} C${(sx+tx)/2} ${sy}, ${(sx+tx)/2} ${ty}, ${tx} ${ty}"/><circle cx="${(sx+tx)/2}" cy="${(sy+ty)/2}" r="3" fill="${risk?'var(--red)':'var(--lime)'}"/>`;}).join('');
+  const nodeSvg=nodes.map(n=>`<g class="ref-node ${n.risk?'risk':''}" data-action="filter-events-by-service" data-svc="${esc(n.name)}" transform="translate(${n.x} ${n.y})"><rect width="90" height="42" rx="11"/><text x="45" y="17" style="font-size:16px">${n.name.toLowerCase().includes('db')||n.name.toLowerCase().includes('database')?'▤':n.name.toLowerCase().includes('api')?'☁':'⬡'}</text><text x="45" y="59">${esc(n.name.length>17?n.name.slice(0,16)+'…':n.name)}</text><rect class="node-kind" x="17" y="66" width="56" height="16" rx="8"/><text class="node-kind-text" x="45" y="77">${n.count} events</text></g>`).join('');
+  const selectedEvents=ev.filter(e=>field(e,'service_id','service_name','service')===selected);
+  const selectedFinding=fList.find(f=>(f.services||[]).includes(selected)||f.evidence?.service_id===selected);
+  const serviceNames=names.length?names.length:'—';
+  const traces=new Set(ev.map(e=>field(e,'trace_id')).filter(x=>x!=='—'));
+  return head('Service Topology','Observed microservice topology and communication graph reconstructed from live telemetry traces.',`<button class="btn small" data-action="refresh">↻</button><button class="btn small primary" data-action="refresh">✣ Refresh Topology</button>`)
     + errPanel()
-    + `<div class="panel pad" style="margin-bottom:16px;background:radial-gradient(900px 350px at 50% 0%, rgba(20,30,40,0.8), var(--panel));border-color:var(--border-subtle)">
-        <div class="between" style="margin-bottom:12px">
-          <div>
-            <h3 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px">
-              <span class="dot" style="background:var(--lime)"></span>
-              Live Telemetry Flow & Service Footprint
-            </h3>
-            <div class="tiny muted" style="margin-top:3px">${serviceList.length} microservices discovered across ${ev.length} telemetry records</div>
-          </div>
-          <div class="row" style="gap:8px">
-            <span class="pill ok">✔ Real Telemetry</span>
-            ${impactedServices.size > 0 ? `<span class="pill danger">⚠️ ${impactedServices.size} Service(s) Under Threat</span>` : '<span class="pill ok">Clean Baseline</span>'}
-          </div>
-        </div>
-
-        <!-- Interactive SVG Topology Visualizer -->
-        <div style="position:relative;width:100%;height:320px;background:rgba(0,0,0,0.3);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:space-around;padding:20px">
-          <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">
-            <defs>
-              <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="var(--cyan)" stop-opacity="0.8" />
-                <stop offset="100%" stop-color="var(--lime)" stop-opacity="0.8" />
-              </linearGradient>
-            </defs>
-            <!-- Animated Request Pulse Lines -->
-            <line x1="22%" y1="50%" x2="50%" y2="50%" stroke="url(#flowGrad)" stroke-width="2" stroke-dasharray="6 4">
-              <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite" />
-            </line>
-            <line x1="50%" y1="50%" x2="78%" y2="50%" stroke="url(#flowGrad)" stroke-width="2" stroke-dasharray="6 4">
-              <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite" />
-            </line>
-          </svg>
-
-          <!-- Node 1: Ingress / API Gateway -->
-          <div style="z-index:2;width:160px;padding:12px;background:var(--panel2);border:2px solid ${impactedServices.has('api-service') ? 'var(--danger)' : 'var(--border-subtle)'};border-radius:8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
-            <div class="tiny dim" style="letter-spacing:0.5px">INGRESS API</div>
-            <b style="font-size:13px;display:block;margin:4px 0;color:var(--text-main)">api-service</b>
-            <span class="pill info" style="font-size:10px">HTTP Gateway</span>
-            <div style="margin-top:8px">
-              <button class="btn small ghost" data-action="filter-events-by-service" data-svc="api-service" style="font-size:10px;padding:2px 8px">View Telemetry</button>
-            </div>
-          </div>
-
-          <!-- Node 2: Worker / Async Pipeline -->
-          <div style="z-index:2;width:160px;padding:12px;background:var(--panel2);border:2px solid ${impactedServices.has('worker-service') ? 'var(--danger)' : 'var(--border-subtle)'};border-radius:8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
-            <div class="tiny dim" style="letter-spacing:0.5px">BACKGROUND WORKER</div>
-            <b style="font-size:13px;display:block;margin:4px 0;color:var(--text-main)">worker-service</b>
-            <span class="pill info" style="font-size:10px">Job Processor</span>
-            <div style="margin-top:8px">
-              <button class="btn small ghost" data-action="filter-events-by-service" data-svc="worker-service" style="font-size:10px;padding:2px 8px">View Telemetry</button>
-            </div>
-          </div>
-
-          <!-- Node 3: Database / Persistence Tier -->
-          <div style="z-index:2;width:160px;padding:12px;background:var(--panel2);border:2px solid ${impactedServices.has('database-service') ? 'var(--danger)' : 'var(--border-subtle)'};border-radius:8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
-            <div class="tiny dim" style="letter-spacing:0.5px">PERSISTENCE TIER</div>
-            <b style="font-size:13px;display:block;margin:4px 0;color:var(--text-main)">database-service</b>
-            <span class="pill info" style="font-size:10px">PostgreSQL / Storage</span>
-            <div style="margin-top:8px">
-              <button class="btn small ghost" data-action="filter-events-by-service" data-svc="database-service" style="font-size:10px;padding:2px 8px">View Telemetry</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Discovered Communication Edges -->
-      <div class="panel pad">
-        <div class="between" style="margin-bottom:10px">
-          <div>
-            <h3 style="margin:0;font-size:14px">Discovered Cross-Service Communication Links</h3>
-            <div class="tiny muted" style="margin-top:2px">Directional request flows extracted from distributed traces and canonical telemetry</div>
-          </div>
-          <span class="pill info">${edges.size} Active Edges</span>
-        </div>
-        ${table(Array.from(edges.entries()).map(([k, count]) => {
-          const [src, tgt] = k.split('->');
-          return { source: src, target: tgt, volume: count };
-        }), [
-          { label: 'Origin Service / Producer', render: r => `<b>${esc(r.source)}</b>` },
-          { label: 'Direction', render: () => '→' },
-          { label: 'Target Service / Consumer', render: r => `<span class="pill neutral" style="font-family:monospace">${esc(r.target)}</span>` },
-          { label: 'Observed Telemetry Volume', render: r => `<span class="pill ok">${r.volume} Events</span>` },
-          { label: 'Audit', render: r => `<button class="btn small ghost" data-action="filter-events-by-service" data-svc="${esc(r.target)}" style="font-size:10px;padding:2px 8px">🔎 Audit Path</button>` }
-        ])}
-      </div>`;
+    + `<div class="ref-topology-stats">
+      ${compactMetric('Services',serviceNames,'Observed in telemetry')}${compactMetric('Connections',edgeList.length,'Observed communication links')}${compactMetric('At risk',impacted.size,'Services linked to open findings')}${compactMetric('Traces',traces.size,'Distinct trace identifiers')}
+    </div>`
+    + `<div class="ref-topology-layout">
+      <section class="panel ref-topology-graph"><div class="ref-graph-tools"><div class="ref-graph-tabs"><button class="active" type="button">⌘ Topology Graph</button><button type="button" disabled>♧ Service Map</button><button type="button" disabled>⌁ Trace Flow</button></div><span class="spacer"></span><span class="pill ${ev.length?'good':'info'}">● ${ev.length?'Telemetry loaded':'Waiting for telemetry'}</span><button class="btn small" type="button" onclick="toast('Graph is derived from the currently loaded event sample')">Show Labels ◉</button></div>
+      ${nodes.length?`<svg class="ref-graph-svg" viewBox="0 0 930 420" role="img" aria-label="Service communication graph">${edgeSvg}${nodeSvg}</svg>`:`<div class="empty" style="position:absolute;inset:80px 20px 20px;display:grid;place-content:center;text-align:center"><b>No service topology yet</b><p class="muted tiny">Topology nodes and links appear when telemetry includes service and source fields.</p></div>`}
+      <div class="ref-graph-legend"><span><i class="dot" style="display:inline-block"></i> Normal flow</span><span><i class="dot" style="display:inline-block;background:var(--red)"></i> Service linked to open finding</span><span>— Observed communication link</span></div></section>
+      <aside class="panel ref-inspector"><div class="ref-inspector-head"><div style="font-size:27px;color:var(--lime)">⬡</div><div style="flex:1;min-width:0"><b style="font-size:15px">${esc(selected||'No service selected')}</b><div class="tiny muted">Selected service · telemetry profile</div></div>${selectedFinding?'<span class="pill danger">⚠ At Risk</span>':'<span class="pill ok">Observed</span>'}</div>
+        <div class="ref-inspector-tabs"><button class="active">Overview</button><button type="button" disabled>Telemetry</button><button type="button" disabled>Findings</button><button type="button" disabled>Traces</button></div>
+        <div class="ref-inspector-metrics"><div><small>Events</small><b>${selectedEvents.length}</b></div><div><small>Related traces</small><b>${new Set(selectedEvents.map(e=>field(e,'trace_id')).filter(x=>x!=='—')).size}</b></div><div><small>Findings</small><b>${selectedFinding?'1':'0'}</b></div></div>
+        <h3 style="font-size:11px;margin:13px 0 4px">Connections (${edgeList.filter(e=>e.source===selected||e.target===selected).length})</h3>
+        ${edgeList.filter(e=>e.source===selected||e.target===selected).slice(0,6).map(e=>`<div class="ref-evidence-row"><b>${e.source===selected?'→':'←'} ${esc(e.source===selected?e.target:e.source)}</b><span class="pill info">${e.count} events</span></div>`).join('')||'<div class="tiny dim" style="padding:8px 0">No directed links were identified in the loaded sample.</div>'}
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:13px"><button class="btn small primary" data-page="investigations">⌕ Investigate in Deep Track</button><button class="btn small" data-action="filter-events-by-service" data-svc="${esc(selected)}">↗ View in Event Explorer</button></div>
+      </aside>
+    </div>
+    <div class="ref-topology-bottom"><section class="panel"><div class="panelhead"><div><h3>Discovered Cross-Service Communication Links</h3><small>Directional links inferred from source and target service fields in loaded events.</small></div><span class="pill info">${edgeList.length} links</span></div><div class="ref-topo-link header"><span>Source</span><span>→</span><span>Target</span><span>Volume</span><span>Status</span></div>${edgeList.slice(0,10).map(e=>`<div class="ref-topo-link"><b>${esc(e.source)}</b><span>→</span><b>${esc(e.target)}</b><span>${e.count} events</span><span class="pill ${impacted.has(e.source)||impacted.has(e.target)?'warn':'ok'}">${impacted.has(e.source)||impacted.has(e.target)?'Elevated':'Normal'}</span></div>`).join('')||'<div class="empty">No communication links in returned telemetry.</div>'}</section>
+    <section class="panel"><div class="panelhead"><div><h3>Topology Timeline</h3><small>Recent event activity associated with discovered services.</small></div></div><div class="ref-topo-timeline">${ev.slice(0,5).map(e=>`<div class="ref-topo-time ${impacted.has(field(e,'service_id','service_name','service'))?'risk':''}"><b>${formatLocalTime(e.timestamp||e.created_at)}</b> &nbsp; ${esc(field(e,'event_type','event_name','type','message'))}<div class="tiny dim">${esc(field(e,'service_id','service_name','service'))} · ${esc(field(e,'trace_id'))}</div></div>`).join('')||'<div class="tiny dim">Recent topology activity will appear after telemetry is received.</div>'}</div></section></div>`;
 }
 
 
@@ -5602,13 +5582,31 @@ async function executeDeepSearch() {
     toast('Please enter a query or prompt for the AI to investigate.');
     return;
   }
+
   const statusEl = $('#deepSearchStatus');
   const statusText = $('#deepSearchStatusText');
   const resEl = $('#deepSearchResult');
   const btn = $('#btnExecDeepSearch');
+  if (!resEl) {
+    toast('Deep Track workspace is not ready. Reopen the page and try again.');
+    return;
+  }
+
+  const controller = new AbortController();
+  const REQUEST_TIMEOUT_MS = 180000; // Allow time for evidence collection and Meta inference.
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
 
   if (statusEl) statusEl.classList.remove('hide');
-  if (btn) btn.disabled = true;
+  if (statusText) statusText.textContent = 'Connecting to the Deep Track investigation service…';
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset.originalText = btn.textContent;
+    btn.textContent = 'Requesting…';
+  }
 
   resEl.innerHTML = `
     <div class="panel pad" id="deepSearchTerminal" style="border-color:#334d38;background:#0d1611;font-family:ui-monospace,monospace;font-size:12px;border-radius:10px;padding:16px;line-height:1.7">
@@ -5618,159 +5616,209 @@ async function executeDeepSearch() {
         <span class="pill tiny good" style="margin-left:auto">LIVE SSE</span>
       </div>
       <div id="deepSearchStreamLog" style="color:#b5cbb7">
-        <div><span class="dim">[0.00s]</span> Initializing Deep Track connection...</div>
+        <div><span class="dim">[0.00s]</span> Connecting to investigation endpoint…</div>
       </div>
     </div>
   `;
 
   const logEl = $('#deepSearchStreamLog');
+  const startedAt = Date.now();
   const appendLog = (icon, msg) => {
     if (logEl) {
       const row = document.createElement('div');
-      row.innerHTML = `<span style="color:var(--lime)">${icon}</span> ${esc(msg)}`;
+      const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
+      row.innerHTML = `<span class="dim">[${elapsed}s]</span> <span style="color:var(--lime)">${icon}</span> ${esc(msg)}`;
       logEl.appendChild(row);
     }
     if (statusText) statusText.textContent = msg;
   };
 
+  const renderReport = async (rep) => {
+    if (!rep || typeof rep !== 'object') {
+      throw new Error('The investigation stream completed without a report payload.');
+    }
+    toast(`Deep search completed: ${rep.verdict || 'Report ready'}`);
+    if (statusEl) statusEl.classList.add('hide');
+
+    const hypotheses = Array.isArray(rep.hypotheses) ? rep.hypotheses : [];
+    const candidateRules = Array.isArray(rep.candidate_rules) ? rep.candidate_rules : [];
+    const mitigations = Array.isArray(rep.recommended_mitigations) ? rep.recommended_mitigations : [];
+
+    resEl.innerHTML = `
+      <div class="panel pad" style="border-color:#3e5833;background:var(--panel2);margin-top:10px">
+        <div class="between">
+          <div><div class="eyebrow">AI DEEP SEARCH REPORT — ${esc(rep.investigator_model || 'model not reported')}</div><h3 style="margin:2px 0">${esc(rep.investigation_id || 'Investigation report')}</h3></div>
+          <div>${pill(rep.verdict || 'Completed')}</div>
+        </div>
+        <div class="panel pad" style="margin:10px 0;background:var(--panel)">
+          <b>Executive Summary</b>
+          <p class="muted" style="margin:6px 0 0;font-size:11px;line-height:1.6">${esc(rep.summary || 'No executive summary was returned.')}</p>
+        </div>
+        <h4 style="margin:12px 0 6px">Grounded Hypotheses & Audited Evidence Citations</h4>
+        ${hypotheses.map(h => `
+          <div class="panel pad" style="margin-bottom:8px;background:var(--panel)">
+            <div class="between"><b>${esc(h.title || 'Hypothesis')}</b><span>${pill(h.likelihood || 'Unrated')} ${pill(h.nature || 'Analysis')}</span></div>
+            <p class="muted tiny" style="margin:6px 0">${esc(h.description || '')}</p>
+            <div class="tiny" style="margin-top:6px"><b>Supporting Evidence Citations (Audited):</b></div>
+            ${(h.supporting_evidence || []).map(cit => `
+              <div class="row tiny" style="margin:3px 0;padding:4px 6px;background:var(--panel2);border-radius:6px">
+                <code>${esc(cit.event_id || 'Event')}</code><span class="dim">(${esc(cit.service_id || 'Service')})</span><span class="muted">${esc(cit.relevance || '')}</span>
+              </div>`).join('') || '<div class="dim tiny">No external citations needed</div>'}
+          </div>`).join('') || '<div class="dim tiny">No hypotheses generated</div>'}
+        <h4 style="margin:12px 0 6px">Candidate Detector Rules (Ready for Fast Track)</h4>
+        ${candidateRules.map(cr => `
+          <div class="panel pad" style="margin-bottom:8px;border-color:#3e5833;background:var(--panel)">
+            <div class="between"><b>${esc(cr.title || 'Candidate rule')}</b><span class="pill info">${esc(cr.logic_type || 'Proposed')}</span></div>
+            <p class="muted tiny" style="margin:4px 0">${esc(cr.description || '')}</p>
+            <div class="tiny dim">Rationale: ${esc(cr.rationale || 'Not provided')}</div>
+            <div style="margin-top:8px"><button class="btn small primary" data-action="promote-candidate-rule" data-title="${esc(cr.title || '')}" data-desc="${esc(cr.description || '')}" data-logic="${esc(cr.logic_type || '')}" data-rationale="${esc(cr.rationale || '')}">⎇ Promote to Fast Track Rule Registry</button></div>
+          </div>`).join('') || '<div class="dim tiny">Zero candidate rules proposed</div>'}
+        ${mitigations.length ? `<h4 style="margin:12px 0 6px">Recommended Active Defense Mitigations</h4><ul class="muted tiny" style="margin:0;padding-left:18px">${mitigations.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
+      </div>`;
+
+    try {
+      cache.investigations = unwrap(await request(endpoint('investigations') || '/api/v1/investigations'), ['investigations', 'items', 'data']);
+      updateSidebarBadges();
+    } catch (refreshErr) {
+      console.warn('Deep Track report completed, but investigation list refresh failed:', refreshErr);
+    }
+  };
+
+  const handlePayload = (payload) => {
+    if (!payload || typeof payload !== 'object') return null;
+    if (payload.error || payload.stage === 'error' || payload.type === 'error') {
+      throw new Error(payload.detail || payload.message || payload.error || 'The Deep Track service returned an error.');
+    }
+    switch (payload.stage) {
+      case 'scope_verification':
+        appendLog('▶', '[1/4] Domain verification: checking query relevance…'); break;
+      case 'scope_rejected':
+        appendLog('✕', `Query out of scope: ${payload.reason || 'The query was not accepted.'}`); break;
+      case 'scope_verified':
+        appendLog('✓', '[1/4] Domain verified: query is within cybersecurity telemetry scope.'); break;
+      case 'evidence_collection':
+        appendLog('▶', '[2/4] Evidence gathering: assembling distributed traces and service context…'); break;
+      case 'evidence_ready':
+        appendLog('✓', `[2/4] Evidence context ready: ${payload.detail || `${payload.events_count ?? 'Unknown'} events gathered`}`); break;
+      case 'inference_dispatched':
+        appendLog('▶', `[3/4] Meta AI inference started${payload.model ? ` (${payload.model})` : ''}…`); break;
+      case 'citation_audit':
+        appendLog('▶', '[4/4] Grounding audit: checking evidence citations…'); break;
+      case 'audit_passed':
+        appendLog('✓', `[4/4] Grounding verified: ${payload.detail || 'Citation audit passed.'}`); break;
+      case 'cache_hit':
+        appendLog('ℹ', payload.detail || 'A cached investigation result was found.'); break;
+      case 'complete':
+        appendLog('✓', 'Investigation completed. Rendering report…');
+        return payload.report || payload.data || null;
+      default:
+        if (payload.report && (payload.investigation_id || payload.verdict || payload.summary)) return payload.report;
+        if (payload.message) appendLog('·', payload.message);
+        break;
+    }
+    return null;
+  };
+
   try {
     const url = apiUrl('/api/v1/investigations/query/stream');
+    const headers = {
+      'Accept': 'text/event-stream, application/json',
+      'Content-Type': 'application/json'
+    };
+    if (bearerToken) headers.Authorization = `Bearer ${bearerToken}`;
+
     const resp = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${bearerToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ query: q })
+      headers,
+      body: JSON.stringify({ query: q }),
+      signal: controller.signal,
+      cache: 'no-store'
     });
 
     if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+      const bodyText = await resp.text().catch(() => '');
+      let detail = bodyText;
+      try {
+        const parsed = JSON.parse(bodyText);
+        detail = parsed.detail || parsed.message || bodyText;
+      } catch (_) {}
+      throw new Error(`HTTP ${resp.status}: ${detail || resp.statusText}`);
     }
 
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+    const contentType = (resp.headers.get('content-type') || '').toLowerCase();
     let finalReport = null;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const blocks = buffer.split('\n\n');
-      buffer = blocks.pop();
+    // Some deployments return a JSON report instead of an SSE stream.
+    if (contentType.includes('application/json')) {
+      const payload = await resp.json();
+      finalReport = payload.report || payload.data || payload;
+      appendLog('✓', 'Received a JSON investigation response.');
+    } else {
+      if (!resp.body || !resp.body.getReader) {
+        throw new Error('The server did not return a readable response stream.');
+      }
 
-      for (const block of blocks) {
-        const trimmed = block.trim();
-        if (trimmed.startsWith('data: ')) {
-          try {
-            const data = JSON.parse(trimmed.slice(6));
-            if (data.stage === 'scope_verification') {
-              appendLog('▶', '[1/4] Domain Verification: Verifying query relevance...');
-            } else if (data.stage === 'scope_rejected') {
-              appendLog('✕', `Query Out of Scope: ${data.reason}`);
-              finalReport = data.report;
-            } else if (data.stage === 'scope_verified') {
-              appendLog('✓', '[1/4] Domain Verified: Inquiry within cybersecurity telemetry scope.');
-            } else if (data.stage === 'evidence_collection') {
-              appendLog('▶', '[2/4] Evidence Gathering: Assembling multi-service distributed traces and baselines...');
-            } else if (data.stage === 'evidence_ready') {
-              appendLog('✓', `[2/4] Evidence Context: ${data.detail || (data.events_count + ' events gathered')}`);
-            } else if (data.stage === 'inference_dispatched') {
-              appendLog('▶', `[3/4] AI Inference: Investigation provider dispatched to ${data.model || 'muse-spark-1.3'}...`);
-            } else if (data.stage === 'model_dispatch') {
-              appendLog('▶', `[3/4] Model Inference: ${data.detail || 'Dispatching...'}`);
-            } else if (data.stage === 'model_completed') {
-              appendLog('✓', `[3/4] Model Completed: Verdict '${data.verdict}', ${data.hypotheses_count || 0} hypotheses formulated.`);
-              if (data.report) finalReport = data.report;
-            } else if (data.stage === 'citation_audit') {
-              appendLog('▶', '[4/4] Grounding Audit: Auditing mathematical citations against PostgreSQL...');
-            } else if (data.stage === 'audit_passed') {
-              appendLog('✓', `[4/4] Grounding Verified: ${data.detail}`);
-            } else if (data.stage === 'audit_failed') {
-              appendLog('✕', `[4/4] Grounding Audit Notice: ${data.detail || 'Audit flagged ungrounded citations'}`);
-            } else if (data.stage === 'complete') {
-              finalReport = data.report;
-            }
-          } catch (_) {}
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let streamEnded = false;
+
+      const processSseBlock = (block) => {
+        const dataLines = block.split(/\r?\n/)
+          .filter(line => line.startsWith('data:'))
+          .map(line => line.slice(5).replace(/^ /, ''));
+        if (!dataLines.length) return;
+        const raw = dataLines.join('\n').trim();
+        if (!raw || raw === '[DONE]') return;
+        let payload;
+        try {
+          payload = JSON.parse(raw);
+        } catch (_) {
+          appendLog('·', raw.slice(0, 500));
+          return;
         }
+        const report = handlePayload(payload);
+        if (report) finalReport = report;
+      };
+
+      while (!streamEnded) {
+        const { done, value } = await reader.read();
+        if (done) {
+          streamEnded = true;
+          buffer += decoder.decode();
+        } else {
+          buffer += decoder.decode(value, { stream: true });
+        }
+
+        // Normalize CRLF first; SSE servers commonly use either LF or CRLF.
+        buffer = buffer.replace(/\r\n/g, '\n');
+        const blocks = buffer.split('\n\n');
+        buffer = blocks.pop() || '';
+        for (const block of blocks) processSseBlock(block);
+
+        if (streamEnded && buffer.trim()) processSseBlock(buffer);
       }
     }
 
-    if (finalReport) {
-      toast(`Deep search completed: ${finalReport.verdict}`);
-      if (statusEl) statusEl.classList.add('hide');
-
-      const rep = finalReport;
-      const hypotheses = Array.isArray(rep.hypotheses) ? rep.hypotheses : [];
-      const candidateRules = Array.isArray(rep.candidate_rules) ? rep.candidate_rules : [];
-      const mitigations = Array.isArray(rep.recommended_mitigations) ? rep.recommended_mitigations : [];
-
-      resEl.innerHTML = `
-        <div class="panel pad" style="border-color:#3e5833;background:var(--panel2);margin-top:10px">
-          <div class="between">
-            <div><div class="eyebrow">AI DEEP SEARCH REPORT — ${esc(rep.investigator_model || 'model not reported')}</div><h3 style="margin:2px 0">${esc(rep.investigation_id)}</h3></div>
-            <div>${pill(rep.verdict)}</div>
-          </div>
-          <div class="panel pad" style="margin:10px 0;background:var(--panel)">
-            <b>Executive Summary</b>
-            <p class="muted" style="margin:6px 0 0;font-size:11px;line-height:1.6">${esc(rep.summary)}</p>
-          </div>
-
-          <h4 style="margin:12px 0 6px">Grounded Hypotheses & Audited Evidence Citations</h4>
-          ${hypotheses.map(h => `
-            <div class="panel pad" style="margin-bottom:8px;background:var(--panel)">
-              <div class="between">
-                <b>${esc(h.title)}</b>
-                <span>${pill(h.likelihood)} ${pill(h.nature)}</span>
-              </div>
-              <p class="muted tiny" style="margin:6px 0">${esc(h.description)}</p>
-              <div class="tiny" style="margin-top:6px"><b>Supporting Evidence Citations (Audited):</b></div>
-              ${(h.supporting_evidence || []).map(cit => `
-                <div class="row tiny" style="margin:3px 0;padding:4px 6px;background:var(--panel2);border-radius:6px">
-                  <code>${esc(cit.event_id)}</code>
-                  <span class="dim">(${esc(cit.service_id)})</span>
-                  <span class="muted">${esc(cit.relevance)}</span>
-                </div>
-              `).join('') || '<div class="dim tiny">No external citations needed</div>'}
-            </div>
-          `).join('') || '<div class="dim tiny">No hypotheses generated</div>'}
-
-          <h4 style="margin:12px 0 6px">Candidate Detector Rules (Ready for Fast Track)</h4>
-          ${candidateRules.map(cr => `
-            <div class="panel pad" style="margin-bottom:8px;border-color:#3e5833;background:var(--panel)">
-              <div class="between">
-                <b>${esc(cr.title)}</b>
-                <span class="pill info">${esc(cr.logic_type)}</span>
-              </div>
-              <p class="muted tiny" style="margin:4px 0">${esc(cr.description)}</p>
-              <div class="tiny dim">Rationale: ${esc(cr.rationale)}</div>
-              <div style="margin-top:8px">
-                <button class="btn small primary" data-action="promote-candidate-rule" data-title="${esc(cr.title)}" data-desc="${esc(cr.description)}" data-logic="${esc(cr.logic_type)}" data-rationale="${esc(cr.rationale)}">⎇ Promote to Fast Track Rule Registry</button>
-              </div>
-            </div>
-          `).join('') || '<div class="dim tiny">Zero candidate rules proposed</div>'}
-
-          ${mitigations.length ? `
-            <h4 style="margin:12px 0 6px">Recommended Active Defense Mitigations</h4>
-            <ul class="muted tiny" style="margin:0;padding-left:18px">
-              ${mitigations.map(m => `<li>${esc(m)}</li>`).join('')}
-            </ul>
-          ` : ''}
-        </div>
-      `;
-
-      try {
-        cache.investigations = unwrap(await request(endpoint('investigations') || '/api/v1/investigations'), ['investigations', 'items', 'data']);
-        updateSidebarBadges();
-      } catch (_) {}
+    if (!finalReport) {
+      throw new Error('The server closed the investigation stream without a completed report. Check backend logs for the query/stream endpoint.');
     }
+    await renderReport(finalReport);
   } catch (err) {
+    let message = err.message || 'Unknown Deep Track error.';
+    if (timedOut || err.name === 'AbortError') {
+      message = 'Deep Track timed out after 180 seconds while waiting for the backend. Check evidence collection, Meta API latency and backend logs.';
+    }
     if (statusEl) statusEl.classList.add('hide');
-    toast(`Deep search error: ${err.message}`);
-    resEl.innerHTML = `<div class="callout danger">Deep Search failed: ${esc(err.message)}</div>`;
+    toast(`Deep Track error: ${message}`);
+    resEl.innerHTML = `<div class="callout danger"><b>Deep Track failed</b><p style="margin:5px 0 0">${esc(message)}</p><small>Check the browser Network tab and backend logs for <code>/api/v1/investigations/query/stream</code>.</small></div>`;
   } finally {
-    if (btn) btn.disabled = false;
+    clearTimeout(timeout);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = btn.dataset.originalText || '▷ Investigate';
+      delete btn.dataset.originalText;
+    }
   }
 }
 
@@ -5908,109 +5956,11 @@ async function rotateKey(keyId) {
   }
 }
 
-async function submitInvestigationFollowUp(invId) {
-  const inp = $('#investigationFollowUpInput');
-  const q = (inp?.value || '').trim();
-  if (!q) {
-    toast('Please enter a follow-up question.');
-    return;
-  }
-  const resEl = $('#investigationFollowUpResult');
-  if (resEl) resEl.innerHTML = `<div class="tiny muted">Analyzing trace evidence with Deep Track adapter...</div>`;
-  try {
-    const res = await request(`/api/v1/investigations/${encodeURIComponent(invId)}/follow-up`, {
-      method: 'POST',
-      body: { query: q }
-    });
-    toast('Follow-up analysis recorded.');
-    if (resEl) {
-      resEl.innerHTML = `
-        <div class="panel pad" style="background:var(--panel);border-color:var(--line);margin-top:6px;border-radius:8px">
-          <div class="between"><b class="tiny" style="color:var(--lime)">Follow-Up Result [${esc(res.entry_id)}]</b><span class="tiny dim">${formatLocalTime(res.created_at)}</span></div>
-          <div class="tiny" style="margin:4px 0;color:var(--text);line-height:1.6">${esc(res.response)}</div>
-        </div>
-      `;
-    }
-  } catch (err) {
-    if (resEl) resEl.innerHTML = `<div class="callout danger tiny">Follow-up failed: ${esc(err.message)}</div>`;
-  }
-}
-
-async function loadTrends(windowHours = 24, intervalMinutes = 60) {
-  const target = $('#trendsContainer');
-  if (!target) return;
-  target.innerHTML = `<div class="panel empty" style="padding:16px;text-align:center"><div class="tiny dim">Querying telemetry trends (${windowHours}h window, ${intervalMinutes}m intervals)...</div></div>`;
-  try {
-    const data = await request(`/api/v1/events/trends?window_hours=${windowHours}&interval_minutes=${intervalMinutes}`);
-    const timeline = Array.isArray(data.timeline) ? data.timeline : [];
-    const maxCount = Math.max(1, ...timeline.map(t => t.event_count || 0));
-
-    target.innerHTML = `
-      ${data.anomaly_detected ? `
-        <div class="callout danger" style="margin-bottom:10px">
-          <div class="between">
-            <b>⚠ Telemetry Burst Anomaly Detected</b>
-            <button class="btn small" data-action="fill-deep-search" data-query="Investigate anomalous telemetry burst in ${data.window_hours}h trend report: ${esc(data.anomaly_reason || '')}">⌘ Investigate with Deep Track</button>
-          </div>
-          <div class="tiny" style="margin-top:3px">${esc(data.anomaly_reason)}</div>
-        </div>
-      ` : `
-        <div class="callout good" style="margin-bottom:10px">
-          <b>✓ Nominal Telemetry Baselines:</b> Zero anomalous spikes or unalerted bursts detected across ${data.total_events} events evaluated in ${data.window_hours}h window.
-        </div>
-      `}
-
-      <div class="panel pad" style="background:var(--panel);margin-bottom:8px">
-        <div class="between" style="margin-bottom:8px">
-          <small class="muted uppercase tiny">Activity by Interval (${timeline.length} slices)</small>
-          <small class="dim tiny">Total: ${data.total_events} events</small>
-        </div>
-        <div class="coverage-list">
-          ${timeline.slice(-12).map((pt, i) => `
-            <div class="coverage-row" style="margin-bottom:6px">
-              <div class="between">
-                <span class="mono tiny">${formatLocalTime(pt.interval_start)}</span>
-                <span class="tiny"><b>${pt.event_count}</b> events ${pt.high_critical_count > 0 ? `<span class="pill bad tiny" style="margin-left:4px">${pt.high_critical_count} critical/high</span>` : ''}</span>
-              </div>
-              <div class="coverage-track" style="height:6px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden">
-                <i style="width:${(pt.event_count / maxCount) * 100}%;height:100%;background:${pt.high_critical_count > 0 ? 'var(--red)' : 'var(--lime)'};display:block;border-radius:4px"></i>
-              </div>
-              <div class="tiny dim" style="margin-top:2px">Active services: ${(pt.top_services && pt.top_services.length) ? pt.top_services.join(', ') : 'none'}</div>
-            </div>
-          `).join('') || '<div class="tiny dim">No events recorded in this time range</div>'}
-        </div>
-      </div>
-    `;
-  } catch (err) {
-    target.innerHTML = `<div class="callout danger tiny">Failed to load trend report: ${esc(err.message)}</div>`;
-  }
-}
-
 async function promoteCandidateRule(btn) {
   const title = btn.dataset.title;
   const description = btn.dataset.desc;
-  const logicType = (btn.dataset.logic || 'threshold').toLowerCase();
+  const logicType = btn.dataset.logic || 'sequence';
   const rationale = btn.dataset.rationale || 'Promoted from Deep Track AI Investigation';
-
-  const isSequence = logicType === 'sequence';
-  const parameters = isSequence ? {
-    rule_type: 'sequence',
-    group_by: ['tenant_id', 'trace_id'],
-    window_seconds: 300,
-    require_distinct_services: true,
-    sequence_stages: [
-      { stage_id: 'ingress', service_id: 'api-service', conditions: [{ field: 'service_id', operator: 'equals', value: 'api-service' }] },
-      { stage_id: 'egress', service_id: 'worker-service', conditions: [{ field: 'service_id', operator: 'equals', value: 'worker-service' }] }
-    ],
-    rationale: rationale
-  } : {
-    rule_type: 'threshold',
-    group_by: ['tenant_id', 'service_id'],
-    window_seconds: 300,
-    conditions: [{ field: 'event_type', operator: 'contains', value: 'sensitive' }],
-    threshold: { metric: 'count', operator: 'gte', value: 5 },
-    rationale: rationale
-  };
 
   try {
     toast('Submitting candidate rule proposal to Rule Registry...');
@@ -6020,7 +5970,11 @@ async function promoteCandidateRule(btn) {
         target_detector: 'detector.deep_track.promoted',
         title: title,
         description: description,
-        parameters: parameters
+        parameters: {
+          logic_type: logicType,
+          rationale: rationale,
+          condition: { severity: 'high' }
+        }
       }
     });
     toast('Candidate rule submitted to Rule Registry! Opening rules...');
@@ -6051,6 +6005,7 @@ const navTips = {
   governance: 'Citation audit rules & hallucination guards',
   settings: 'API routes, health probes & Bearer token'
 };
+
 
 function initSidebarTooltips() {
   const tipEl = $('#sidebarTooltip');

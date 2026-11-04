@@ -75,7 +75,7 @@ class BaseInvestigator(abc.ABC):
             "verdict": report.verdict,
             "hypotheses_count": len(report.hypotheses),
             "rules_count": len(report.candidate_rules),
-            "report": report
+            "report": report.model_dump(mode="json") if hasattr(report, "model_dump") else report
         }
 
 
