@@ -11,10 +11,66 @@ Ternline is an active security intelligence platform designed for microservices 
 * **Live Web Console:** [https://ternline.vercel.app/console](https://ternline.vercel.app/console)
 * **Landing Page:** [https://ternline.vercel.app](https://ternline.vercel.app)
 * **Comprehensive Documentation & Guide:** [https://ternline.vercel.app/docs](https://ternline.vercel.app/docs) (or [`/documentation`](https://ternline.vercel.app/documentation))
+* **Featured Test App (InstaTern):** [https://github.com/Imrankhadeer/InstaTern-TERNLINE-](https://github.com/Imrankhadeer/InstaTern-TERNLINE-)
+* **Live Hosted Test App (Render):** [https://myapp-v1-p9qy.onrender.com/?chat=emily_style](https://myapp-v1-p9qy.onrender.com/?chat=emily_style)
 * **Local Web Console:** [http://localhost:8000/console](http://localhost:8000/console)
 * **Interactive OpenAPI / Swagger UI:** [http://localhost:8000/swagger](http://localhost:8000/swagger) (or [`/api/docs`](http://localhost:8000/api/docs))
 * **Prometheus Observability Metrics:** [http://localhost:8000/metrics](http://localhost:8000/metrics)
 * **Service Health Probe:** [http://localhost:8000/health](http://localhost:8000/health)
+
+---
+
+## 📱 Featured Test App: InstaTern & Adversary Attack Simulator
+
+We built and deployed a production-grade social media microservice application called **InstaTern** specifically to demonstrate real-time telemetry ingestion, cross-service adversary attack simulation, and autonomous defense with Ternline.
+
+* **GitHub Repository:** [https://github.com/Imrankhadeer/InstaTern-TERNLINE-](https://github.com/Imrankhadeer/InstaTern-TERNLINE-)
+* **Live Hosted Application (Render):** [https://myapp-v1-p9qy.onrender.com/?chat=emily_style](https://myapp-v1-p9qy.onrender.com/?chat=emily_style)
+
+### Step-by-Step Tutorial: How to Test Ternline Using InstaTern
+
+InstaTern comes bundled with an `attack-sim` adversary suite that exercises 5 realistic cyber attack vectors against the hosted application and streams live telemetry to the Ternline Engine:
+
+#### Step 1: Clone the InstaTern Repository
+```bash
+git clone https://github.com/Imrankhadeer/InstaTern-TERNLINE-.git
+cd InstaTern-TERNLINE-
+```
+
+#### Step 2: Navigate to the Simulator & Install Dependencies
+```bash
+cd attack-sim
+pip install requests python-dotenv
+```
+
+#### Step 3: Run the 5-Stage Attack Campaign Against Ternline
+Run the attack simulator pointing to either your local Ternline server or the live cloud engine:
+
+```bash
+# Option A: Test against live cloud Ternline Engine
+python attack.py --target https://myapp-v1-p9qy.onrender.com --engine https://ternline.vercel.app
+
+# Option B: Test against local development engine
+python attack.py --target https://myapp-v1-p9qy.onrender.com --engine http://localhost:8000
+```
+
+#### Step 4: (Optional) Generate Benign Baseline User Activity
+```bash
+# Simulates organic, legitimate platform traffic
+python user_sim.py --target https://myapp-v1-p9qy.onrender.com --engine http://localhost:8000
+```
+
+#### What Attacks Are Simulated:
+1. **Brute-Force Credential Spraying:** Sprays rapid failed logins against `@sarah_dev` from rotating client IPs, instantly triggering Fast Track detection.
+2. **Stealth Reconnaissance:** Harvests session tokens through proxy IPs and crawls private creator profiles.
+3. **Multi-Stage Cross-Service Exfiltration:** Triggers a 3-tier sequence across `api-service` → `worker-service` → `database-service`.
+4. **API Parameter Tampering & Injection:** Simulates suspicious API payloads and unauthorized privilege escalation attempts.
+
+#### Step 5: Observe Real-Time Detection & Investigation in Ternline
+1. Open your Ternline Console at [http://localhost:8000/console](http://localhost:8000/console) (or [https://ternline.vercel.app/console](https://ternline.vercel.app/console)).
+2. Navigate to **Findings & Incidents** to observe real-time alerts detected in `<1ms`.
+3. Open **Entities & Correlation** to view the reconstructed multi-service execution flow.
+4. Launch **Deep Track** on any finding to watch Meta AI formulate hypotheses and propose candidate detection rules.
 
 ---
 
