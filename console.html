@@ -742,12 +742,7 @@ td { font-size: 12px; padding: 11px 13px; }
       </div>
       <div id="gateLoginMsg" class="tiny" style="margin-bottom:12px;"></div>
       <button class="btn primary" type="submit" id="gateLoginBtn" style="width:100%;justify-content:center;padding:11px 16px;font-weight:700;">Sign In to Console</button>
-      <button class="btn ghost" type="button" id="gatePreviewBtn" onclick="enterVisualPreview()" style="width:100%;justify-content:center;padding:10px 16px;margin-top:9px;border-color:rgba(183,243,107,0.35);color:var(--lime);">
-        <span aria-hidden="true">◉</span>&nbsp; Instant UI Preview
-      </button>
-      <div class="tiny muted" style="text-align:center;margin-top:7px;line-height:1.5;">
-        Open the Control Room immediately in preview mode. No account or password needed; live workspace data and protected actions stay locked.
-      </div>
+
       
       <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--muted);">
         Don't have a workspace? <a href="javascript:void(0)" onclick="switchGateTab('register')" style="font-weight:700;">Create Workspace</a>
@@ -1610,9 +1605,22 @@ function overview() {
     if (['critical', 'high', 'medium', 'low', 'info'].includes(k)) a[k] = (a[k] || 0) + 1;
     return a;
   }, {});
+  const critEvents = events.filter(r => {
+    const s = String(r.severity || r.event_severity || r.level || (r.attributes && r.attributes.severity) || '').toLowerCase().trim();
+    return s === 'critical';
+  }).length;
+  // Severe threats (exfiltration, injection, privilege escalation) map to Critical posture
+  const criticalThreatFindings = combinedFindings.filter(r => {
+    const t = String(r.detector_id || r.title || '').toLowerCase();
+    return t.includes('exfiltration') || t.includes('critical') || t.includes('exploit') || t.includes('injection') || t.includes('escalation');
+  }).length;
+  const rawCrit = Number(sev.critical) || 0;
+  const fCrit = fSev.critical || 0;
+  const elevatedCrit = (rawCrit === 0 && fCrit === 0 && criticalThreatFindings > 0) ? Math.min(criticalThreatFindings, (fSev.high || 0) || 1) : 0;
+
   const effectiveSev = {
-    critical: Math.max(Number(sev.critical) || 0, fSev.critical || 0),
-    high: Math.max(Number(sev.high) || 0, fSev.high || 0),
+    critical: Math.max(rawCrit, fCrit, critEvents, elevatedCrit),
+    high: Math.max(0, (Math.max(Number(sev.high) || 0, fSev.high || 0) - elevatedCrit)),
     medium: Math.max(Number(sev.medium) || 0, fSev.medium || 0),
     low: Math.max(Number(sev.low) || 0, fSev.low || 0),
     info: Math.max(Number(sev.info) || 0, fSev.info || 0, infoCount || 0)
@@ -1630,9 +1638,8 @@ function overview() {
     ['✣','Deep Track','AI investigation engine',inv.status,inv.average_duration_ms],
     ['◈','Redis','Caching and runtime state',pipe.redis_status,pipe.redis_latency_ms]
   ];
-  return head('Overview','A live picture of telemetry, detection activity and investigation outcomes across your connected applications.',`<button class="btn small primary" data-action="run-quick-simulation" style="background:var(--lime);color:#08100c;font-weight:800;border-color:var(--lime);">⚡ Trigger Attack Simulation</button> <button class="btn small" data-action="refresh">⟳ Refresh Data</button>`)
+  return head('Overview','A live picture of telemetry, detection activity and investigation outcomes across your connected applications.',`<button class="btn small primary" data-action="refresh">⟳ Refresh Data</button>`)
     + errPanel()
-    + (!bearerToken ? `<div class="callout warn" style="margin-bottom:12px"><b>Preview session:</b> Sign in to load tenant-specific operational data and enable protected actions. <a href="#" data-page="settings" style="text-decoration:underline">Backend & Settings</a></div>` : '')
     + `<div class="between" style="margin:3px 0 8px"><div><div class="eyebrow">OPERATIONAL SNAPSHOT</div><div style="font-size:14px;font-weight:750">Security activity at a glance</div></div><span class="tiny dim">${hasData?'Tenant data returned by API':'Waiting for tenant data'}</span></div>`
     + `<div class="ref-overview-kpis">
       <div class="panel ref-kpi"><span class="ref-kpi-icon">▤</span><div><strong>${hasData?esc(pipe.total_events_ingested??events.length):'—'}</strong><label>Events</label><small>${hasData?`${esc(pipe.recent_events_1h??0)} received in the past hour`:'No tenant data'}</small></div><i class="ref-spark"></i></div>
@@ -3113,7 +3120,7 @@ function entities() {
   const ev = records('events');
   if (!ev.length) {
     return head('Entities & Correlation', 'Observed services, network actors, and cross-service traces derived from live telemetry.', '')
-      + empty('No entity or trace data loaded', 'Load telemetry events in Event Explorer or run a simulation to populate entities and correlation traces.', true);
+      + empty('No entity or trace data loaded', 'Load live telemetry events in Event Explorer to populate entities and correlation traces.', true);
   }
   const svcs = new Map();
   const actors = new Map();
@@ -5560,9 +5567,7 @@ document.addEventListener('click', e => {
   const action = a.dataset.action;
 
   switch (action) {
-    case 'run-quick-simulation':
-      runLiveAttackSimulation();
-      break;
+
     case 'refresh':
       refresh();
       break;
@@ -6399,30 +6404,7 @@ window.handleGateForgot = handleGateForgot;
 window.handleGateReset = handleGateReset;
 window.handleGateKey = handleGateKey;
 
-async function runLiveAttackSimulation() {
-  if (!bearerToken) {
-    toast('⚠️ Please sign in with a valid API key before running simulations.');
-    return;
-  }
-  toast('⚡ Injecting multi-stage exfiltration attack telemetry across services...');
-  try {
-    const res = await fetch(apiUrl('/api/v1/simulation/run'), {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${bearerToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ scenario: 'exfiltration' })
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.detail || 'Simulation execution failed');
-    toast(`✅ Attack sequence completed! ${result.events_emitted || 3} events emitted across services. Finding generated.`);
-    await refresh();
-  } catch (err) {
-    toast(`⚠️ Simulation error: ${err.message}`);
-  }
-}
-window.runLiveAttackSimulation = runLiveAttackSimulation;
+
 
 window.handleSwitchWorkspace = handleSwitchWorkspace;
 window.openCreateWorkspaceModal = openCreateWorkspaceModal;
