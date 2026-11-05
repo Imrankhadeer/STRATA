@@ -68,7 +68,7 @@ html[data-theme="dark"] .method,html[data-theme="dark"] .method-get,html[data-th
 <div class="sidebar-search"><span aria-hidden="true">⌕</span><input aria-label="Search documentation" autocomplete="off" id="docSearch" placeholder="Search docs" type="search"/></div>
 <nav aria-label="Documentation navigation" class="sidebar-nav" id="generatedNav">
 <div class="nav-group"><div class="nav-label">START HERE</div>
-<a href="#tutorial">Hands-on tutorial</a><a href="#overview">System architecture</a><a href="#connect-application">Connect an application</a><a href="#quickstart">Quickstart</a>
+<a href="#tutorial">Hands-on tutorial</a><a href="#demo-instatern">Demo app (InstaTern)</a><a href="#overview">System architecture</a><a href="#connect-application">Connect an application</a><a href="#quickstart">Quickstart</a>
 </div>
 <div class="nav-group"><div class="nav-label">INTEGRATE</div>
 <a href="#authentication">Authentication &amp; RBAC</a><a href="#apps-workspaces">Workspaces &amp; Apps</a><a href="#wire-schema">Canonical event schema</a><a href="#sdk-python">Python SDK guide</a><a href="#wire-curl">HTTP ingestion</a><a href="#multilang">Other languages</a>
@@ -134,7 +134,17 @@ docker compose up -d
 # Follow service startup logs
 docker compose logs -f</code></pre>
 </div>
-<p style="margin-bottom:4px;font-weight:650">Option B: Python 3.12+ Direct Execution (Local environment)</p>
+<p style="margin-bottom:4px;font-weight:650">Option B: Automatic 1-Command Startup Script</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code># macOS / Linux / WSL:
+./start.sh
+
+# Windows Command Prompt or PowerShell:
+start.bat
+# or in PowerShell: .\start.ps1</code></pre>
+</div>
+<p style="margin-bottom:4px;font-weight:650">Option C: Python 3.12+ Direct Execution (Local environment)</p>
 <div class="code-container">
 <button class="copy-btn">Copy</button>
 <pre><code># Install dependencies and start Uvicorn
@@ -287,6 +297,67 @@ done</code></pre>
 </div>
 </div>
 </div>
+
+<!-- Featured Demo App: InstaTern & Attack Simulation Walkthrough -->
+<div class="step-card" id="demo-instatern" style="border-left: 3px solid var(--accent); margin-top: 32px; background: var(--accent-soft);">
+<div class="step-header">
+<span class="step-badge" style="background: var(--accent); color: white;">★</span>
+<h3 style="color: var(--ink);">Featured Demo App: InstaTern & Adversary Attack Simulator</h3>
+</div>
+<p class="lead" style="font-size: 14.5px; margin-bottom: 14px;">We built and deployed a complete, production-grade social media microservice application called <strong>InstaTern</strong> specifically to demonstrate real-time telemetry ingestion, adversary attack simulation, and autonomous defense.</p>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0 20px;">
+  <a href="https://github.com/Imrankhadeer/InstaTern-TERNLINE-" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; font-weight: 650; color: var(--ink); text-decoration: none;">
+    <span>📦</span> GitHub: InstaTern-TERNLINE-
+  </a>
+  <a href="https://myapp-v1-p9qy.onrender.com/?chat=emily_style" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; background: var(--accent); border-radius: 6px; font-weight: 650; color: #fff; text-decoration: none;">
+    <span>🚀</span> Live Hosted App (Render)
+  </a>
+  <a href="/console" style="display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; font-weight: 650; color: var(--accent); text-decoration: none;">
+    <span>⚡</span> Open Ternline Control Room
+  </a>
+</div>
+
+<h4 style="margin: 18px 0 8px; color: var(--ink);">Step-by-Step: How to Simulate Attacks Against InstaTern</h4>
+<p style="font-size: 13.5px; margin-bottom: 10px;">The <code>attack-sim</code> adversary suite exercises 5 realistic cyber attack vectors against the hosted application and automatically streams security telemetry to the Ternline Engine:</p>
+
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code># 1. Open terminal and navigate to the simulator folder
+cd attack-sim
+
+# 2. Install lightweight dependencies
+pip install requests python-dotenv
+
+# 3. Run the automated 5-stage attack campaign against InstaTern
+# Option A: Target live cloud engine on Vercel
+python attack.py --target https://myapp-v1-p9qy.onrender.com --engine https://ternline.vercel.app
+
+# Option B: Target local development engine
+python attack.py --target https://myapp-v1-p9qy.onrender.com --engine http://localhost:8000
+
+# 4. (Optional) Run organic baseline user activity
+python user_sim.py --target https://myapp-v1-p9qy.onrender.com --engine http://localhost:8000</code></pre>
+</div>
+
+<div class="card-grid" style="margin-top: 18px;">
+<div class="feature-card">
+<h4><span>1.</span> Brute-Force Spray</h4>
+<p style="font-size: 12.5px;">Sprays credential attempts against @sarah_dev, instantly triggering Fast Track detection.</p>
+</div>
+<div class="feature-card">
+<h4><span>2.</span> Stealth Recon</h4>
+<p style="font-size: 12.5px;">Harvests tokens through rotating proxy IPs and crawls private creator profiles.</p>
+</div>
+<div class="feature-card">
+<h4><span>3.</span> Multi-Stage Killchain</h4>
+<p style="font-size: 12.5px;">Correlates cross-service exfiltration: api-service → worker-service → database-service.</p>
+</div>
+</div>
+
+<p style="font-size: 12.5px; color: var(--muted); margin-top: 14px;">Once complete, switch to your Ternline Console (<code>/console</code>). You will immediately see real-time findings, correlated cross-service traces under Entities & Correlation, and 1-click active containment.</p>
+</div>
+
 </section>
 <!-- 1. Architecture Overview -->
 <section id="overview">
@@ -939,10 +1010,10 @@ async function emitEvent(eventType: string, attributes: Record&lt;string, unknow
 <p>Generic rule field conditions evaluate against an explicit operator allowlist:</p>
 <p><code>equals</code>, <code>not_equals</code>, <code>in</code>, <code>not_in</code>, <code>starts_with</code>, <code>starts_with_any</code>, <code>ends_with</code>, <code>contains</code>, <code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>, <code>exists</code>, <code>is_true</code>, <code>is_false</code>.</p>
 <h3 id="rule-lifecycle">Rule Validation, Approval &amp; Promotion Lifecycle</h3>
-<p>Rules progress through mandatory state transitions:</p>
+<p>Rules progress through mandatory state transitions with automated schema normalization and deterministic validation:</p>
 <ol>
-<li><strong>Proposed (<code>status: proposed</code>):</strong> Created via <code>POST /api/v1/rules</code> or synthesized by Deep Track AI.</li>
-<li><strong>Replay Validation (<code>POST /api/v1/rules/{id}/validate</code>):</strong> Replays historical attack scenarios through <code>ReplayValidationEngine</code>. Calculates true positives, false positives, precision, recall, and F1 score. Rules failing the validation threshold cannot be approved.</li>
+<li><strong>Proposed (<code>status: proposed</code>):</strong> Created via <code>POST /api/v1/rules</code>, synthesized via <code>POST /api/v1/rules/generate-from-prompt</code>, or proposed by Deep Track AI. The backend automatically normalizes thresholds (scalar counts into <code>ThresholdSpec</code>), converts string sequence stages, maps fields in <code>group_by</code> (e.g. <code>attributes.client_ip</code> → <code>source_resource</code>), and enforces tenant isolation.</li>
+<li><strong>Replay Validation (<code>POST /api/v1/rules/{id}/validate</code>):</strong> Replays historical attack scenarios and benign baselines through <code>ReplayValidationEngine</code>. Evaluates true positives, false positives, precision, recall, and F1 score. Rules triggering any false positives (FP &gt; 0) fail validation and are blocked from activation.</li>
 <li><strong>Approval (<code>POST /api/v1/rules/{id}/approve</code>):</strong> A human operator reviews validation metrics and authorizes the rule with an audit rationale.</li>
 <li><strong>Activation (<code>POST /api/v1/rules/{id}/activate</code>):</strong> Instantiates the rule in <code>runtime_rule_registry</code> for real-time evaluation.</li>
 <li><strong>Disable / Rollback (<code>POST /api/v1/rules/{id}/disable</code>, <code>POST /api/v1/rules/{id}/rollback</code>):</strong> Deactivates rule or reverts to previous approved version with audit recording.</li>
@@ -1554,6 +1625,8 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
 <tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/ops/events/recent</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Retrieve recent telemetry event buffer from memory/cache.</td></tr>
 <tr><td><span class="method method-get">GET</span></td><td><code>/metrics</code></td><td>Public / Scrape</td><td>None</td><td>Prometheus 0.0.4 metrics scrape endpoint.</td></tr>
 <tr><td><span class="method method-get">GET</span></td><td><code>/health</code></td><td>Public</td><td>None</td><td>Root health probe.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/swagger</code>, <code>/api/docs</code></td><td>Public</td><td>None</td><td>Interactive OpenAPI Swagger UI.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/docs</code>, <code>/documentation</code></td><td>Public</td><td>None</td><td>Ternline developer documentation and guides.</td></tr>
 </tbody>
 </table>
 </section>
