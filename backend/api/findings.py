@@ -103,6 +103,33 @@ async def get_finding(
     ).first()
 
     if not finding:
+        # Check if finding_id corresponds to a Deep Track query report
+        inv = db.query(InvestigationReport).filter(
+            (InvestigationReport.finding_id == finding_id) | (InvestigationReport.investigation_id == finding_id),
+            InvestigationReport.tenant_id == auth.tenant_id
+        ).first()
+        if inv:
+            if payload.status == "false_positive":
+                inv.verdict = "likely_benign"
+            elif payload.status == "resolved":
+                inv.verdict = "resolved"
+            else:
+                inv.verdict = "confirmed_threat"
+            db.commit()
+            return SecurityFindingSchema(
+                finding_id=finding_id,
+                tenant_id=auth.tenant_id,
+                detector_id="deep_investigator.query",
+                detector_version="1.0",
+                title=f"Query Investigation: {inv.summary[:40]}",
+                severity="medium",
+                confidence="high",
+                description=inv.summary,
+                evidence={"feedback_history": [{"status": payload.status, "reason": payload.reason}]},
+                created_at=inv.created_at,
+                status=payload.status,
+                investigation_ids=[inv.investigation_id],
+            )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Security finding '{finding_id}' not found.",
@@ -145,6 +172,33 @@ async def submit_finding_feedback(
     ).first()
 
     if not finding:
+        # Check if finding_id corresponds to a Deep Track query report
+        inv = db.query(InvestigationReport).filter(
+            (InvestigationReport.finding_id == finding_id) | (InvestigationReport.investigation_id == finding_id),
+            InvestigationReport.tenant_id == auth.tenant_id
+        ).first()
+        if inv:
+            if payload.status == "false_positive":
+                inv.verdict = "likely_benign"
+            elif payload.status == "resolved":
+                inv.verdict = "resolved"
+            else:
+                inv.verdict = "confirmed_threat"
+            db.commit()
+            return SecurityFindingSchema(
+                finding_id=finding_id,
+                tenant_id=auth.tenant_id,
+                detector_id="deep_investigator.query",
+                detector_version="1.0",
+                title=f"Query Investigation: {inv.summary[:40]}",
+                severity="medium",
+                confidence="high",
+                description=inv.summary,
+                evidence={"feedback_history": [{"status": payload.status, "reason": payload.reason}]},
+                created_at=inv.created_at,
+                status=payload.status,
+                investigation_ids=[inv.investigation_id],
+            )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Security finding '{finding_id}' not found.",

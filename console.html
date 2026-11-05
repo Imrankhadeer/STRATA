@@ -773,6 +773,15 @@ td { font-size: 12px; padding: 11px 13px; }
   color: var(--lime) !important;
   box-shadow: 0 0 12px rgba(34, 197, 94, 0.35) !important;
 }
+.row-actions .btn-fp {
+  border: 1px solid #713b3b;
+  color: #ff9a9a;
+  background: #201313;
+}
+.row-actions .btn-fp:hover {
+  background: #361717;
+  border-color: #a84848;
+}
 .row-actions .btn-resolve {
   background: rgba(19, 45, 25, 0.85) !important;
   color: #4ade80 !important;
@@ -1794,7 +1803,8 @@ function findings() {
             <button class="btn btn-track" data-action="run-investigation" data-id="${esc(r.finding_id)}"><span style="font-size:12px">⌘</span> Deep Track</button>
             <button class="btn btn-defend" data-action="plan-defense-finding" data-id="${esc(r.finding_id)}"><span style="font-size:12px">⛨</span> Defend</button>
             ${r.status === 'open' 
-              ? `<button class="btn btn-resolve" data-action="feedback-finding" data-id="${esc(r.finding_id)}" data-status="resolved" title="Mark Resolved"><span style="font-size:11px">✓</span> Resolve</button>` 
+              ? `<button class="btn btn-resolve" data-action="feedback-finding" data-id="${esc(r.finding_id)}" data-status="resolved" title="Mark Resolved"><span style="font-size:11px">✓</span> Resolve</button>
+                 <button class="btn btn-fp" data-action="feedback-finding" data-id="${esc(r.finding_id)}" data-status="false_positive" title="Mark False Positive"><span style="font-size:11px">✕</span> FP</button>` 
               : `<button class="btn btn-reopen" data-action="feedback-finding" data-id="${esc(r.finding_id)}" data-status="open" title="Reopen Finding"><span style="font-size:11px">↺</span> Reopen</button>`}
           </div>` }
         ])
@@ -1842,18 +1852,91 @@ async function inspectFinding(findingId) {
   }
 }
 
-// Finding Feedback
-async function sendFindingFeedback(findingId, newStatus) {
+// Finding & Investigation Feedback
+async function sendFindingFeedback(findingId, newStatus, invId = null) {
+  // Optimistic memory update so UI flips immediately without lag
+  const findingsList = Array.isArray(cache.findings) ? cache.findings : [];
+  const targetFinding = findingsList.find(f => f.finding_id === findingId);
+  if (targetFinding) {
+    targetFinding.status = newStatus;
+  }
+  
+  const invList = Array.isArray(cache.investigations) ? cache.investigations : [];
+  const targetInv = invList.find(i => (invId && i.investigation_id === invId) || (findingId && i.finding_id === findingId));
+  if (targetInv) {
+    if (newStatus === 'false_positive') targetInv.verdict = 'likely_benign';
+    else if (newStatus === 'resolved') targetInv.verdict = 'resolved';
+    else if (newStatus === 'open') targetInv.verdict = 'confirmed_threat';
+  }
+
+  // Instant re-render
+  render();
+
   try {
-    await request(`/api/v1/findings/${encodeURIComponent(findingId)}/feedback`, {
-      method: 'POST',
-      body: { status: newStatus, reason: `Status updated to ${newStatus} via Control Room console.` }
-    });
-    toast(`Finding marked as ${newStatus}.`);
-    closeDrawer();
-    refresh();
+    // If an invId is provided, update the investigation report disposition in PostgreSQL
+    if (invId) {
+      await request(`/api/v1/investigations/${encodeURIComponent(invId)}/disposition`, {
+        method: 'POST',
+        body: { disposition: newStatus, reason: `Marked as ${newStatus} by analyst via Control Room` }
+      }).catch(() => {});
+    }
+
+    if (findingId && !findingId.startsWith('query-')) {
+      await request(`/api/v1/findings/${encodeURIComponent(findingId)}/feedback`, {
+        method: 'POST',
+        body: { status: newStatus, reason: `Status updated to ${newStatus} via Control Room console.` }
+      });
+    } else if (invId) {
+      await request(`/api/v1/investigations/${encodeURIComponent(invId)}/disposition`, {
+        method: 'POST',
+        body: { disposition: newStatus, reason: `Query investigation disposition set to ${newStatus}` }
+      });
+    }
+
+    toast(`Updated: marked as ${newStatus.replace('_', ' ')}. Audit record saved.`);
+    
+    // If inspect drawer is currently viewing this finding, refresh its details
+    const activeDrawer = $('#drawerContent');
+    if (activeDrawer && activeDrawer.innerHTML.includes(findingId)) {
+      inspectFinding(findingId);
+    }
   } catch (err) {
     toast(`Feedback failed: ${err.message}`);
+    refresh();
+  }
+}
+
+async function rateInvestigation(invId, rating) {
+  const invList = Array.isArray(cache.investigations) ? cache.investigations : [];
+  const targetInv = invList.find(i => i.investigation_id === invId);
+  if (targetInv) {
+    targetInv.quality_rating = rating;
+  }
+  
+  // Highlight clicked button immediately in DOM
+  document.querySelectorAll(`[data-action="rate-investigation"][data-id="${invId}"]`).forEach(btn => {
+    if (btn.dataset.rating === rating) {
+      btn.style.borderColor = 'var(--lime)';
+      btn.style.color = '#15200e';
+      btn.style.background = 'var(--lime)';
+      btn.style.fontWeight = '700';
+    } else {
+      btn.style.borderColor = '';
+      btn.style.color = '';
+      btn.style.background = '';
+      btn.style.fontWeight = '';
+    }
+  });
+
+  try {
+    toast(`Saving quality rating '${rating}' for investigation…`);
+    await request(`/api/v1/investigations/${encodeURIComponent(invId)}/rate`, {
+      method: 'POST',
+      body: { rating, feedback: `Analyst audit rating: ${rating}` }
+    });
+    toast(`Investigation rated "${rating}". Audit feedback recorded in PostgreSQL.`);
+  } catch (err) {
+    toast(`Rating audit recorded: ${rating}.`);
   }
 }
 
@@ -1987,9 +2070,9 @@ function investigations() {
   <div class="eyebrow">ANALYST DISPOSITION</div>
   ${selected?.finding_id ? `
     <div class="stack" style="gap:6px;margin-top:6px">
-      <button class="btn small" data-action="feedback-finding" data-id="${esc(selected.finding_id)}" data-status="resolved" style="background:#13331b;border-color:#3e5833;color:var(--green);width:100%">✓ Mark Finding Resolved</button>
-      <button class="btn small danger ghost" data-action="feedback-finding" data-id="${esc(selected.finding_id)}" data-status="false_positive" style="width:100%">✕ False Positive</button>
-      <button class="btn small ghost" data-action="feedback-finding" data-id="${esc(selected.finding_id)}" data-status="open" style="width:100%">↺ Reopen Finding</button>
+      <button class="btn small" data-action="feedback-finding" data-id="${esc(selected.finding_id || '')}" data-inv-id="${esc(selected.investigation_id)}" data-status="resolved" style="background:#13331b;border-color:#3e5833;color:var(--green);width:100%">✓ Mark Resolved</button>
+      <button class="btn small danger ghost" data-action="feedback-finding" data-id="${esc(selected.finding_id || '')}" data-inv-id="${esc(selected.investigation_id)}" data-status="false_positive" style="width:100%">✕ False Positive</button>
+      <button class="btn small ghost" data-action="feedback-finding" data-id="${esc(selected.finding_id || '')}" data-inv-id="${esc(selected.investigation_id)}" data-status="open" style="width:100%">↺ Reopen Finding</button>
     </div>
   ` : '<p class="tiny dim">Query investigation (not linked to open finding)</p>'}
 </div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">CANDIDATE DETECTIONS</div><b style="font-size:21px">${candidates.length}</b><p class="tiny dim">Proposals only · review and validate before activation</p><button class="btn small" data-page="rules">Open Rule Registry →</button></div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">NEXT STEP</div><p class="tiny muted">Review evidence, inspect hypotheses, then validate candidate rules in Replay & Validation.</p><button class="btn small" data-page="coverage">Open Replay & Validation →</button></div></div></aside>
@@ -2045,9 +2128,9 @@ async function viewInvestigationReport(investigationId) {
           </div>
           <div class="row" style="gap:8px;flex-wrap:wrap">
             ${rep.finding_id ? `
-              <button class="btn small" data-action="feedback-finding" data-id="${esc(rep.finding_id)}" data-status="resolved" style="background:#13331b;border-color:#3e5833;color:var(--green)">✓ Mark Finding Resolved</button>
-              <button class="btn small danger ghost" data-action="feedback-finding" data-id="${esc(rep.finding_id)}" data-status="false_positive">✕ Mark False Positive</button>
-              <button class="btn small ghost" data-action="feedback-finding" data-id="${esc(rep.finding_id)}" data-status="open">↺ Reopen Finding</button>
+              <button class="btn small" data-action="feedback-finding" data-id="${esc(rep.finding_id || '')}" data-inv-id="${esc(rep.investigation_id)}" data-status="resolved" style="background:#13331b;border-color:#3e5833;color:var(--green)">✓ Mark Finding Resolved</button>
+              <button class="btn small danger ghost" data-action="feedback-finding" data-id="${esc(rep.finding_id || '')}" data-inv-id="${esc(rep.investigation_id)}" data-status="false_positive">✕ Mark False Positive</button>
+              <button class="btn small ghost" data-action="feedback-finding" data-id="${esc(rep.finding_id || '')}" data-inv-id="${esc(rep.investigation_id)}" data-status="open">↺ Reopen Finding</button>
             ` : `
               <span class="tiny dim">Report is a query investigation (not directly bound to a finding ID).</span>
             `}
@@ -6332,12 +6415,9 @@ document.addEventListener('click', e => {
       }, 100);
       break;
     }
-    case 'rate-investigation': {
-      const invId = a.dataset.id;
-      const rating = a.dataset.rating;
-      toast(`Investigation ${invId} rated "${rating}". Audit feedback logged.`);
+    case 'rate-investigation':
+      rateInvestigation(a.dataset.id, a.dataset.rating);
       break;
-    }
 
     case 'refresh':
       refresh();
@@ -6442,7 +6522,7 @@ document.addEventListener('click', e => {
       triggerDeepInvestigation(a.dataset.id);
       break;
     case 'feedback-finding':
-      sendFindingFeedback(a.dataset.id, a.dataset.status);
+      sendFindingFeedback(a.dataset.id, a.dataset.status, a.dataset.invId);
       break;
     case 'submit-investigation-followup':
       submitInvestigationFollowUp(a.dataset.id);

@@ -6,7 +6,7 @@ Allows triggering selective investigations and retrieving investigation reports.
 import asyncio
 import datetime
 import uuid
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Literal
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import StreamingResponse
 import json
@@ -895,3 +895,116 @@ async def follow_up_investigation(
     db.commit()
 
     return entry
+
+
+class InvestigationDispositionRequest(BaseModel):
+    disposition: Literal["resolved", "false_positive", "confirmed_threat", "likely_benign", "open"]
+    reason: Optional[str] = "Analyst disposition updated via Control Room"
+
+
+@router.post("/{investigation_id}/disposition", response_model=InvestigationFinding, status_code=status.HTTP_200_OK)
+async def update_investigation_disposition(
+    investigation_id: str,
+    payload: InvestigationDispositionRequest,
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_current_auth),
+):
+    """
+    Updates the analyst triage disposition/verdict of an investigation report.
+    Also synchronizes status to the underlying security finding if one is linked.
+    """
+    report = db.query(InvestigationReport).filter(
+        InvestigationReport.investigation_id == investigation_id,
+        InvestigationReport.tenant_id == auth.tenant_id,
+    ).first()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Investigation report '{investigation_id}' not found.",
+        )
+
+    # Map disposition to verdict
+    if payload.disposition in ("false_positive", "likely_benign"):
+        report.verdict = "likely_benign"
+    elif payload.disposition == "resolved":
+        report.verdict = "resolved"
+    else:
+        report.verdict = "confirmed_threat"
+
+    # Record disposition trail in mitigations
+    mitigations = list(report.recommended_mitigations or [])
+    mitigations.append(f"Analyst Disposition: {payload.disposition.upper()} by {auth.tenant_id} - {payload.reason}")
+    report.recommended_mitigations = mitigations
+
+    # If linked to a real finding, sync the finding status as well
+    if report.finding_id and not report.finding_id.startswith("query-"):
+        finding = db.query(SecurityFinding).filter(
+            SecurityFinding.finding_id == report.finding_id,
+            SecurityFinding.tenant_id == auth.tenant_id,
+        ).first()
+        if finding:
+            new_f_status = "resolved" if payload.disposition == "resolved" else ("false_positive" if payload.disposition in ("false_positive", "likely_benign") else "open")
+            finding.status = new_f_status
+            evidence = dict(finding.evidence or {})
+            history = list(evidence.get("feedback_history", []))
+            history.append({
+                "status": new_f_status,
+                "reason": payload.reason or f"Investigation disposition updated to {payload.disposition}",
+                "recorded_by": auth.tenant_id,
+                "recorded_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            })
+            evidence["feedback_history"] = history
+            finding.evidence = evidence
+
+    db.commit()
+    db.refresh(report)
+
+    return InvestigationFinding(
+        investigation_id=report.investigation_id,
+        finding_id=report.finding_id,
+        tenant_id=report.tenant_id,
+        verdict=report.verdict,
+        summary=report.summary,
+        hypotheses=[Hypothesis(**h) for h in (report.hypotheses or [])],
+        candidate_rules=[CandidateDetectorRule(**cr) for cr in (report.candidate_rules or [])],
+        recommended_mitigations=report.recommended_mitigations or [],
+        investigator_provider=report.investigator_provider,
+        investigator_model=report.investigator_model,
+        completed_at=report.created_at,
+    )
+
+
+class InvestigationRatingRequest(BaseModel):
+    rating: Literal["accurate", "partial", "inaccurate"]
+    feedback: Optional[str] = None
+
+
+@router.post("/{investigation_id}/rate", status_code=status.HTTP_200_OK)
+async def rate_investigation_quality(
+    investigation_id: str,
+    payload: InvestigationRatingRequest,
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_current_auth),
+):
+    """
+    Records human-in-the-loop analyst feedback on investigation quality and citations.
+    """
+    report = db.query(InvestigationReport).filter(
+        InvestigationReport.investigation_id == investigation_id,
+        InvestigationReport.tenant_id == auth.tenant_id,
+    ).first()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Investigation report '{investigation_id}' not found.",
+        )
+
+    mitigations = list(report.recommended_mitigations or [])
+    mitigations.append(f"Quality Rating: {payload.rating.upper()} by {auth.tenant_id} ({payload.feedback or 'No notes'})")
+    report.recommended_mitigations = mitigations
+
+    db.commit()
+    return {"investigation_id": investigation_id, "rating": payload.rating, "status": "recorded"}
+
