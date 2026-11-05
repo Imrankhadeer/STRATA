@@ -2,13 +2,25 @@
 
 > **Integrate once. Detect continuously. Investigate intelligently. Improve detection safely.**
 
-Ternline is an active security intelligence platform designed for microservices and distributed applications. It bridges sub-millisecond, deterministic threat detection (**Fast Track**) with evidence-grounded AI investigations (**Deep Track**) and self-hardening declarative rule authoring.
+Ternline is an active security intelligence platform designed for microservices and modern distributed applications. It bridges sub-millisecond, deterministic threat detection (**Fast Track**) with evidence-grounded AI investigations (**Deep Track**), automated mitigation (**Active Defense**), and self-hardening declarative detection rule authoring.
+
+---
+
+## 🌐 Live Platform & Evaluation Links
+
+* **Live Web Console:** [https://ternline.vercel.app/console](https://ternline.vercel.app/console)
+* **Landing Page:** [https://ternline.vercel.app](https://ternline.vercel.app)
+* **Comprehensive Documentation & Guide:** [https://ternline.vercel.app/docs](https://ternline.vercel.app/docs) (or [`/documentation`](https://ternline.vercel.app/documentation))
+* **Local Web Console:** [http://localhost:8000/console](http://localhost:8000/console)
+* **Interactive OpenAPI / Swagger UI:** [http://localhost:8000/swagger](http://localhost:8000/swagger) (or [`/api/docs`](http://localhost:8000/api/docs))
+* **Prometheus Observability Metrics:** [http://localhost:8000/metrics](http://localhost:8000/metrics)
+* **Service Health Probe:** [http://localhost:8000/health](http://localhost:8000/health)
 
 ---
 
 ## ⚡ 30-Second Quickstart (Judges & Evaluators)
 
-Anyone can clone the repository and boot the entire platform with a single command:
+Anyone can clone the repository and boot the complete stack with a single command:
 
 ### 1. Clone & Start
 ```bash
@@ -31,31 +43,32 @@ docker compose up --build
 
 ### 2. Live 3-Click Evaluation Walkthrough
 
-1. **Open the Web Console:** Navigate to **`http://localhost:8000/console`**.
-2. **Instant 1-Click Login:** Click the prominent **`⚡ 1-Click Demo Login (Hackathon Judges)`** button at the top of the login gate. You are instantly authenticated into the pre-seeded `tenant-alpha` workspace with full administrator permissions.
+1. **Open the Web Console:** Navigate to **`http://localhost:8000/console`** (or [live on Vercel](https://ternline.vercel.app/console)).
+2. **Instant 1-Click Login:** Click the prominent **`⚡ 1-Click Demo Login (Hackathon Judges)`** button on the login gate. You are instantly authenticated into the pre-seeded `tenant-alpha` workspace with full administrator permissions.
 3. **Trigger Live Multi-Service Attack Simulation:** On the **Overview** dashboard, click **`⚡ Trigger Attack Simulation`**.
-   - Emits a real-time 3-stage exfiltration attack sequence: `api-service` → `worker-service` → `database-service`.
+   - Emits a real-time 3-stage cross-service attack sequence: `api-service` → `worker-service` → `database-service`.
    - The deterministic Fast Track engine processes the stream in pure Python/Redis Lua in **`<1ms`**.
-   - Immediate security findings appear on your dashboard!
+   - Immediate security findings and correlated incidents appear on your dashboard!
 4. **Inspect & Run AI Deep Track:**
    - Click **Findings & Incidents** on the sidebar.
-   - Click **`⌘ Deep Track`** on the detected exfiltration finding.
-   - Watch the live SSE investigation stream reconstruct the cross-service sequence, formulate hypotheses, and propose candidate declarative detection rules.
-5. **Promote Rule to Fast Track:** Click **`Promote Candidate Rule`** to push the AI-discovered rule directly into the active Fast Track engine.
+   - Click **`⌘ Deep Track`** on the detected finding.
+   - Watch the live SSE investigation stream reconstruct the cross-service sequence, formulate grounded hypotheses, audit evidence citations against database records, and propose candidate declarative detection rules.
+5. **Validate & Promote Rule to Fast Track:**
+   - Open **Rule Registry** → click **Validate (replay)** to replay the candidate rule against historical attack and benign benchmarks.
+   - Click **Approve** and **Activate** to hot-deploy the rule directly into the active Fast Track engine without downtime or server restart.
 
 ---
 
 ## 🔑 Pre-Seeded Evaluation Credentials
 
-When running in development mode (`ENVIRONMENT=development`), the application seeds ready-to-use tenant credentials:
+When running in development mode (`ENVIRONMENT=development`), the application automatically seeds baseline credentials:
 
 * **Tenant ID:** `tenant-alpha`
 * **Application ID:** `payments-api`
 * **API Key:** `ce_live_test_api_key_secret_12345`
-* **HTTP Header:** `Authorization: Bearer ce_live_test_api_key_secret_12345`
-* **Console URL:** [http://localhost:8000/console](http://localhost:8000/console)
-* **Swagger API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-* **Prometheus Metrics:** [http://localhost:8000/metrics](http://localhost:8000/metrics)
+* **HTTP Authorization Header:** `Authorization: Bearer ce_live_test_api_key_secret_12345`
+
+Use these credentials for all API requests to `/v1/events`, `/api/v1/findings`, `/api/v1/investigations`, `/api/v1/rules`, and `/api/v1/keys`.
 
 ---
 
@@ -97,12 +110,38 @@ When running in development mode (`ENVIRONMENT=development`), the application se
 │  3. Approved: Explicit audit authorization with rationale              │
 │  4. Active: Dynamically loaded by RuntimeRuleRegistry across workers   │
 │  5. Disabled / Rolled Back: Immediate runtime cache invalidation       │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                 ACTIVE DEFENSE & MITIGATION WORKFLOW                   │
+│  • Configurable Posture: OBSERVE, ASSISTED (Human-in-the-loop),        │
+│    or ENFORCED (Autonomous Low-Risk Execution)                         │
+│  • Containment Actions: Rate limiting, IP blocking, token revocation   │
+│  • Full Auditability: Reversible actions with rollback capabilities    │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Configuration & Startup Options
+## 2. Key Platform Capabilities
+
+| Capability | Module | Description |
+| :--- | :--- | :--- |
+| **Deterministic Fast Track** | `backend/detection/` | Sub-millisecond stream evaluation in Python & atomic Redis Lua. Emits structured `SecurityFinding` objects with zero LLM overhead. |
+| **AI Deep Track Investigations** | `backend/investigation/` | On-demand forensic investigations powered by Meta AI Spark. Reconstructs execution flows, formulates hypotheses, and cites audited evidence. |
+| **Evidence Citation Audit** | `backend/investigation/scope.py` | Programmatically audits all event citations in AI reports against PostgreSQL records. Hallucinated or cross-tenant citations are rejected. |
+| **Declarative Detection Rules** | `backend/schemas/rules.py` | Versioned declarative rules supporting thresholds and sequence stages. Validated via historical replay with zero code deployment. |
+| **Active Defense & Mitigation** | `backend/defense/` | Multi-mode response orchestrator (Observe, Assisted, Enforced) supporting rate limiting, IP blocking, and session revocation. |
+| **Threat Hunting & MITRE ATT&CK** | `backend/api/events.py` | Multi-dimensional telemetry search, service topology reconstruction, and interactive MITRE ATT&CK matrix coverage mapping. |
+| **IOC Registry** | `backend/api/threat_intelligence.py` | Curated Indicators of Compromise (IPs, domains, hashes) with CIDR range matching and automatic hit detection. |
+| **AI Security Copilot** | `backend/api/assistant.py` | Interactive LLM assistant grounded in tenant security posture, active findings, and event streams. |
+| **Multi-Tenant Workspaces & RBAC** | `backend/api/auth.py` | Tenant-isolated workspaces with role-based access control (`owner`, `admin`, `analyst`, `observer`) and hashed API keys. |
+| **Attack Simulation Engine** | `backend/api/simulation.py` | Realistic cross-service multi-stage attack generator (`api` → `worker` → `db`) for instant evaluation and drills. |
+
+---
+
+## 3. Configuration & Startup Options
 
 Ternline supports two operational modes:
 
@@ -113,8 +152,8 @@ start.bat           # Windows
 docker compose up --build
 ```
 
-### Mode B: Local Development & Inspection (Without Docker)
-Requires a running **PostgreSQL 16** database:
+### Mode B: Local Development (Without Docker)
+Requires a running **PostgreSQL 16** database and optionally Redis 7+:
 ```bash
 # 1. Clone & create virtual environment
 python -m venv .venv
@@ -135,7 +174,7 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 
 ---
 
-## 3. Environment Variables Reference
+## 4. Environment Variables Reference
 
 | Variable | Default | Purpose |
 | :--- | :--- | :--- |
@@ -151,12 +190,12 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 
 ---
 
-## 4. Test Suite Execution
+## 5. Test Suite Execution
 
-All 360 backend tests execute deterministically without external network services:
+All tests execute deterministically without external network services:
 
 ```bash
-# Run full automated regression suite
+# Run the complete test suite
 python -m pytest tests/ -k "not test_live_meta_model_inference" -q
 
 # Run Distributed Correlation & Redis State Store tests
@@ -165,15 +204,19 @@ python -m pytest tests/test_checkpoint5_completion.py tests/test_distributed_cor
 # Run Declarative Rule Lifecycle & Parity tests
 python -m pytest tests/test_checkpoint4_runtime.py tests/test_checkpoint3_parity.py -v
 
-# Run API Key Lifecycle & Metrics tests
-python -m pytest tests/test_api_keys.py tests/test_metrics.py -v
+# Run API Key Lifecycle, Metrics & Console E2E tests
+python -m pytest tests/test_api_keys.py tests/test_metrics.py tests/test_milestone5_e2e_console_workflow.py -v
+
+# Run Documentation Integrity tests
+python -m pytest tests/test_documentation_integrity.py -v
 ```
 
 ---
 
-## 5. Security & Isolation Invariants
+## 6. Security & Isolation Invariants
 
 1. **Deterministic Fast Track:** Fast Track evaluation executes in pure Python and atomic Redis Lua scripts in $<1\text{ms}$. Zero LLM calls are made on the ingestion path.
 2. **Tenant Boundary Enforcement:** All Redis state keys, PostgreSQL queries, and API authorizations are strictly tenant-scoped (`ternline:{tenant_id}:...`). Cross-tenant leakage is architecturally prohibited.
 3. **No Silent Fallback:** In production or staging, if Redis is unavailable, the engine fails fast at startup and reports `correlation_status="degraded"` at runtime while preserving PostgreSQL event durability.
 4. **Grounded Deep Track:** Every event cited in AI investigation reports is programmatically audited against stored database records by `InvestigationQualityAuditor`. Hallucinated citations are rejected with `HTTP 422`.
+5. **Declarative Rule Safety:** Candidate detection rules contain NO executable code, eval statements, or arbitrary SQL. All rules compile strictly to validated declarative schemas evaluated in-memory.
