@@ -79,6 +79,8 @@ def db_engine():
 
     # Seed baseline tenant and active API key in session-scoped PostgreSQL database
     with Session(bind=engine) as session:
+        session.execute(text("TRUNCATE TABLE security_findings, events, investigation_reports, declarative_rules, incidents CASCADE;"))
+        session.commit()
         if not session.query(Tenant).filter(Tenant.id == TEST_TENANT_ID).first():
             session.add(Tenant(id=TEST_TENANT_ID, name="Alpha Corp", is_active=True))
         if not session.query(Tenant).filter(Tenant.id == "tenant-beta").first():

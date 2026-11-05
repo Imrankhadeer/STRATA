@@ -44,14 +44,41 @@ class ReplayValidationEngine:
         Supports both generic declarative rules and legacy detector configurations.
         No dynamic code evaluation or script execution occurs.
         """
-        is_generic = (
-            rule.target_detector in ("detector.deep_track.promoted", "generic.declarative")
-            or (rule.parameters and (
-                rule.parameters.get("rule_type") in ("threshold", "sequence")
-                or rule.parameters.get("type") in ("threshold", "sequence")
-            ))
+        is_legacy_exfil = (
+            rule.target_detector in ("detector.cross_service.exfiltration", "detector.exfiltration.cross_service")
+            and not (rule.parameters and rule.parameters.get("rule_type") in ("threshold", "sequence"))
         )
-        if is_generic:
+        is_legacy_auth = (
+            rule.target_detector in ("detector.auth.failed_threshold", "detector.auth.brute_force", "detector.auth.password_spray")
+            and not (rule.parameters and rule.parameters.get("rule_type") in ("threshold", "sequence"))
+        )
+
+        if is_legacy_exfil:
+            p = dict(rule.parameters or {})
+            if "bulk_row_threshold" not in p:
+                p["bulk_row_threshold"] = int(p.get("row_threshold") or p.get("max_rows") or 1000)
+            if "time_window_seconds" not in p:
+                p["time_window_seconds"] = float(p.get("window_seconds") or 300.0)
+            params = CrossServiceRuleParameters(**p)
+            return CrossServiceExfiltrationDetector(
+                time_window_seconds=params.time_window_seconds,
+                bulk_row_threshold=params.bulk_row_threshold,
+                sensitive_tables=frozenset(params.sensitive_tables),
+                internal_prefixes=tuple(params.internal_prefixes),
+            )
+        elif is_legacy_auth:
+            p = dict(rule.parameters or {})
+            if "failure_threshold" not in p:
+                f_val = p.get("failure_count") or p.get("count") or (p.get("threshold", {}).get("value") if isinstance(p.get("threshold"), dict) else p.get("threshold")) or 5
+                p["failure_threshold"] = int(f_val)
+            if "window_seconds" not in p:
+                p["window_seconds"] = float(p.get("time_window_seconds") or 60.0)
+            params = BruteForceRuleParameters(**p)
+            return BruteForceLoginDetector(
+                failure_threshold=params.failure_threshold,
+            )
+        else:
+            # Generic declarative evaluation (supports detector.deep_track.promoted, generic.declarative, and all custom/promoted rules)
             from backend.schemas.declarative_spec import GenericDeclarativeRuleDefinition
             from backend.detection.generic_evaluator import GenericDeclarativeEvaluator
             from backend.detection.state_store import InMemoryCorrelationStateStore, RedisCorrelationStateStore
@@ -67,7 +94,6 @@ class ReplayValidationEngine:
                         settings.REDIS_URL,
                         socket_timeout=settings.REDIS_STATE_TIMEOUT_MS / 1000.0,
                     )
-                    # Explicitly ping Redis to verify live connectivity
                     candidate_store.client.ping()
                     state_store = candidate_store
                 except Exception as e:
@@ -95,6 +121,60 @@ class ReplayValidationEngine:
                 norm_params["rule_type"] = norm_params.get("type") or (
                     "sequence" if "sequence_stages" in norm_params or "stages" in norm_params else "threshold"
                 )
+
+            # Ensure threshold specification has required 'value' field if rule_type is threshold
+            if norm_params["rule_type"] == "threshold":
+                raw_thresh = norm_params.get("threshold")
+                val = None
+                metric = "count"
+                op = "gte"
+                if isinstance(raw_thresh, dict):
+                    val = (
+                        raw_thresh.get("value")
+                        if raw_thresh.get("value") is not None
+                        else (
+                            raw_thresh.get("count")
+                            or raw_thresh.get("failure_count")
+                            or raw_thresh.get("failure_threshold")
+                            or raw_thresh.get("row_threshold")
+                            or raw_thresh.get("max_rows")
+                        )
+                    )
+                    metric = raw_thresh.get("metric", "count")
+                    op = raw_thresh.get("operator", "gte")
+                elif isinstance(raw_thresh, (int, float)):
+                    val = raw_thresh
+                else:
+                    val = (
+                        norm_params.get("failure_threshold")
+                        or norm_params.get("failure_count")
+                        or norm_params.get("count")
+                        or norm_params.get("row_threshold")
+                        or norm_params.get("max_rows")
+                        or norm_params.get("value")
+                    )
+
+                try:
+                    val = float(val) if val is not None else 5.0
+                except (ValueError, TypeError):
+                    val = 5.0
+
+                norm_params["threshold"] = {
+                    "metric": metric if metric in ("count", "attribute_sum", "attribute_max") else "count",
+                    "operator": op if op in ("gte", "gt", "lte", "lt", "equals") else "gte",
+                    "value": val,
+                }
+
+                if not norm_params.get("conditions"):
+                    if "event_type" in norm_params:
+                        norm_params["conditions"] = [{"field": "event_type", "operator": "contains", "value": str(norm_params["event_type"])}]
+                    elif rule.target_detector in ("detector.auth.failed_threshold", "detector.auth.brute_force"):
+                        norm_params["conditions"] = [{"field": "event_type", "operator": "contains", "value": "login_failed"}]
+                    elif rule.target_detector in ("detector.cross_service.exfiltration", "detector.exfiltration.cross_service"):
+                        norm_params["conditions"] = [{"field": "event_type", "operator": "contains", "value": "exfiltration"}]
+                    else:
+                        norm_params["conditions"] = [{"field": "event_type", "operator": "exists"}]
+
             if "sequence_stages" not in norm_params and "stages" in norm_params:
                 norm_params["sequence_stages"] = norm_params["stages"]
 
@@ -119,6 +199,15 @@ class ReplayValidationEngine:
                         normalized_stages.append(st)
                 norm_params["sequence_stages"] = normalized_stages
 
+            # Infer evaluation_target_detector if not explicitly provided
+            if "evaluation_target_detector" not in norm_params:
+                t_lower = (rule.target_detector or "").lower()
+                title_lower = (rule.title or "").lower()
+                if "auth" in t_lower or "brute" in t_lower or "login" in title_lower:
+                    norm_params["evaluation_target_detector"] = "detector.auth.failed_threshold"
+                elif "exfil" in t_lower or "cross" in t_lower or "database" in title_lower or "export" in title_lower:
+                    norm_params["evaluation_target_detector"] = "detector.cross_service.exfiltration"
+
             spec = GenericDeclarativeRuleDefinition(**norm_params)
             return GenericDeclarativeEvaluator(
                 rule_id=rule.rule_id,
@@ -128,21 +217,6 @@ class ReplayValidationEngine:
                 spec=spec,
                 state_store=state_store,
             )
-        elif rule.target_detector == "detector.cross_service.exfiltration":
-            params = CrossServiceRuleParameters(**rule.parameters)
-            return CrossServiceExfiltrationDetector(
-                time_window_seconds=params.time_window_seconds,
-                bulk_row_threshold=params.bulk_row_threshold,
-                sensitive_tables=frozenset(params.sensitive_tables),
-                internal_prefixes=tuple(params.internal_prefixes),
-            )
-        elif rule.target_detector == "detector.auth.failed_threshold":
-            params = BruteForceRuleParameters(**rule.parameters)
-            return BruteForceLoginDetector(
-                failure_threshold=params.failure_threshold,
-            )
-        else:
-            raise ValueError(f"Unknown target detector: '{rule.target_detector}'")
 
     def validate_rule(self, rule: DeclarativeRule) -> ReplayValidationMetrics:
         """

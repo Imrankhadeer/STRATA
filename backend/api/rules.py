@@ -676,12 +676,14 @@ async def generate_rule_from_prompt(
             "group_by": ["tenant_id", "source_resource"],
             "window_seconds": 60.0,
             "severity": payload.severity,
+            "evaluation_target_detector": "detector.auth.failed_threshold",
             "conditions": [
-                {"field": "event_type", "operator": "equals", "value": "auth.login.failed"}
+                {"field": "event_type", "operator": "contains", "value": "login_failed"}
             ],
             "threshold": {
-                "count": 5,
-                "time_window_seconds": 60.0
+                "metric": "count",
+                "operator": "gte",
+                "value": 5
             }
         }
         explanation = "Detects bursts of 5 or more failed login events from the same source IP/entity within a 60-second sliding window."
@@ -701,12 +703,14 @@ async def generate_rule_from_prompt(
             "group_by": ["tenant_id", "service_id"],
             "window_seconds": 300.0,
             "severity": payload.severity,
+            "evaluation_target_detector": "detector.cross_service.exfiltration",
             "conditions": [
                 {"field": "event_type", "operator": "contains", "value": "exfiltration"}
             ],
             "threshold": {
-                "count": 3,
-                "time_window_seconds": 300.0
+                "metric": "count",
+                "operator": "gte",
+                "value": 3
             }
         }
         explanation = "Detects repeated high-volume data exfiltration signals from microservices within a 5-minute sliding window."
@@ -731,8 +735,9 @@ async def generate_rule_from_prompt(
                 {"field": "service_id", "operator": "equals", "value": svc}
             ],
             "threshold": {
-                "count": 10,
-                "time_window_seconds": 120.0
+                "metric": "count",
+                "operator": "gte",
+                "value": 10
             }
         }
         explanation = f"Monitors {svc} for abnormal burst rates exceeding 10 events within a 2-minute window."
