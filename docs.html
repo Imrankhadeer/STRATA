@@ -64,19 +64,19 @@ html[data-theme="dark"] .method,html[data-theme="dark"] .method-get,html[data-th
 <div class="sidebar-search"><span aria-hidden="true">⌕</span><input aria-label="Search documentation" autocomplete="off" id="docSearch" placeholder="Search docs" type="search"/></div>
 <nav aria-label="Documentation navigation" class="sidebar-nav" id="generatedNav">
 <div class="nav-group"><div class="nav-label">START HERE</div>
-<a href="#connect-application">Connect an application</a><a href="#tutorial">Hands-on tutorial</a><a href="#overview">How Ternline works</a><a href="#quickstart">Quickstart</a>
+<a href="#tutorial">Hands-on tutorial</a><a href="#overview">System architecture</a><a href="#connect-application">Connect an application</a><a href="#quickstart">Quickstart</a>
 </div>
 <div class="nav-group"><div class="nav-label">INTEGRATE</div>
-<a href="#authentication">Authentication</a><a href="#wire-schema">Event schema</a><a href="#sdk-python">Python SDK</a><a href="#wire-curl">HTTP ingestion</a><a href="#multilang">Other languages</a>
+<a href="#authentication">Authentication &amp; RBAC</a><a href="#apps-workspaces">Workspaces &amp; Apps</a><a href="#wire-schema">Canonical event schema</a><a href="#sdk-python">Python SDK guide</a><a href="#wire-curl">HTTP ingestion</a><a href="#multilang">Other languages</a>
 </div>
 <div class="nav-group"><div class="nav-label">DETECT &amp; INVESTIGATE</div>
-<a href="#rules">Detection rules</a><a href="#deep-track">Deep Track</a><a href="#rules">Rule validation</a><a href="#threat-intel">Threat intelligence</a>
+<a href="#rules">Fast Track detection</a><a href="#rule-lifecycle">Rule validation &amp; lifecycle</a><a href="#threat-hunting">Threat hunting &amp; entities</a><a href="#deep-track">Deep Track investigation</a><a href="#assistant">AI Security Assistant</a><a href="#threat-intel">Threat intelligence &amp; IOCs</a>
 </div>
 <div class="nav-group"><div class="nav-label">PROTECT &amp; OPERATE</div>
-<a href="#active-defense">Protection</a><a href="#launch-config">Launch &amp; configuration</a><a href="#deployment">Deployment</a><a href="#observability">Operations</a><a href="#troubleshooting">Troubleshooting</a>
+<a href="#active-defense">Active Defense &amp; quarantine</a><a href="#simulation">Attack simulation</a><a href="#launch-config">Launch &amp; configuration</a><a href="#deployment">Deployment &amp; cloud</a><a href="#observability">Operations &amp; metrics</a><a href="#troubleshooting">Troubleshooting</a>
 </div>
 <div class="nav-group"><div class="nav-label">REFERENCE</div>
-<a href="#mcp">MCP integration</a><a href="#api-reference">REST API</a><a href="#limitations">Security &amp; limitations</a>
+<a href="#mcp">MCP server for AI IDEs</a><a href="#api-reference">Comprehensive REST API</a><a href="#tenant-isolation">Security &amp; limitations</a>
 </div>
 </nav>
 </aside><div class="content"><article class="doc-content">
@@ -838,7 +838,7 @@ func emitTelemetry(ev Event) error {
 <h3>Node.js / TypeScript Pattern</h3>
 <pre><code>import axios from 'axios';
 
-async function emitEvent(eventType: string, attributes: Record<string, unknown="">, traceId?: string) {
+async function emitEvent(eventType: string, attributes: Record&lt;string, unknown&gt;, traceId?: string) {
   await axios.post('http://localhost:8000/v1/events', {
     app_id: 'payments-api',
     service_id: 'auth-service',
@@ -853,8 +853,51 @@ async function emitEvent(eventType: string, attributes: Record<string, unknown="
     },
     timeout: 3000
   });
-}</string,></code></pre>
+}</code></pre>
 </section>
+<!-- Workspaces and Applications -->
+<section id="apps-workspaces">
+<h2>Multi-Tenant Workspaces &amp; Application Scopes</h2>
+<p class="lead">Ternline models microservice security using two operational boundaries: <strong>Workspaces</strong> (tenant-isolated organizations) and <strong>Applications</strong> (registered client services).</p>
+
+<h3 id="workspaces-overview">Multi-Tenant Workspace Partitioning</h3>
+<p>Each workspace is an autonomous security domain. All telemetry events, findings, investigations, declarative rules, threat indicators, and containment policies are strictly partitioned by <code>tenant_id</code>. Database queries enforce tenant filtering unconditionally, and Redis distributed correlation keys are namespaced per workspace.</p>
+<ul>
+  <li><strong>Tenant Switching:</strong> Operators managing multiple workspaces can switch contexts seamlessly via the Control Room dropdown, passing the <code>X-Tenant-ID</code> HTTP header, or calling <code>POST /api/v1/workspaces/switch</code> to issue an updated session JWT.</li>
+  <li><strong>Role-Based Access Control (RBAC):</strong> Workspace members can be assigned granular roles: <code>admin</code> (full workspace management, user provisioning, key rotation), <code>analyst</code> (rule authoring, incident triage, investigation triggers), and <code>viewer</code> (read-only telemetry and findings access).</li>
+</ul>
+
+<h3 id="apps-overview">Application Registry &amp; Scoped Ingest Keys</h3>
+<p>Within a workspace, multiple microservices and background workers register their identity (e.g. <code>payments-api</code>, <code>auth-gateway</code>, <code>order-processor</code>, <code>database-worker</code>). Every ingestion API key is scoped strictly to an <code>app_id</code>, ensuring compromised microservice credentials cannot emit telemetry under another service's identity.</p>
+
+<h4>Registering an Application via API</h4>
+<pre><code>curl -X POST http://localhost:8000/api/v1/apps \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "billing-service",
+    "name": "Billing &amp; Subscription Engine",
+    "environment": "production",
+    "description": "Handles recurring customer invoices and Stripe webhooks"
+  }'</code></pre>
+
+<p>The response automatically provisions a dedicated, cryptographically hashed API key with prefix <code>ce_live_</code> for that service:</p>
+<pre><code>{
+  "status": "created",
+  "app": {
+    "app_id": "billing-service",
+    "name": "Billing &amp; Subscription Engine",
+    "environment": "production",
+    "status": "active"
+  },
+  "api_key": {
+    "id": "key-98f21a",
+    "key": "ce_live_YOUR_APP_KEY_TOKEN",
+    "scopes": ["events:ingest", "diagnostics:read"]
+  }
+}</code></pre>
+</section>
+
 <!-- 6. Fast Track Detection -->
 <section id="rules">
 <h2>Fast Track Detection &amp; Declarative Rules</h2>
@@ -906,6 +949,48 @@ async function emitEvent(eventType: string, attributes: Record<string, unknown="
 <li><strong>Redis Unavailable (Degraded Mode):</strong> When Redis is unreachable and <code>REDIS_REQUIRED=false</code>, the engine falls back to process-local in-memory sliding windows. Telemetry ingestion continues, returning <code>correlation_status: "degraded"</code>. In production multi-worker clusters, <code>REDIS_REQUIRED=true</code> must be set to ensure cross-worker correlation.</li>
 </ul>
 </section>
+<!-- Threat Hunting and Entity Correlation -->
+<section id="threat-hunting">
+<h2>Threat Hunting &amp; Entity Correlation Explorer</h2>
+<p class="lead">Investigate distributed attack surfaces across microservices using graph-based entity correlation, multi-parameter telemetry queries, and statistical anomaly detection.</p>
+
+<h3 id="entity-correlation">Unified Entity Correlation Graph</h3>
+<p>Ternline automatically extracts, normalizes, and indexes critical entities from every incoming telemetry event. Incident responders can query <code>GET /api/v1/events/entities</code> to pivot across four key dimensions:</p>
+<div class="card-grid">
+  <div class="feature-card">
+    <h4><span>🌐</span> Network Entities (IP / CIDR)</h4>
+    <p>Track source IP addresses, external reverse proxies, egress destinations, and geographic origin across all reporting microservices.</p>
+  </div>
+  <div class="feature-card">
+    <h4><span>👤</span> Identity Entities (User / Token)</h4>
+    <p>Correlate user IDs, service account tokens, API keys, and session identities involved in credential misuse or permission elevation.</p>
+  </div>
+  <div class="feature-card">
+    <h4><span>⚙️</span> Service Entities (App / Host)</h4>
+    <p>Visualize the exact microservice hop where suspicious patterns first emerged and which downstream services were subsequently probed.</p>
+  </div>
+  <div class="feature-card">
+    <h4><span>🔗</span> Trace Entities (W3C / Request ID)</h4>
+    <p>Trace the entire lifecycle of a malicious HTTP request across gateway, worker, cache, and database layers using distributed trace IDs.</p>
+  </div>
+</div>
+
+<h3 id="threat-hunting-queries">Multi-Parameter Threat Hunting Engine</h3>
+<p>Perform guided, historical queries across millions of normalized security events via <code>GET /api/v1/events/hunt</code>:</p>
+<pre><code>curl -G http://localhost:8000/api/v1/events/hunt \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  --data-urlencode "query=event_type:db.* AND severity:high" \
+  --data-urlencode "service_id=database-worker" \
+  --data-urlencode "time_window=24h" \
+  --data-urlencode "limit=50"</code></pre>
+
+<h3 id="event-trends">Statistical Volume Trends &amp; Anomaly Deltas</h3>
+<p>Querying <code>GET /api/v1/events/trends</code> calculates comparative telemetry volume, error spikes, service traffic distribution, and anomalous deviation over configurable historical baselines (1h, 24h, 7d).</p>
+
+<h3 id="fast-track-recheck">Fast Track Historical Recheck</h3>
+<p>When a new detection rule is proposed or modified, operators can immediately recheck historical events against the updated rule logic using <code>POST /api/v1/events/{event_id}/recheck</code> without having to wait for live traffic.</p>
+</section>
+
 <!-- 7. Deep Track AI Investigator -->
 <section id="deep-track">
 <h2>Deep Track AI Investigation</h2>
@@ -941,6 +1026,44 @@ data: {"investigation_id": "inv-9921", "verdict": "malicious", "summary": "Coord
 </div>
 <p>Queries submitted to <code>/api/v1/investigations/query</code> pass through an automated scope gatekeeper (<code>backend/investigation/scope.py</code>). Non-security, entertainment, or trivia queries return <code>verdict: "inconclusive"</code> without invoking model providers.</p>
 </section>
+<!-- AI Security Assistant Copilot -->
+<section id="assistant">
+<h2>AI Security Assistant Copilot</h2>
+<p class="lead">A context-aware SOC co-pilot embedded directly in the Control Room to answer security queries, analyze anomalies, explain detections, and synthesize declarative rules from plain English.</p>
+
+<h3 id="assistant-grounding">Live Telemetry Grounding &amp; Zero Hallucination</h3>
+<p>Unlike generic AI chat interfaces, the Ternline Assistant is grounded dynamically in your active workspace data at query time:</p>
+<ul>
+  <li><strong>Active Findings &amp; Incidents:</strong> Inspects open findings, severity levels, affected entities, and attack stages.</li>
+  <li><strong>Recent Telemetry Stream:</strong> Reviews the latest canonical telemetry events and service distribution.</li>
+  <li><strong>Active Defense Posture:</strong> Checks current protection mode (OBSERVE, ASSISTED, ENFORCED) and active quarantines.</li>
+  <li><strong>Rule Registry:</strong> Accesses the current active declarative rules and their threshold parameters.</li>
+</ul>
+
+<h3 id="assistant-chat-api">Interactive Copilot API (<code>POST /api/v1/assistant/chat</code>)</h3>
+<pre><code>curl -X POST http://localhost:8000/api/v1/assistant/chat \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What are the top security findings detected in the last 24 hours, and which IP addresses should be quarantined?",
+    "context_mode": "grounded_soc"
+  }'</code></pre>
+
+<h3 id="assistant-timeout-guard">18-Second Upstream Guard &amp; Resilient Fallback</h3>
+<p>To guarantee operational uptime and prevent <code>504 Gateway Timeout</code> errors when deployed behind reverse proxies (Vercel, Cloudflare, AWS ALB), the backend enforces a strict <strong>18-second upstream timeout</strong> on LLM provider requests. If an external model provider experiences latency spikes, the engine gracefully falls back to deterministic local database telemetry analysis.</p>
+
+<h3 id="assistant-rule-synthesis">Natural Language Rule Synthesis</h3>
+<p>Operators can synthesize candidate declarative detection rules using natural language via <code>POST /api/v1/rules/generate-from-prompt</code>:</p>
+<pre><code>curl -X POST http://localhost:8000/api/v1/rules/generate-from-prompt \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Alert when any user fails authentication more than 10 times in 2 minutes from the same IP address",
+    "target_severity": "high"
+  }'</code></pre>
+<p>The Assistant translates the prompt into a syntactically valid, schema-compliant <code>DeclarativeRule</code> specification with deterministic window parameters and comparison operators, immediately ready for automated replay validation.</p>
+</section>
+
 <!-- 8. Active Defense -->
 <section id="active-defense">
 <h2>Active Defense &amp; Containment (Phase 1)</h2>
@@ -1121,6 +1244,37 @@ X-Ternline-Signature: t=1730578490,v1=9f82c04...
 <li><strong>Prompts:</strong> <code>integrate_telemetry</code> (step-by-step instrumentation guide), <code>investigate_incident</code> (triage and root-cause analysis), <code>create_declarative_rule</code> (authoring and parameterizing rules).</li>
 </ul>
 </section>
+<!-- Built-in Attack Simulation -->
+<section id="simulation">
+<h2>Built-in Attack Simulation &amp; Security Chaos Engineering</h2>
+<p class="lead">Validate your end-to-end detection, alerting, and automated containment pipelines in seconds without needing external penetration testing tools.</p>
+
+<h3 id="simulation-overview">Deterministic Multi-Stage Scenarios</h3>
+<p>Ternline includes built-in attack scenarios designed to replicate modern microservice adversarial tactics:</p>
+<ul>
+  <li><strong><code>exfiltration</code> (Multi-Service Data Exfiltration):</strong> Emits a realistic 3-stage cross-service attack:
+    <ol>
+      <li><code>api-service</code> receives unauthorized perimeter probes against data export endpoints.</li>
+      <li><code>worker-service</code> executes asynchronous batch jobs to pull sensitive records.</li>
+      <li><code>database-service</code> reports bulk query execution on sensitive tables (<code>users</code>, <code>secrets</code>).</li>
+    </ol>
+  </li>
+  <li><strong><code>brute_force</code> (Credential Stuffing):</strong> Emits rapid authentication failure events across a sliding window from a single attacker IP.</li>
+  <li><strong><code>privilege_escalation</code> (Unauthorized Role Escalation):</strong> Simulates an unprivileged service account attempting admin role assignment.</li>
+</ul>
+
+<h3 id="running-simulation">Triggering an Attack Simulation via API</h3>
+<pre><code>curl -X POST http://localhost:8000/api/v1/simulation/run \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "scenario": "exfiltration",
+    "target_service": "payments-api"
+  }'</code></pre>
+
+<p>The simulation runs deterministically, emits canonical telemetry events, triggers Fast Track detectors, correlates an Incident case, and plans candidate containment actions for immediate review in the Control Room.</p>
+</section>
+
 <!-- 11. Deployment & Operations -->
 <section id="deployment">
 <h2>Cloud Deployment &amp; Operations</h2>
@@ -1232,17 +1386,49 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
 <section id="api-reference">
 <h2>Comprehensive REST API Catalog</h2>
 <p>All endpoints enforce tenant isolation. Endpoints require either a Service API Key (<code>ce_live_...</code>), an Operator JWT (<code>Bearer eyJ...</code>), or are Public.</p>
-<h3>Authentication &amp; User Management</h3>
+
+<h3>Authentication &amp; Account Management</h3>
 <table>
 <thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/register</code></td><td>Public</td><td>None</td><td>Register new operator account &amp; workspace; sends verification email.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/register</code></td><td>Public</td><td>None</td><td>Register new operator account and workspace; sends verification email via AWS SES.</td></tr>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/verify-email</code></td><td>Public</td><td>None</td><td>Validate 256-bit token, verify email, and issue operator session JWT.</td></tr>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/resend-verification</code></td><td>Public</td><td>None</td><td>Resend verification email (anti-enumeration protected).</td></tr>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/login</code></td><td>Public (Rate-limited)</td><td>None</td><td>Authenticate verified operator; returns session JWT.</td></tr>
 <tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/auth/me</code></td><td>Operator JWT</td><td>Authenticated</td><td>Retrieve current authenticated operator profile and permissions.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/change-password</code></td><td>Operator JWT</td><td>Authenticated</td><td>Update account password with current credentials check.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/forgot-password</code></td><td>Public (Rate-limited)</td><td>None</td><td>Request password reset link delivered via secure email.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/reset-password</code></td><td>Public</td><td>None</td><td>Reset password using single-use 256-bit cryptographic token.</td></tr>
 </tbody>
 </table>
+
+<h3>Multi-Tenant Workspaces &amp; RBAC</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/workspaces</code></td><td>Operator JWT</td><td>Authenticated</td><td>List all workspaces accessible to the authenticated operator.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/workspaces</code></td><td>Operator JWT</td><td><code>workspaces:write</code></td><td>Create and bootstrap a new isolated tenant workspace.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/workspaces/switch</code></td><td>Operator JWT</td><td>Authenticated</td><td>Switch active workspace context; issues updated session JWT.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/workspaces/current</code></td><td>Operator JWT</td><td>Authenticated</td><td>Retrieve details and posture of currently active workspace.</td></tr>
+<tr><td><span class="method method-put">PUT</span></td><td><code>/api/v1/workspaces/current</code></td><td>Operator JWT</td><td><code>workspaces:write</code></td><td>Update workspace name and organization metadata.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/workspaces/members</code></td><td>Operator JWT</td><td><code>workspaces:read</code></td><td>List members and their assigned RBAC roles in current workspace.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/workspaces/members</code></td><td>Operator JWT</td><td><code>workspaces:write</code></td><td>Invite a new member with role (admin, analyst, viewer).</td></tr>
+<tr><td><span class="method method-patch">PATCH</span></td><td><code>/api/v1/workspaces/members/{user_id}</code></td><td>Operator JWT</td><td><code>workspaces:write</code></td><td>Update a workspace member's role or access status.</td></tr>
+<tr><td><span class="method method-del">DELETE</span></td><td><code>/api/v1/workspaces/members/{user_id}</code></td><td>Operator JWT</td><td><code>workspaces:write</code></td><td>Remove a member's access from current workspace.</td></tr>
+</tbody>
+</table>
+
+<h3>Applications Registry &amp; Microservices</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/apps</code></td><td>Operator JWT</td><td><code>apps:read</code></td><td>List all registered applications and microservices in workspace.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/apps</code></td><td>Operator JWT</td><td><code>apps:write</code></td><td>Register application and auto-provision scoped ingestion API key.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/apps/{app_id}</code></td><td>Operator JWT</td><td><code>apps:read</code></td><td>Retrieve application metadata, active keys, and telemetry metrics.</td></tr>
+<tr><td><span class="method method-del">DELETE</span></td><td><code>/api/v1/apps/{app_id}</code></td><td>Operator JWT</td><td><code>apps:write</code></td><td>Deactivate application and revoke associated ingestion credentials.</td></tr>
+</tbody>
+</table>
+
 <h3>Telemetry Ingestion &amp; Event Explorer</h3>
 <table>
 <thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
@@ -1250,11 +1436,23 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
 <tr><td><span class="method method-post">POST</span></td><td><code>/v1/events</code></td><td>Service Key</td><td><code>events:ingest</code></td><td>Ingest single canonical telemetry event.</td></tr>
 <tr><td><span class="method method-post">POST</span></td><td><code>/v1/events/batch</code></td><td>Service Key</td><td><code>events:ingest</code></td><td>Ingest batch of up to 100 canonical telemetry events.</td></tr>
 <tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>List and filter ingested events for authenticated tenant.</td></tr>
-<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/search</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Time-bounded historical query with severity &amp; period comparison.</td></tr>
-<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/{event_id}</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Retrieve detailed canonical event by ID.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/search</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Time-bounded historical query with severity and period comparison.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/{event_id}</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Retrieve detailed canonical event record by ID.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/trends</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Statistical volume trends, error spikes, and baseline anomaly deltas.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/events/{event_id}/recheck</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Re-evaluate active Fast Track detection rules against historical event.</td></tr>
 </tbody>
 </table>
-<h3>Security Findings</h3>
+
+<h3>Threat Hunting &amp; Entity Correlation</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/entities</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Traverse entity correlation graph across IP, User, Service, and Trace.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/hunt</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Multi-parameter guided search across distributed microservice logs.</td></tr>
+</tbody>
+</table>
+
+<h3>Security Findings &amp; Triage</h3>
 <table>
 <thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
 <tbody>
@@ -1263,7 +1461,8 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/findings/{finding_id}/feedback</code></td><td>Operator JWT</td><td><code>findings:read</code></td><td>Submit human analyst triage (resolve, false_positive) with reason.</td></tr>
 </tbody>
 </table>
-<h3>Deep Track Investigations</h3>
+
+<h3>Deep Track AI &amp; Security Assistant Copilot</h3>
 <table>
 <thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
 <tbody>
@@ -1271,8 +1470,11 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/investigations/query/stream</code></td><td>Operator JWT</td><td><code>investigations:write</code></td><td>Stream AI investigation progression via Server-Sent Events (SSE).</td></tr>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/investigations/{finding_id}</code></td><td>Operator JWT</td><td><code>investigations:write</code></td><td>Trigger Deep Track investigation for a specific security finding.</td></tr>
 <tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/investigations/{investigation_id}</code></td><td>Operator JWT</td><td><code>investigations:read</code></td><td>Retrieve full investigation report, audited citations, and candidate rules.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/assistant/chat</code></td><td>Operator JWT</td><td><code>assistant:chat</code></td><td>AI Copilot chat grounded in live findings, telemetry, and defense status.</td></tr>
+<tr><td><span class="method method-del">DELETE</span></td><td><code>/api/v1/assistant/chat/{conversation_id}</code></td><td>Operator JWT</td><td><code>assistant:chat</code></td><td>Clear conversation memory and reset assistant context.</td></tr>
 </tbody>
 </table>
+
 <h3>Declarative Rules Engine</h3>
 <table>
 <thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
@@ -1280,6 +1482,8 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Propose a new candidate declarative detection rule.</td></tr>
 <tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/rules</code></td><td>Operator JWT</td><td><code>rules:read</code></td><td>List declarative detection rules for authenticated tenant.</td></tr>
 <tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/rules/{rule_id}</code></td><td>Operator JWT</td><td><code>rules:read</code></td><td>Retrieve rule details, validation metrics, and approval audit.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/rules/{rule_id}/history</code></td><td>Operator JWT</td><td><code>rules:read</code></td><td>Inspect version history and state transition audit trail for rule.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/generate-from-prompt</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Synthesize declarative rule proposal from plain English description.</td></tr>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/{rule_id}/validate</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Execute automated replay validation against scenario tests.</td></tr>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/{rule_id}/approve</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Approve or reject validated rule proposal with rationale.</td></tr>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/{rule_id}/activate</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Activate approved rule into runtime detection registry.</td></tr>
@@ -1287,7 +1491,8 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/{rule_id}/rollback</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Rollback rule to a previous approved version.</td></tr>
 </tbody>
 </table>
-<h3>Active Defense &amp; Containment</h3>
+
+<h3>Active Defense &amp; Perimeter Protection</h3>
 <table>
 <thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
 <tbody>
@@ -1304,6 +1509,7 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
 <tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/defense/audit</code></td><td>Operator JWT</td><td><code>defense:actions:read</code></td><td>Query immutable audit log of all defense actions and approvals.</td></tr>
 </tbody>
 </table>
+
 <h3>Incident Management &amp; Threat Intelligence</h3>
 <table>
 <thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
@@ -1319,6 +1525,16 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
 <tr><td><span class="method method-del">DELETE</span></td><td><code>/api/v1/threat-intelligence/{ioc_id}</code></td><td>Operator JWT</td><td><code>threat_intel:write</code></td><td>Deactivate or remove threat intelligence indicator.</td></tr>
 </tbody>
 </table>
+
+<h3>Attack Simulation &amp; Chaos Engineering</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/simulation/run</code></td><td>Operator JWT</td><td><code>simulation:run</code></td><td>Trigger deterministic 3-stage cross-service attack simulation.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/simulation/scenarios</code></td><td>Operator JWT</td><td><code>simulation:read</code></td><td>List available attack simulation scenarios and target stages.</td></tr>
+</tbody>
+</table>
+
 <h3>API Keys, Operations &amp; Monitoring</h3>
 <table>
 <thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
@@ -1331,6 +1547,7 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
 <tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/ops/overview</code></td><td>Operator JWT</td><td><code>findings:read</code></td><td>Operational counts (events, findings, actions, incidents).</td></tr>
 <tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/ops/stream-ticket</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Issue single-use authentication ticket for SSE stream.</td></tr>
 <tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/ops/events/stream</code></td><td>Ticket</td><td>Stream Ticket</td><td>Live Server-Sent Events (SSE) telemetry bus stream.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/ops/events/recent</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Retrieve recent telemetry event buffer from memory/cache.</td></tr>
 <tr><td><span class="method method-get">GET</span></td><td><code>/metrics</code></td><td>Public / Scrape</td><td>None</td><td>Prometheus 0.0.4 metrics scrape endpoint.</td></tr>
 <tr><td><span class="method method-get">GET</span></td><td><code>/health</code></td><td>Public</td><td>None</td><td>Root health probe.</td></tr>
 </tbody>
