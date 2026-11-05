@@ -49,7 +49,7 @@ COPY --chown=appuser:appgroup scenarios ./scenarios
 COPY --chown=appuser:appgroup alembic.ini .
 COPY --chown=appuser:appgroup migrations ./migrations
 COPY --chown=appuser:appgroup docker-entrypoint.sh .
-COPY --chown=appuser:appgroup index.html console.html docs.html ./
+COPY --chown=appuser:appgroup index.html console.html docs.html documentation.html favicon.* apple-touch-icon.png ./
 
 RUN chmod +x /app/docker-entrypoint.sh
 

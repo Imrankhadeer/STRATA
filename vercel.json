@@ -42,11 +42,11 @@
     },
     {
       "source": "/documentation",
-      "destination": "/docs.html"
+      "destination": "/documentation.html"
     },
     {
       "source": "/documentation/:path*",
-      "destination": "/docs.html"
+      "destination": "/documentation.html"
     },
     {
       "source": "/guide",

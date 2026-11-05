@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111c15"/>
+      <stop offset="100%" stop-color="#080e0a"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#grad)" stroke="#2a3e30" stroke-width="1"/>
+  <rect x="1" y="1" width="30" height="30" rx="6" fill="none" stroke="#c5f36b" stroke-opacity="0.15" stroke-width="1"/>
+  <!-- Ternline Signal Radar Constellation Glyph -->
+  <g filter="url(#glow)">
+    <path d="M5 20 L15 7 L17.5 14 L26 10 L18.5 21 L16 14.5 L5 20 Z" 
+          fill="none" stroke="#c5f36b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M5 25 H14" stroke="#c5f36b" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

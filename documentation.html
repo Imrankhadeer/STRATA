@@ -1,0 +1,1576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f7f8f6" name="theme-color"/>
+<meta content="Ternline developer documentation: integrate telemetry, investigate findings, create detection rules, and operate application protection." name="description"/>
+<title>Documentation · Ternline</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="alternate icon" href="/favicon.ico"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+
+<style>
+    :root{--bg:#f7f8f6;--paper:#fff;--ink:#20251f;--muted:#687168;--soft:#8b938b;--line:#e5e9e3;--accent:#668d37;--accent-soft:#eff5e8;--code:#171c19;--sidebar:264px;--content:820px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:92px}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.72 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}a{color:#557d2d;text-decoration:none}a:hover{text-decoration:underline;color:#3d6120}button,input{font:inherit}.topbar{height:64px;position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}.topbar-inner{height:100%;max-width:1440px;padding:0 34px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{display:flex;align-items:center;gap:11px;color:var(--ink);font-weight:780;letter-spacing:.13em;font-size:12px}.brand-symbol{width:28px;height:28px;border:1px solid #b9c9aa;border-radius:7px;display:grid;place-items:center;color:var(--accent);font-size:16px}.toplinks{display:flex;align-items:center;gap:24px;font-size:13px;color:var(--muted)}.toplinks a{color:inherit}.toplinks .console{color:var(--ink);font-weight:650}.mobile-menu{display:none;border:1px solid var(--line);background:white;border-radius:7px;padding:6px 10px;color:var(--ink)}.layout{max-width:1440px;margin:auto;display:grid;grid-template-columns:var(--sidebar) minmax(0,1fr);min-height:calc(100vh - 64px)}.sidebar{position:sticky;top:64px;height:calc(100vh - 64px);overflow:auto;border-right:1px solid var(--line);padding:32px 22px 40px 30px;background:#fafbf9}.sidebar-heading{font-size:10px;font-weight:750;letter-spacing:.15em;color:#8b9389;margin:0 0 18px}.sidebar-search{height:38px;border:1px solid #e1e6de;background:#fff;border-radius:7px;display:flex;align-items:center;gap:8px;padding:0 10px;margin-bottom:28px;color:#929b90}.sidebar-search input{border:0;outline:0;width:100%;min-width:0;background:transparent;font-size:12px;color:var(--ink)}.nav-group{margin:0 0 25px}.nav-label{font-size:10px;letter-spacing:.12em;font-weight:750;color:#929a90;margin:0 0 9px 8px}.sidebar-nav a{display:block;padding:6px 9px;border-radius:5px;font-size:12.5px;line-height:1.45;color:#596259;margin:1px 0}.sidebar-nav a:hover{background:#f0f3ed;text-decoration:none;color:var(--ink)}.sidebar-nav a.active{background:var(--accent-soft);color:#456b25;font-weight:650}.content{min-width:0;padding:58px clamp(28px,6vw,92px) 100px}.doc-content{max-width:var(--content);margin:0 auto}.page-intro{padding:0 0 42px;border-bottom:1px solid var(--line);margin-bottom:42px}.eyebrow{font-size:10px;font-weight:750;letter-spacing:.16em;color:var(--accent);margin-bottom:14px}.page-intro h1{font-size:clamp(34px,4.4vw,48px);letter-spacing:-.055em;line-height:1.12;margin:0 0 16px;font-weight:720}.intro-copy{font-size:17px;line-height:1.65;color:#626c61;max-width:650px;margin:0}.intro-links{display:flex;gap:24px;margin-top:23px;font-size:13px;font-weight:650}.intro-links span{padding-left:4px}.doc-content section{padding:0 0 42px;margin:0 0 42px;border-bottom:1px solid var(--line);scroll-margin-top:90px}.doc-content h2{font-size:25px;line-height:1.3;letter-spacing:-.035em;margin:0 0 15px;padding:0;border:0;color:#242a23}.doc-content h3{font-size:18px;line-height:1.4;letter-spacing:-.02em;margin:30px 0 10px;color:#30382f}.doc-content h4{font-size:15px;margin:20px 0 8px;color:#30382f}.doc-content p{color:#596259;margin:10px 0 15px}.doc-content .lead{font-size:16px;color:#59645a;line-height:1.7}.doc-content ul,.doc-content ol{padding-left:22px;color:#596259}.doc-content li{padding:3px 0}.doc-content strong{color:#30382f}.doc-content hr{border:0;border-top:1px solid var(--line);margin:30px 0}.doc-content code{font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;background:#eef1ec;color:#3d493a;padding:2px 5px;border-radius:4px}.code-container{position:relative;margin:15px 0 20px}pre{background:var(--code);color:#e3e9e1;border:1px solid #2a322c;border-radius:8px;padding:19px 20px;overflow:auto;font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;margin:0;tab-size:2}pre code{background:none;color:inherit;padding:0;font:inherit}.copy-btn{position:absolute;top:9px;right:9px;border:1px solid #465047;background:#242c26;color:#d2dbd0;border-radius:5px;padding:4px 9px;font-size:10px;cursor:pointer}.copy-btn:hover{background:#344034}.copy-btn.copied{color:#c6e5a7;border-color:#789b53}.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:18px 0 24px}.feature-card,.step-card{background:#fff;border:1px solid var(--line);border-radius:7px;padding:17px 18px;box-shadow:0 1px 2px rgba(30,45,25,.025)}.feature-card h4{margin:0 0 8px;font-size:14px}.feature-card p{font-size:13px;margin:0;color:#697268}.step-card{margin:14px 0}.step-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.step-header h3{margin:0;font-size:16px}.tag{display:inline-block;font-size:10px;letter-spacing:.07em;font-weight:700;padding:3px 7px;border-radius:4px;background:#eef2eb;color:#65745e}.tag-green{background:#edf4e7;color:#567d30}.tag-blue,.tag-purple,.tag-amber{background:#f0f2ef;color:#657066}.method{font:700 10px ui-monospace,monospace;padding:3px 6px;border-radius:4px;background:#edf2e9;color:#557d2d}.method-get,.method-post,.method-put,.method-patch,.method-del{background:#edf2e9;color:#557d2d}table{width:100%;border-collapse:collapse;margin:18px 0 25px;font-size:12.5px;display:block;overflow-x:auto;white-space:normal}th{text-align:left;padding:11px 12px;background:#f0f3ee;border-bottom:1px solid #dfe5dc;color:#485346;font-size:10px;text-transform:uppercase;letter-spacing:.08em}td{padding:11px 12px;border-bottom:1px solid var(--line);color:#596259;vertical-align:top;min-width:100px}tr:hover td{background:#fbfcfa}.tiny{font-size:12px}.muted{color:var(--muted)}.page-footer{max-width:var(--content);margin:30px auto 0;color:#92998f;font-size:11px;border-top:1px solid var(--line);padding-top:20px}
+    @media(max-width:900px){.topbar-inner{padding:0 18px}.toplinks{gap:14px}.layout{grid-template-columns:1fr}.sidebar{position:fixed;z-index:25;top:64px;left:0;bottom:0;width:min(310px,86vw);height:auto;transform:translateX(-105%);transition:transform .2s ease;box-shadow:10px 0 30px rgba(20,30,20,.08)}.sidebar.open{transform:translateX(0)}.mobile-menu{display:inline-block}.content{padding:42px 24px 80px}}
+    @media(max-width:560px){.toplinks a:not(.console){display:none}.content{padding:34px 18px 65px}.page-intro h1{font-size:36px}.intro-links{flex-direction:column;gap:10px}.doc-content h2{font-size:22px}.doc-content h3{font-size:17px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+  
+/* Contrast corrections and accessible theme support */
+:root{color-scheme:light;--bg:#f7f8f6;--paper:#fff;--ink:#20251f;--muted:#596259;--soft:#747e73;--line:#dfe5dc;--accent:#557d2d;--accent-soft:#edf4e7;--code:#171c19;--sidebar-bg:#fafbf9;--heading:#242a23;--body-copy:#4e594e;--inline-code-bg:#e9eee6;--inline-code:#34432f}
+body{background:var(--bg);color:var(--ink)}
+.topbar{background:color-mix(in srgb,var(--paper) 94%,transparent);border-color:var(--line)}
+.sidebar{background:var(--sidebar-bg);border-color:var(--line)}
+.doc-content h2,.doc-content h3,.doc-content h4,.doc-content strong{color:var(--heading)}
+.doc-content p,.doc-content li,.doc-content td{color:var(--body-copy)}
+.intro-copy,.doc-content .lead{color:var(--body-copy)}
+.doc-content code{background:var(--inline-code-bg);color:var(--inline-code)}
+.doc-content pre code,pre code{background:transparent!important;color:inherit!important;padding:0!important}
+.doc-content pre{background:var(--code);color:#e3e9e1}
+.feature-card,.step-card{background:var(--paper);border-color:var(--line)}
+.sidebar-nav a{color:var(--body-copy)}
+.sidebar-nav a:hover{background:var(--accent-soft);color:var(--heading)}
+.sidebar-search{background:var(--paper);border-color:var(--line)}
+.sidebar-search input{color:var(--ink)}
+th{background:var(--accent-soft);color:var(--heading);border-color:var(--line)}
+td{border-color:var(--line)}
+.tag,.tag-blue,.tag-purple,.tag-amber{background:var(--accent-soft);color:var(--body-copy)}
+.theme-toggle{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:7px 11px;font-size:12px;cursor:pointer}
+.theme-toggle:hover{border-color:var(--accent);color:var(--accent)}
+/* Dark theme */
+html[data-theme="dark"]{color-scheme:dark;--bg:#101411;--paper:#171d18;--ink:#e7ece5;--muted:#b2bdb0;--soft:#929e90;--line:#303a30;--accent:#b7df82;--accent-soft:#263321;--sidebar-bg:#141a15;--heading:#edf2e9;--body-copy:#c1cbbd;--inline-code-bg:#273127;--inline-code:#d8e5d1;--code:#0b100d}
+html[data-theme="dark"] body{background:var(--bg);color:var(--ink)}
+html[data-theme="dark"] .topbar{background:rgba(20,26,21,.94);border-color:var(--line)}
+html[data-theme="dark"] .sidebar{background:var(--sidebar-bg);border-color:var(--line)}
+html[data-theme="dark"] .brand,html[data-theme="dark"] .toplinks .console{color:var(--ink)}
+html[data-theme="dark"] .toplinks,html[data-theme="dark"] .toplinks a{color:var(--muted)}
+html[data-theme="dark"] .doc-content h2,html[data-theme="dark"] .doc-content h3,html[data-theme="dark"] .doc-content h4,html[data-theme="dark"] .doc-content strong{color:var(--heading)}
+html[data-theme="dark"] .doc-content p,html[data-theme="dark"] .doc-content li,html[data-theme="dark"] .doc-content td,html[data-theme="dark"] .intro-copy,html[data-theme="dark"] .doc-content .lead{color:var(--body-copy)}
+html[data-theme="dark"] .doc-content code{background:var(--inline-code-bg);color:var(--inline-code)}
+html[data-theme="dark"] .doc-content pre,html[data-theme="dark"] pre{background:var(--code);color:#e3e9e1;border-color:#303a32}
+html[data-theme="dark"] .feature-card,html[data-theme="dark"] .step-card{background:var(--paper);border-color:var(--line)}
+html[data-theme="dark"] .sidebar-nav a{color:var(--body-copy)}
+html[data-theme="dark"] .sidebar-nav a:hover,html[data-theme="dark"] .sidebar-nav a.active{background:var(--accent-soft);color:var(--heading)}
+html[data-theme="dark"] .sidebar-search,html[data-theme="dark"] .theme-toggle,html[data-theme="dark"] .mobile-menu{background:var(--paper);border-color:var(--line);color:var(--ink)}
+html[data-theme="dark"] .sidebar-search input{color:var(--ink)}
+html[data-theme="dark"] th{background:var(--accent-soft);color:var(--heading);border-color:var(--line)}
+html[data-theme="dark"] td{border-color:var(--line)}
+html[data-theme="dark"] .tag,html[data-theme="dark"] .tag-blue,html[data-theme="dark"] .tag-purple,html[data-theme="dark"] .tag-amber{background:var(--accent-soft);color:var(--body-copy)}
+html[data-theme="dark"] a{color:#b7df82}
+html[data-theme="dark"] .method,html[data-theme="dark"] .method-get,html[data-theme="dark"] .method-post,html[data-theme="dark"] .method-put,html[data-theme="dark"] .method-patch,html[data-theme="dark"] .method-del{background:var(--accent-soft);color:#c5e69b}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><a aria-label="Ternline home" class="brand" href="/"><span class="brand-symbol">↗</span><span>TERNLINE</span></a><nav aria-label="Main navigation" class="toplinks"><a href="#connect-application">Get started</a><a href="#api-reference">API reference</a><a class="console" href="/console">Open Control Room ↗</a></nav><button aria-expanded="false" aria-label="Open documentation navigation" class="mobile-menu" id="mobileMenuBtn">☰</button><button aria-label="Switch to dark mode" class="theme-toggle" id="themeToggle" title="Switch theme" type="button">Dark mode</button></div></header>
+<main class="layout"><aside class="sidebar" id="sidebarNav">
+<div class="sidebar-heading">DOCUMENTATION</div>
+<div class="sidebar-search"><span aria-hidden="true">⌕</span><input aria-label="Search documentation" autocomplete="off" id="docSearch" placeholder="Search docs" type="search"/></div>
+<nav aria-label="Documentation navigation" class="sidebar-nav" id="generatedNav">
+<div class="nav-group"><div class="nav-label">START HERE</div>
+<a href="#tutorial">Hands-on tutorial</a><a href="#overview">System architecture</a><a href="#connect-application">Connect an application</a><a href="#quickstart">Quickstart</a>
+</div>
+<div class="nav-group"><div class="nav-label">INTEGRATE</div>
+<a href="#authentication">Authentication &amp; RBAC</a><a href="#apps-workspaces">Workspaces &amp; Apps</a><a href="#wire-schema">Canonical event schema</a><a href="#sdk-python">Python SDK guide</a><a href="#wire-curl">HTTP ingestion</a><a href="#multilang">Other languages</a>
+</div>
+<div class="nav-group"><div class="nav-label">DETECT &amp; INVESTIGATE</div>
+<a href="#rules">Fast Track detection</a><a href="#rule-lifecycle">Rule validation &amp; lifecycle</a><a href="#threat-hunting">Threat hunting &amp; entities</a><a href="#deep-track">Deep Track investigation</a><a href="#assistant">AI Security Assistant</a><a href="#threat-intel">Threat intelligence &amp; IOCs</a>
+</div>
+<div class="nav-group"><div class="nav-label">PROTECT &amp; OPERATE</div>
+<a href="#active-defense">Active Defense &amp; quarantine</a><a href="#simulation">Attack simulation</a><a href="#launch-config">Launch &amp; configuration</a><a href="#deployment">Deployment &amp; cloud</a><a href="#observability">Operations &amp; metrics</a><a href="#troubleshooting">Troubleshooting</a>
+</div>
+<div class="nav-group"><div class="nav-label">REFERENCE</div>
+<a href="#mcp">MCP server for AI IDEs</a><a href="#api-reference">Comprehensive REST API</a><a href="#tenant-isolation">Security &amp; limitations</a>
+</div>
+</nav>
+</aside><div class="content"><article class="doc-content">
+<header class="page-intro" id="top">
+<div class="eyebrow">TERNLINE / DOCUMENTATION</div>
+<h1>Build with Ternline.</h1>
+<p class="intro-copy">Instrument your application, understand security findings, and operate protection with clear evidence and control.</p>
+<div class="intro-links"><a href="#connect-application">Connect an application <span>→</span></a><a href="#api-reference">Explore the API <span>→</span></a></div>
+</header>
+<!-- 0. Hands-on Tutorial & Mental Model -->
+<section id="tutorial" style="border-bottom: 2px solid var(--line); padding-bottom: 36px; margin-bottom: 36px;">
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+<span class="tag tag-green">★ 3-MINUTE TUTORIAL</span>
+<span class="tag tag-blue">ZERO EXPERIENCE REQUIRED</span>
+</div>
+<h2 style="margin-top: 8px; border-top: none; padding-top: 0;">Hands-On Tutorial: Zero to First Threat in 3 Minutes</h2>
+<p class="lead" style="margin-bottom: 20px;">Never worked with a security event engine, SOC tool, or microservice correlation system before? Ternline is designed specifically for software engineers. Follow this 5-step walkthrough to start the local engine, send a sample telemetry event, trigger a real-time brute force alert, and actively quarantine the attacker.</p>
+<!-- Mental Model in 30 Seconds -->
+<div id="mental-model" style="margin: 28px 0 32px;">
+<h3 style="color: var(--ink); font-size: 18px; margin-bottom: 6px;">Ternline in 30 Seconds: The Plain-English Mental Model</h3>
+<p>Modern microservices produce thousands of distributed API logs. Ternline acts as an automated security co-pilot that watches these logs and acts instantly:</p>
+<div class="card-grid">
+<div class="feature-card" style="border-top: 3px solid var(--blue);">
+<h4><span>📡</span> 1. Microservices Emit</h4>
+<p>Whenever a user logs in, queries a database, or transfers funds, your microservice sends a lightweight JSON event to Ternline at <code>POST /v1/events</code>.</p>
+</div>
+<div class="feature-card" style="border-top: 3px solid var(--accent);">
+<h4><span>⚡</span> 2. Fast Track Correlates</h4>
+<p>Ternline correlates events across multiple services by trace ID or client IP in real time. If 5 failed logins occur in 60s, it instantly creates a <strong>Security Finding</strong> with proof.</p>
+</div>
+<div class="feature-card" style="border-top: 3px solid var(--red);">
+<h4><span>🛡️</span> 3. Active Defense Quarantines</h4>
+<p>You review findings in the Control Room. With 1 click (or via automated policy), Active Defense revokes compromised keys or quarantines the attacker IP at the perimeter.</p>
+</div>
+</div>
+</div>
+<!-- Step 1: Launch the Engine -->
+<div class="step-card" id="tutorial-step1" style="border-left: 3px solid var(--accent);">
+<div class="step-header">
+<span class="step-badge">1</span>
+<h3>Launch the Ternline Engine</h3>
+</div>
+<p>Choose either Docker Compose (includes PostgreSQL &amp; Redis) or direct Python execution:</p>
+<p style="margin-bottom:4px;font-weight:650">Option A: Docker Compose (Recommended — All dependencies bundled)</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code># From the Ternline repository root
+# Confirm the production/development compose file name in the repository
+docker compose up -d
+
+# Follow service startup logs
+docker compose logs -f</code></pre>
+</div>
+<p style="margin-bottom:4px;font-weight:650">Option B: Python 3.12+ Direct Execution (Local environment)</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code># Install dependencies and start Uvicorn
+pip install -r requirements.txt
+uvicorn backend.main:app --host 0.0.0.0 --port 8000</code></pre>
+</div>
+<p>Verify that the service is running and ready to accept traffic:</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>curl -s http://localhost:8000/api/v1/ops/health
+# Response: {"status":"healthy","version":"1.2.0","storage":"postgresql"}</code></pre>
+</div>
+</div>
+<!-- Step 2: Open the Control Room -->
+<div class="step-card" id="tutorial-step2" style="border-left: 3px solid var(--blue);">
+<div class="step-header">
+<span class="step-badge" style="background: rgba(120,183,255,.15); color: var(--blue);">2</span>
+<h3>Open the Live Control Room</h3>
+</div>
+<p>Open your browser and navigate to the SOC Console UI:</p>
+<p><a href="http://localhost:8000/console" style="display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; color: var(--accent); background: rgba(183,243,107,.1); padding: 8px 14px; border-radius: 6px; border: 1px solid rgba(183,243,107,.25); text-decoration: none;" target="_blank">http://localhost:8000/console ↗</a></p>
+<p>You are now inside the <strong>Ternline SOC Control Room</strong>. You will see real-time gauges: Ingestion Rate, Active Findings, High-Priority Incidents, and Active Defense status. It polls the engine automatically every 3 seconds.</p>
+</div>
+<!-- Step 3: Send Your First Telemetry Event -->
+<div class="step-card" id="tutorial-step3" style="border-left: 3px solid var(--accent);">
+<div class="step-header">
+<span class="step-badge">3</span>
+<h3>Send Your First Telemetry Event</h3>
+</div>
+<p>Simulate an authentication gateway service reporting a normal customer login attempt:</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>curl -X POST http://localhost:8000/v1/events \
+  -H "Authorization: Bearer YOUR_TERNLINE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "payments-api",
+    "service_id": "api-gateway",
+    "event_type": "auth.login_attempt",
+    "severity": "low",
+    "source_resource": "198.51.100.42",
+    "target_resource": "/api/v1/login",
+    "attributes": {
+      "username": "alice@example.com",
+      "auth_method": "password"
+    }
+  }'</code></pre>
+</div>
+<p>The engine responds with HTTP <code>200 OK</code>:</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>{
+  "status": "accepted",
+  "event_id": "evt_01HZX82P9J7V2R4M80KB5N29",
+  "finding_id": null
+}</code></pre>
+</div>
+<div class="callout info">
+<p><strong>Check your Control Room:</strong> Switch to the <strong>Event Explorer</strong> tab or watch the Ingestion Counter tick up by 1. The event was validated, correlated, and persisted to PostgreSQL in milliseconds.</p>
+</div>
+</div>
+<!-- Step 4: Trigger a Live Attack Alert -->
+<div class="step-card" id="tutorial-step4" style="border-left: 3px solid var(--amber);">
+<div class="step-header">
+<span class="step-badge" style="background: rgba(247,162,59,.15); color: var(--amber);">4</span>
+<h3>Trigger a Live Attack Alert</h3>
+</div>
+<p>Now simulate a real attacker attempting a brute-force credential spray from IP <code>198.51.100.42</code>. Ternline's built-in <code>detector.auth.brute_force</code> triggers when 5 failed logins occur within 60 seconds from the same source IP:</p>
+<p style="margin-bottom:4px;font-weight:650">Run 5 rapid failed logins (macOS / Linux / Bash):</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>for i in {1..5}; do
+  curl -s -X POST http://localhost:8000/v1/events \
+    -H "Authorization: Bearer YOUR_TERNLINE_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "{\"app_id\":\"payments-api\",\"service_id\":\"api-gateway\",\"event_type\":\"auth.login_failed\",\"severity\":\"medium\",\"source_resource\":\"198.51.100.42\",\"target_resource\":\"/api/v1/login\",\"attributes\":{\"attempt\":$i}}"
+done</code></pre>
+</div>
+<p style="margin-bottom:4px;font-weight:650">Windows PowerShell alternative:</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>1..5 | ForEach-Object {
+  Invoke-RestMethod -Uri "http://localhost:8000/v1/events" -Method Post -Headers @{"Authorization"="Bearer YOUR_TERNLINE_API_KEY"} -ContentType "application/json" -Body '{"app_id":"payments-api","service_id":"api-gateway","event_type":"auth.login_failed","severity":"medium","source_resource":"198.51.100.42","target_resource":"/api/v1/login"}'
+}</code></pre>
+</div>
+<p>On the 5th event, the engine recognizes the sliding window threshold violation and immediately generates a Security Finding:</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>{
+  "status": "accepted",
+  "event_id": "evt_01HZX82P9J7V2R4M80KB5N35",
+  "finding_id": "fnd_01HZX82PBW7E1D8M92AC1K44"
+}</code></pre>
+</div>
+<div class="callout warn">
+<p><strong>Instant Alert in Control Room:</strong> Switch to the <strong>Findings</strong> tab. A <span class="tag tag-amber">HIGH</span> severity alert appears: <strong>Brute Force Credential Spray Detected</strong>. Click on it to see the full list of correlated failed login events, timestamps, and target resources attached as evidence.</p>
+</div>
+</div>
+<!-- Step 5: Quarantine the Attacker with Active Defense -->
+<div class="step-card" id="tutorial-step5" style="border-left: 3px solid var(--red);">
+<div class="step-header">
+<span class="step-badge" style="background: rgba(255,123,114,.15); color: var(--red);">5</span>
+<h3>Quarantine the Attacker with Active Defense</h3>
+</div>
+<p>Contain the threat immediately so the attacker cannot continue probing your infrastructure:</p>
+<p style="margin-bottom:4px;font-weight:650">Option 1: Point-and-Click in the Control Room</p>
+<p>In the <strong>Findings</strong> tab, click the newly generated finding, then click <strong>"Propose IP Quarantine"</strong> or <strong>"Execute Containment"</strong>. Active Defense immediately registers the block.</p>
+<p style="margin-bottom:4px;font-weight:650">Option 2: Direct Active Defense API Call</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>curl -X POST http://localhost:8000/api/v1/defense/quarantine/ip \
+  -H "Authorization: Bearer YOUR_TERNLINE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ip": "198.51.100.42",
+    "reason": "Exceeded failed login threshold (Brute Force)",
+    "duration_seconds": 3600
+  }'</code></pre>
+</div>
+<p><strong>Verify Containment:</strong> Try sending another event from IP <code>198.51.100.42</code> (repeat Step 3). Ternline immediately denies the request at the perimeter with HTTP <code>403 Forbidden</code>:</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>{
+  "detail": "Source IP '198.51.100.42' is actively quarantined by Active Defense until 2026-11-02T22:50:00Z"
+}</code></pre>
+</div>
+<div class="callout danger">
+<p><strong>The attacker is contained.</strong> Your downstream microservices were never touched, and the quarantine automatically expires in 3600 seconds or can be rolled back anytime via the Control Room.</p>
+</div>
+</div>
+<!-- Next Steps -->
+<div style="margin-top: 32px;">
+<h3 style="color: var(--ink); font-size: 18px; margin-bottom: 6px;">Next Steps: Connect Your Application Stack</h3>
+<p>Now that you've seen the complete end-to-end detection and response lifecycle, choose your integration path:</p>
+<div class="card-grid">
+<div class="feature-card">
+<h4><span>🐍</span> Python Services</h4>
+<p style="margin-bottom: 12px;">Use the verified client SDK with automated batching and async buffering in 3 lines of code.</p>
+<a href="#sdk-python">View Python SDK Guide →</a>
+</div>
+<div class="feature-card">
+<h4><span>🌐</span> Node.js / Go / Java</h4>
+<p style="margin-bottom: 12px;">Emit standard JSON over HTTP POST or configure your API gateway (Kong, Envoy, NGINX).</p>
+<a href="#multilang">View Multi-Language Guide →</a>
+</div>
+<div class="feature-card">
+<h4><span>🤖</span> AI Assistant Tools (MCP)</h4>
+<p style="margin-bottom: 12px;">Connect Cursor or Claude Desktop via Model Context Protocol to query findings and run triage.</p>
+<a href="#mcp">View MCP Documentation →</a>
+</div>
+</div>
+</div>
+</section>
+<!-- 1. Architecture Overview -->
+<section id="overview">
+<h2>System Architecture</h2>
+<p>Ternline structures workloads across two decoupled operating tracks to balance high-throughput telemetry ingestion with deep forensic analysis:</p>
+<div class="step-card" style="border-left: 3px solid var(--accent);">
+<div class="step-header">
+<span class="tag tag-green">FAST TRACK</span>
+<h3 style="margin-left: 10px;">Deterministic Ingestion &amp; Pattern Detection</h3>
+</div>
+<p>Operates synchronously during the <code>POST /v1/events</code> request lifecycle in Python 3.12+ with in-memory state or Redis 7+ atomic sliding windows. Evaluates declarative rules and native baseline detectors, persists validated events to PostgreSQL, and records security findings. Never places synchronous LLM API calls on the ingestion path.</p>
+</div>
+<div class="step-card" style="border-left: 3px solid var(--purple);">
+<div class="step-header">
+<span class="tag tag-purple">DEEP TRACK</span>
+<h3 style="margin-left: 10px;">AI Forensic Investigation &amp; Hypothesis Synthesis</h3>
+</div>
+<p>Operates strictly out-of-band. Triggered manually by operators or automatically for critical findings. Gathers distributed trace context across services via <code>EvidenceCollector</code>, audits generated citations against PostgreSQL database records using <code>InvestigationQualityAuditor</code>, and proposes candidate declarative detection rules for human review.</p>
+</div>
+</section>
+<!-- Connect Your Application to Ternline -->
+<section id="connect-application" style="border-bottom: 2px solid var(--line); padding-bottom: 36px; margin-bottom: 36px;">
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+<span class="tag tag-green">INTEGRATION GUIDE</span>
+<span class="tag tag-blue">DEVELOPER ONBOARDING</span>
+</div>
+<h2 style="margin-top: 8px; border-top: none; padding-top: 0;">Connect Your Application to Ternline</h2>
+<p class="lead" style="margin-bottom: 20px;">Send security events from your application to Ternline in a few minutes. Ternline works with independent applications and services. You can integrate it with FastAPI, Django, Flask, Express, NestJS, Go, Java, or any system capable of sending HTTP requests.</p>
+<!-- How It Works Summary -->
+<div class="card-grid" style="margin: 20px 0 28px;">
+<div class="feature-card" style="border-top: 3px solid var(--accent);">
+<h4><span>1️⃣</span> Register Application</h4>
+<p>Create an application in Ternline, assign an environment (Production, Staging, Dev), and generate a cryptographically hashed API key.</p>
+</div>
+<div class="feature-card" style="border-top: 3px solid var(--blue);">
+<h4><span>2️⃣</span> Install &amp; Configure SDK</h4>
+<p>Install <code>cyber-engine-sdk</code> or use the REST API. Set <code>TERNLINE_ENDPOINT</code> and <code>TERNLINE_API_KEY</code> environment variables.</p>
+</div>
+<div class="feature-card" style="border-top: 3px solid var(--purple);">
+<h4><span>3️⃣</span> Stream Telemetry &amp; Protect</h4>
+<p>Emit security events on authentication, authorization, or sensitive operations. Fast Track evaluates events in &lt;1ms for real-time defense.</p>
+</div>
+</div>
+<!-- Step 1: Create an Application -->
+<div class="step-card" id="connect-step1" style="border-left: 3px solid var(--accent);">
+<div class="step-header">
+<span class="step-badge">1</span>
+<h3>Create an Application</h3>
+</div>
+<ol style="color: #aab7c4; font-size: 14.5px; padding-left: 20px; line-height: 1.7;">
+<li>Sign in to the <a href="/console" target="_blank"><strong>Ternline Control Room</strong></a> (or hosted deployment at <a href="https://ternline.vercel.app/console" target="_blank">https://ternline.vercel.app/console</a>).</li>
+<li>Select your workspace using the workspace selector dropdown in the top navigation bar.</li>
+<li>Navigate to <strong>Applications &amp; SDK</strong> (or open <strong>Platform Settings → Applications &amp; Keys</strong>).</li>
+<li>Click <strong>Add Application</strong> (or <strong>+ Register Application</strong>).</li>
+<li>Enter your application name and select its environment:</li>
+</ol>
+<table style="max-width: 600px; margin: 14px 0;">
+<thead>
+<tr><th>Setting</th><th>Example Value</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Application name</code></td><td><code>Checkout API</code></td><td>Human-readable microservice or system title</td></tr>
+<tr><td><code>Environment</code></td><td><code>Production</code></td><td>Tier classification (Production, Staging, Development)</td></tr>
+<tr><td><code>Application ID</code></td><td><code>checkout-api</code></td><td>Unique slug identifier bound to ingestion scope</td></tr>
+</tbody>
+</table>
+<p>After creating the application, open its integration settings to view and copy its provisioned API key.</p>
+<div class="callout warn">
+<p><strong>Keep your API key secret:</strong> Copy it when it is displayed. Store it in an environment variable or secrets manager (AWS Secrets Manager, HashiCorp Vault, Doppler). Never commit it to GitHub or expose it in frontend JavaScript.</p>
+</div>
+</div>
+<!-- Step 2: Install the SDK -->
+<div class="step-card" id="connect-step2" style="border-left: 3px solid var(--blue);">
+<div class="step-header">
+<span class="step-badge" style="background: rgba(120,183,255,.15); color: var(--blue);">2</span>
+<h3>Install the SDK</h3>
+</div>
+<p>For Python applications (FastAPI, Django, Flask, Celery):</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>pip install cyber-engine-sdk</code></pre>
+</div>
+<p>For Node.js / TypeScript, Go, Java, or other runtimes, use the supported SDK or the standard HTTP REST API (<code>POST /v1/events</code>).</p>
+</div>
+<!-- Step 3: Configure Your Application -->
+<div class="step-card" id="connect-step3" style="border-left: 3px solid var(--accent);">
+<div class="step-header">
+<span class="step-badge">3</span>
+<h3>Configure Your Application</h3>
+</div>
+<p>Set the following environment variables in your deployment environment or <code>.env</code> file:</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>TERNLINE_ENDPOINT=https://ternline-cyber-engine.onrender.com
+TERNLINE_API_KEY=YOUR_TERNLINE_API_KEY</code></pre>
+</div>
+<p class="tiny muted">Use the actual API endpoint provided by your Ternline deployment (e.g. your AWS EC2 host or Render domain). Do not hardcode credentials in your source code.</p>
+<h4 style="margin: 18px 0 8px; color: var(--ink);">Python Integration</h4>
+<p>Initialize the client once when your application starts:</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>import os
+from cyber_engine import CyberEngine
+
+ternline = CyberEngine(
+    api_key=os.environ["TERNLINE_API_KEY"],
+    app="YOUR_APPLICATION_ID",
+    endpoint=os.environ["TERNLINE_ENDPOINT"],
+)</code></pre>
+</div>
+<p class="tiny muted">The application ID must match the application associated with your API key.</p>
+</div>
+<!-- Step 4: Send Your First Security Event -->
+<div class="step-card" id="connect-step4" style="border-left: 3px solid var(--amber);">
+<div class="step-header">
+<span class="step-badge" style="background: rgba(247,162,59,.15); color: var(--amber);">4</span>
+<h3>Send Your First Security Event</h3>
+</div>
+<p>Add telemetry to important parts of your application, such as authentication, authorization, sensitive data access, and administrative actions.</p>
+<p><strong>Example: Recording a failed login attempt:</strong></p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code>ternline.emit(
+    event_type="auth.login.failed",
+    service="auth-service",
+    severity="medium",
+    details={
+        "client_ip": "203.0.113.10",
+        "reason": "invalid_password",
+    },
+)</code></pre>
+</div>
+<p class="tiny muted">This is an illustrative example. Use the SDK's actual supported method signature and event fields for your installed version. Avoid sending passwords, access tokens, session cookies, or other sensitive information.</p>
+<h4 style="margin: 20px 0 8px; color: var(--ink);">What Should You Monitor?</h4>
+<table>
+<thead>
+<tr><th>Category</th><th>Example Event Type</th><th>Recommended Security Trigger</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Authentication</strong></td><td><code>auth.login.failed</code></td><td>Repeated failed logins, MFA exhaustion, password brute force</td></tr>
+<tr><td><strong>Authorization</strong></td><td><code>authz.access.denied</code></td><td>Forbidden object access (IDOR / BOLA attempts), unauthorized role escalation</td></tr>
+<tr><td><strong>Account Security</strong></td><td><code>account.privilege.changed</code></td><td>Admin rights grant, API key creation, MFA reset, email change</td></tr>
+<tr><td><strong>Data Access</strong></td><td><code>data.sensitive.accessed</code></td><td>PII queries, payment ledger reads, credential access</td></tr>
+<tr><td><strong>Data Transfer</strong></td><td><code>data.bulk.exported</code></td><td>Unusual bulk exports, massive record queries, exfiltration spikes</td></tr>
+<tr><td><strong>API Activity</strong></td><td><code>api.request.rejected</code></td><td>Repeated 401/403/429 rejected requests, WAF signature triggers</td></tr>
+</tbody>
+</table>
+<p class="tiny muted">Start with security-relevant events. You do not need to send every application log to Ternline.</p>
+</div>
+<!-- Step 5: Verify Your Connection -->
+<div class="step-card" id="connect-step5" style="border-left: 3px solid var(--blue);">
+<div class="step-header">
+<span class="step-badge" style="background: rgba(120,183,255,.15); color: var(--blue);">2</span>
+<h3>Verify Your Connection</h3>
+</div>
+<ol style="color: #aab7c4; font-size: 14.5px; padding-left: 20px; line-height: 1.7;">
+<li>Start your application.</li>
+<li>Trigger an action that emits a security event (e.g. attempt an invalid login or make an API request).</li>
+<li>Open the <strong>Ternline Control Room</strong>.</li>
+<li>Select your application from the topbar filter.</li>
+<li>Open <strong>Event Explorer</strong> in the sidebar.</li>
+<li>Confirm that the event appears with its service ID, event type, and attributes.</li>
+</ol>
+<div class="callout info">
+<p><strong>Verification Standard:</strong> A successful connection should be based on actual telemetry received by Ternline, not simply the existence of an API key.</p>
+</div>
+<p><strong>If your event does not appear, check:</strong></p>
+<ul>
+<li><strong>The API endpoint:</strong> Ensure <code>TERNLINE_ENDPOINT</code> matches your active engine host without trailing slashes.</li>
+<li><strong>The application API key:</strong> Ensure the <code>Authorization: Bearer YOUR_TERNLINE_API_KEY</code> header is correctly transmitted.</li>
+<li><strong>The application ID:</strong> Ensure <code>app_id</code> in the payload matches the application scope of the API key.</li>
+<li><strong>Network connectivity:</strong> Verify firewall, VPC egress, or proxy rules allow HTTPS requests to the Ternline backend.</li>
+<li><strong>The event payload:</strong> Ensure all required fields (<code>app_id</code>, <code>service_id</code>, <code>event_type</code>) are present and conform to alphanumeric patterns.</li>
+<li><strong>The ingestion response:</strong> Check the HTTP status code (HTTP <code>202 Accepted</code> indicates success; HTTP <code>422</code> indicates validation failure).</li>
+</ul>
+</div>
+<!-- Step 6: Use Ternline Across Multiple Services -->
+<div class="step-card" id="connect-step6" style="border-left: 3px solid var(--accent);">
+<div class="step-header">
+<span class="step-badge">6</span>
+<h3>Use Ternline Across Multiple Services</h3>
+</div>
+<p>If your application architecture uses multiple microservices, instrument each service independently:</p>
+<div class="code-container">
+<pre><code>Workspace: Acme
+│
+├── Checkout API
+│   └── checkout-api
+│
+├── Authentication Service
+│   └── auth-service
+│
+└── Billing Worker
+    └── billing-worker</code></pre>
+</div>
+<p>Use the same workspace and appropriate application identity for related services. Propagate a shared trace ID across service boundaries when you want Ternline to correlate events from the same request or operation:</p>
+<div class="code-container">
+<button class="copy-btn">Copy</button>
+<pre><code># Incoming HTTP header forwarded across downstream RPC/microservices
+X-Trace-ID: tr-89102-abc</code></pre>
+</div>
+<p>Each service should emit its own events with the shared trace ID. Ternline can then correlate related telemetry across services (such as tracking an initial authentication failure that leads to a database exfiltration attempt across microservices).</p>
+</div>
+<!-- Step 7: Need More Control? -->
+<div class="step-card" id="connect-step7" style="border-left: 3px solid var(--purple);">
+<div class="step-header">
+<span class="step-badge" style="background: rgba(210,168,255,.15); color: var(--purple);">7</span>
+<h3>Need More Control?</h3>
+</div>
+<p>Continue exploring the full Ternline security intelligence architecture:</p>
+<div class="card-grid">
+<div class="feature-card">
+<h4><a href="#sdk-python">SDK Reference ↗</a></h4>
+<p>Client initialization, buffered async queueing, retries, PII scrubbing, and supported methods.</p>
+</div>
+<div class="feature-card">
+<h4><a href="#wire-schema">Event Schema ↗</a></h4>
+<p>Required fields, optional contextual attributes, event types, severity levels, and validation rules.</p>
+</div>
+<div class="feature-card">
+<h4><a href="#api-reference">REST API Catalog ↗</a></h4>
+<p>Authentication, telemetry endpoints, query parameters, request bodies, and JSON response formats.</p>
+</div>
+<div class="feature-card">
+<h4><a href="#rules">Detection Rules ↗</a></h4>
+<p>Authoring declarative detection rules, sliding windows, threshold conditions, and replay validation.</p>
+</div>
+<div class="feature-card">
+<h4><a href="#deep-track">Deep Track AI ↗</a></h4>
+<p>Investigate findings with Meta Muse Spark 1.3, audit database citations, and review hypotheses.</p>
+</div>
+<div class="feature-card">
+<h4><a href="#active-defense">Active Defense ↗</a></h4>
+<p>Configure protection modes (Observe, Assisted, Enforced), automated IP quarantines, and WAF webhooks.</p>
+</div>
+<div class="feature-card">
+<h4><a href="#troubleshooting">Troubleshooting ↗</a></h4>
+<p>Diagnose authentication errors, rate limiting, ingestion rejections, and connectivity issues.</p>
+</div>
+</div>
+<p class="tiny muted">You can connect additional applications at any time from the <strong>Applications &amp; SDK</strong> section of your workspace. You are connected when Ternline has successfully received and accepted your application's telemetry.</p>
+</div>
+</section>
+<!-- 2. Quickstart -->
+<section id="quickstart">
+<h2>5-Minute Onboarding Workflow</h2>
+<p>This workflow walks through provisioning an ingestion key, emitting telemetry, and viewing detected intelligence.</p>
+<div class="callout info">
+<p><strong>Environment Context:</strong> The examples below target a local development engine at <code>http://localhost:8000</code>. For production, replace the endpoint with your cloud backend URL (e.g. <code>https://api.yourdomain.com</code>) and use your workspace credentials.</p>
+</div>
+<div class="step-card">
+<div class="step-header">
+<span class="step-badge">1</span>
+<h3>Provision an Ingestion API Key</h3>
+</div>
+<p>API keys are SHA-256 hashed and scoped to a specific <code>tenant_id</code> and <code>app_id</code>. Provision a key using an administrative operator token or via the Control Room:</p>
+<pre><code>curl -X POST http://localhost:8000/api/v1/keys \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "payments-api",
+    "name": "Checkout Ingest Key"
+  }'</code></pre>
+<p class="tiny muted">The server returns a plaintext key prefixed with <code>ce_live_</code>. Store this key securely; only its SHA-256 hash is retained in the database.</p>
+</div>
+<div class="step-card">
+<div class="step-header">
+<span class="step-badge">2</span>
+<h3>Emit Canonical Telemetry</h3>
+</div>
+<p>Send a telemetry event to <code>/v1/events</code> using the provisioned key. The <code>app_id</code> in the payload <strong>must match</strong> the application scope of the API key:</p>
+<pre><code>curl -X POST http://localhost:8000/v1/events \
+  -H "Authorization: Bearer YOUR_TERNLINE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "payments-api",
+    "service_id": "checkout-worker",
+    "event_type": "auth.login_failed",
+    "severity": "medium",
+    "source_resource": "198.51.100.42",
+    "target_resource": "/api/v1/auth/login",
+    "trace_id": "trace-8f0ef82b-101",
+    "attributes": {
+      "user_id": "usr_9981",
+      "failure_reason": "invalid_password",
+      "attempt_count": 3
+    }
+  }'</code></pre>
+<p><strong>Successful Response (HTTP 202 Accepted):</strong></p>
+<pre><code>{
+  "accepted": 1,
+  "rejected": 0,
+  "duplicates": 0,
+  "event_ids": ["c1a4569e-561b-4f7d-8fb0-4573199bc489"],
+  "errors": [],
+  "correlation_status": "ok",
+  "correlation_degraded_reason": null
+}</code></pre>
+<p><strong>Common Ingestion Errors:</strong></p>
+<ul>
+<li><code>HTTP 401 Unauthorized</code>: The Bearer token is missing, invalid, or revoked.</li>
+<li><code>HTTP 403 Forbidden</code>: The event's <code>app_id</code> does not match the key's application scope, or the source IP address is quarantined by Active Defense.</li>
+<li><code>HTTP 422 Unprocessable Entity</code>: Missing required fields (<code>app_id</code>, <code>service_id</code>, <code>event_type</code>) or invalid attribute key formats.</li>
+<li><code>HTTP 429 Too Many Requests</code>: Tenant rate limit exceeded (default: 1,200 events/minute).</li>
+</ul>
+</div>
+<div class="step-card">
+<div class="step-header">
+<span class="step-badge">3</span>
+<h3>View Real-Time Security Intelligence</h3>
+</div>
+<p>Open the <a href="/console">Ternline Control Room</a>. Telemetry streams into the Event Explorer, Fast Track evaluates events against declarative rules, the Incident Correlator groups multi-service activity, and Active Defense monitors containment policies.</p>
+</div>
+</section><section id="launch-config">
+<h2>Launch &amp; Configure Ternline</h2>
+<p class="lead">This is the operator setup path: prepare the database and runtime configuration, start the API, verify dependencies, then connect the web console. Keep development and production credentials separate.</p>
+<h3 id="launch-prerequisites">1. Prerequisites</h3>
+<ul>
+<li>Python 3.12+ for direct execution, or Docker Engine with the Docker Compose plugin.</li>
+<li>PostgreSQL 16. Ternline uses PostgreSQL; SQLite is not supported.</li>
+<li>Redis 7+ for distributed correlation and shared runtime state, especially when running multiple API workers.</li>
+<li>A configured AI investigation provider and its API credential if Deep Track investigations are enabled.</li>
+</ul>
+<p>Run commands from the repository root (the directory containing <code>requirements.txt</code>, <code>backend/</code>, and the Alembic configuration). Use the compose file and environment template that actually exist in your checkout; do not copy a guessed filename or repository URL from an example.</p>
+<h3 id="launch-docker">2. Start with Docker Compose</h3>
+<p>Use the repository's Compose configuration when it defines the API, PostgreSQL, and Redis services. Start the stack, then inspect logs before testing the API:</p>
+<div class="code-container"><pre><code>docker compose config
+docker compose up -d
+docker compose ps
+docker compose logs -f</code></pre></div>
+<p>If your checkout uses a named Compose file, pass it explicitly with <code>-f</code> (for example, <code>docker compose -f docker-compose.prod.yml up -d</code>) and use the matching environment file documented for that deployment. Do not assume the production Compose file is suitable for local development.</p>
+<h3 id="launch-python">3. Start directly with Python</h3>
+<p>For a local development run, first make sure PostgreSQL and Redis are running and the environment variables below point to them. Then install dependencies, apply migrations, and start the API:</p>
+<div class="code-container"><pre><code>python -m venv .venv
+# Windows PowerShell:
+.venv\Scripts\Activate.ps1
+# macOS / Linux:
+# source .venv/bin/activate
+
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --workers 1</code></pre></div>
+<p>Keep the API bound to <code>127.0.0.1</code> for local-only development. Bind to <code>0.0.0.0</code> only when the service must be reachable from another container or host and the network is appropriately restricted.</p>
+<h3 id="launch-env">4. Configure environment variables</h3>
+<p>Set these in your shell, deployment environment, or a locally ignored <code>.env</code> file. Never commit secrets or paste them into frontend JavaScript.</p>
+<table>
+<thead><tr><th>Variable</th><th>Purpose</th><th>Configuration guidance</th></tr></thead>
+<tbody>
+<tr><td><code>ENVIRONMENT</code></td><td>Runtime security profile</td><td>Use <code>development</code> locally; set <code>staging</code> or <code>production</code> for deployed environments.</td></tr>
+<tr><td><code>DATABASE_URL</code></td><td>PostgreSQL connection</td><td>Use a PostgreSQL 16 URL and enable SSL for managed production databases where required.</td></tr>
+<tr><td><code>SECRET_KEY</code></td><td>Operator JWT signing</td><td>Use a unique, randomly generated secret of at least 32 characters. Never reuse a sample or development value.</td></tr>
+<tr><td><code>REDIS_URL</code></td><td>Redis connection</td><td>Use a private Redis endpoint; use <code>rediss://</code> when TLS is configured.</td></tr>
+<tr><td><code>REDIS_REQUIRED</code></td><td>Redis startup policy</td><td>Set to <code>true</code> when the deployment requires Redis and should fail startup if it is unavailable.</td></tr>
+<tr><td><code>WORKERS</code></td><td>API worker count</td><td>Start with one worker locally. Multiple workers require shared Redis-backed state.</td></tr>
+<tr><td><code>ALLOWED_CORS_ORIGINS</code></td><td>Browser origin allowlist</td><td>Set the exact frontend origins, comma-separated. Avoid wildcard origins for authenticated production consoles.</td></tr>
+<tr><td><code>FRONTEND_URL</code></td><td>Public console/base URL</td><td>Set the externally reachable frontend URL used for account and verification links.</td></tr>
+<tr><td><code>INVESTIGATOR_PROVIDER</code></td><td>Deep Track model adapter</td><td>Select a provider supported by the installed backend configuration; do not use a mock provider in production.</td></tr>
+<tr><td><code>INVESTIGATOR_API_KEY</code></td><td>Deep Track provider credential</td><td>Store the provider key in a secret manager or protected environment variable.</td></tr>
+<tr><td><code>AWS_REGION</code>, <code>AWS_SES_SOURCE</code></td><td>Optional email delivery</td><td>Configure when the deployment uses AWS SES for email delivery.</td></tr>
+</tbody>
+</table>
+<p><strong>Important:</strong> The exact set of required variables depends on enabled features and the checked-out backend version. Treat the repository's environment template and startup validation as authoritative; do not invent values for optional integrations.</p>
+<h3 id="launch-migrations">5. Initialize and verify the database</h3>
+<p>Apply migrations before serving traffic. For a new production deployment, follow the repository's documented bootstrap procedure to create the first administrator; do not enable development key seeding.</p>
+<div class="code-container"><pre><code>alembic upgrade head
+curl -i http://localhost:8000/api/v1/ops/health</code></pre></div>
+<p>Check the health response and service logs for PostgreSQL and Redis status. A healthy HTTP response alone should not be interpreted as proof that every optional integration is configured.</p>
+<h3 id="launch-console">6. Connect the Control Room</h3>
+<ol>
+<li>Deploy or serve the static frontend separately from the backend API.</li>
+<li>Configure the frontend's API base URL using the actual supported frontend configuration mechanism in your checkout.</li>
+<li>Add the exact frontend origin to <code>ALLOWED_CORS_ORIGINS</code>.</li>
+<li>Open the console, register or sign in, create a workspace/application, and generate an application-scoped ingestion key.</li>
+<li>Configure your application with <code>TERNLINE_ENDPOINT</code> and <code>TERNLINE_API_KEY</code>, send a test event, and confirm it appears in Event Explorer.</li>
+</ol>
+<p>Do not expose operator JWT signing secrets, database credentials, Redis credentials, or ingestion keys in the browser bundle. The ingestion key belongs in the instrumented server-side application.</p>
+<h3 id="launch-production">7. Before exposing a deployment publicly</h3>
+<ul>
+<li>Use HTTPS and restrict database/Redis access to the backend network.</li>
+<li>Set production secrets through the hosting provider's secret manager.</li>
+<li>Set exact CORS origins and review authentication, email verification, and initial-admin bootstrap.</li>
+<li>Use PostgreSQL backups and test restore procedures.</li>
+<li>Confirm Redis availability and worker configuration before scaling horizontally.</li>
+<li>Start protection in <code>OBSERVE</code> mode; explicitly review policy and approval requirements before enabling enforcement.</li>
+<li>Verify health, metrics, logs, and the live event stream after deployment.</li>
+</ul>
+</section>
+<!-- 2. Authentication & Keys -->
+<section id="authentication">
+<h2>Authentication &amp; Identity Models</h2>
+<p>Ternline enforces strict multi-tenant boundary isolation across two distinct authentication models:</p>
+<table>
+<thead>
+<tr><th>Identity Model</th><th>Token Type</th><th>Target Scope</th><th>Allowed Operations</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Service Ingestion Key</strong></td>
+<td>Hashed API Key (<code>ce_live_...</code>)</td>
+<td>Application-scoped (<code>app_id</code>)</td>
+<td>Telemetry ingestion (<code>POST /v1/events</code>, <code>POST /v1/events/batch</code>) and diagnostic testing.</td>
+</tr>
+<tr>
+<td><strong>Operator Session Token</strong></td>
+<td>Cryptographic JWT (HS256)</td>
+<td>Tenant-scoped Human Operator</td>
+<td>Rule authoring, dual-custody action approvals, containment execution, investigations, policy updates.</td>
+</tr>
+</tbody>
+</table>
+<div class="callout warn">
+<p><strong>Anti-Spoofing Enforcement:</strong> Human actions such as containment approvals (<code>/api/v1/defense/actions/{action_id}/approve</code>) require a verified operator JWT. Ingestion API keys and service accounts are strictly rejected from approving containment actions.</p>
+</div>
+</section>
+<!-- 3. Ingestion & Wire Protocol -->
+<section id="wire-schema">
+<h2>Canonical Event Schema</h2>
+<p>All telemetry events must conform to the Canonical Event Schema. Fields are validated upon arrival, and payload size is bounded to 1 MB per request.</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Constraints &amp; Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>app_id</code></td><td>string</td><td><strong>Yes</strong></td><td>Application identifier. Must match the API key's application scope. Pattern: <code>^[a-zA-Z0-9_\-\.]+$</code> (1-64 chars).</td></tr>
+<tr><td><code>service_id</code></td><td>string</td><td><strong>Yes</strong></td><td>Microservice or worker name (e.g. <code>api-gateway</code>, <code>payment-processor</code>). Pattern: <code>^[a-zA-Z0-9_\-\.]+$</code> (1-64 chars).</td></tr>
+<tr><td><code>event_type</code></td><td>string</td><td><strong>Yes</strong></td><td>Dot-separated event classification (e.g. <code>auth.login_failed</code>, <code>db.bulk_query</code>). Pattern: <code>^[a-zA-Z0-9_\-\.]+$</code> (3-128 chars).</td></tr>
+<tr><td><code>event_id</code></td><td>string (UUID)</td><td>No</td><td>Globally unique event identifier. Server generates a UUID v4 if omitted.</td></tr>
+<tr><td><code>schema_version</code></td><td>string</td><td>No</td><td>Semantic version of event schema. Defaults to <code>"1.0.0"</code>.</td></tr>
+<tr><td><code>timestamp</code></td><td>string (ISO-8601)</td><td>No</td><td>UTC timestamp of event occurrence. If omitted, server assigns current UTC time. Naive timestamps are converted to UTC.</td></tr>
+<tr><td><code>severity</code></td><td>enum</td><td>No</td><td>One of <code>"info"</code>, <code>"low"</code>, <code>"medium"</code>, <code>"high"</code>, <code>"critical"</code>. Defaults to <code>"info"</code>.</td></tr>
+<tr><td><code>source_resource</code></td><td>string</td><td>No</td><td>Originating client IP, user ID, or service ARN (max 256 chars).</td></tr>
+<tr><td><code>target_resource</code></td><td>string</td><td>No</td><td>Target endpoint, table name, or RPC method (max 256 chars).</td></tr>
+<tr><td><code>trace_id</code></td><td>string</td><td>No</td><td>Distributed W3C / OpenTelemetry trace identifier across service hops (max 128 chars).</td></tr>
+<tr><td><code>request_id</code></td><td>string</td><td>No</td><td>HTTP or correlation request ID (max 128 chars).</td></tr>
+<tr><td><code>attributes</code></td><td>object (JSON)</td><td>No</td><td>Structured context map. Max 200 keys; keys must be alphanumeric (max 64 chars).</td></tr>
+<tr><td><code>provenance</code></td><td>object (JSON)</td><td>No</td><td>Sensor, host, runtime environment, or SDK version metadata.</td></tr>
+</tbody>
+</table>
+</section>
+<!-- HTTP cURL Telemetry Ingest -->
+<section id="wire-curl">
+<h2>HTTP / cURL Telemetry Ingestion</h2>
+<p>Telemetry events can be submitted directly over HTTP without language-specific client libraries via <code>POST /v1/events</code> or in batches up to 100 events via <code>POST /v1/events/batch</code>.</p>
+<pre><code>curl -X POST http://localhost:8000/v1/events/batch \
+  -H "Authorization: Bearer YOUR_TERNLINE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": [
+      {
+        "app_id": "payments-api",
+        "service_id": "api-gateway",
+        "event_type": "http.request",
+        "severity": "info",
+        "source_resource": "198.51.100.42",
+        "target_resource": "/api/v1/checkout",
+        "trace_id": "trace-8f0ef82b-101"
+      },
+      {
+        "app_id": "payments-api",
+        "service_id": "database-worker",
+        "event_type": "db.query",
+        "severity": "low",
+        "source_resource": "internal-worker",
+        "target_resource": "orders_table",
+        "trace_id": "trace-8f0ef82b-101"
+      }
+    ]
+  }'</code></pre>
+</section>
+<!-- 4. Python SDK Guide -->
+<section id="sdk-python">
+<h2>Python SDK Guide</h2>
+<p>The native Python client (<code>cyber_engine</code>) provides buffered and non-buffered event dispatch with automatic secret scrubbing, payload bounding, and HTTPS verification.</p>
+<div class="callout info">
+<p><strong>Package Import:</strong> The official library is imported as <code>from cyber_engine import CyberEngine</code>.</p>
+</div>
+<pre><code>from cyber_engine import CyberEngine, IngestError
+
+# Initialize client
+client = CyberEngine(
+    endpoint="https://api.yourdomain.com",  # Enforces HTTPS for remote hosts
+    api_key="YOUR_TERNLINE_API_KEY",
+    app="payments-api",
+    service="checkout-worker",
+    buffered=True,                          # Non-blocking background worker thread
+    buffer_size=1000,
+    flush_interval_seconds=2.0,
+    max_batch_size=50,
+    auto_sanitize=True,                     # Automatically scrubs PII and passwords
+    max_retries=3
+)
+
+# Emit telemetry event
+try:
+    result = client.emit(
+        event_type="auth.login_failed",
+        severity="medium",
+        source_resource="198.51.100.42",
+        target_resource="/api/v1/auth/login",
+        trace_id="trace-0192a-88",
+        attributes={
+          "user_id": "usr_789",
+          "failure_reason": "invalid_password",
+          "password": "plain_secret_text"   # Auto-redacted to [REDACTED] before transmission
+        }
+    )
+    print(f"Accepted: {result.accepted}, Event ID: {result.event_ids}")
+except IngestError as e:
+    print(f"Ingestion rejected: {e}")</code></pre>
+<h3 id="sdk-redaction">Client-Side Sanitization Details</h3>
+<p>When <code>auto_sanitize=True</code> (default), the SDK scrubs sensitive keys using regex matching on:</p>
+<p><code>password</code>, <code>passwd</code>, <code>pwd</code>, <code>secret</code>, <code>api_key</code>, <code>access_token</code>, <code>auth_token</code>, <code>authorization</code>, <code>bearer</code>, <code>jwt</code>, <code>private_key</code>, <code>credit_card</code>, <code>cvv</code>, <code>ssn</code>.</p>
+<p>Strings longer than 10,000 characters are safely truncated to prevent buffer overflows.</p>
+</section>
+<!-- 5. Multi-Language Ingestion -->
+<section id="multilang">
+<h2>Multi-Language Ingestion Patterns</h2>
+<p>Ternline officially distributes the native Python SDK. For Go, Node.js, and Java, services integrate via standard HTTP POST calls conforming to the Canonical Event Schema.</p>
+<h3>Go Integration Pattern</h3>
+<pre><code>package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+    "time"
+)
+
+type Event struct {
+    AppID          string                 `json:"app_id"`
+    ServiceID      string                 `json:"service_id"`
+    EventType      string                 `json:"event_type"`
+    Severity       string                 `json:"severity"`
+    SourceResource string                 `json:"source_resource,omitempty"`
+    TraceID        string                 `json:"trace_id,omitempty"`
+    Attributes     map[string]interface{} `json:"attributes,omitempty"`
+}
+
+func emitTelemetry(ev Event) error {
+    body, _ := json.Marshal(ev)
+    req, _ := http.NewRequest("POST", "http://localhost:8000/v1/events", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer YOUR_TERNLINE_API_KEY")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &amp;http.Client{Timeout: 3 * time.Second}
+    resp, err := client.Do(req)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+    return nil
+}</code></pre>
+<h3>Node.js / TypeScript Pattern</h3>
+<pre><code>import axios from 'axios';
+
+async function emitEvent(eventType: string, attributes: Record&lt;string, unknown&gt;, traceId?: string) {
+  await axios.post('http://localhost:8000/v1/events', {
+    app_id: 'payments-api',
+    service_id: 'auth-service',
+    event_type: eventType,
+    severity: 'info',
+    trace_id: traceId,
+    attributes
+  }, {
+    headers: {
+      'Authorization': 'Bearer YOUR_TERNLINE_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    timeout: 3000
+  });
+}</code></pre>
+</section>
+<!-- Workspaces and Applications -->
+<section id="apps-workspaces">
+<h2>Multi-Tenant Workspaces &amp; Application Scopes</h2>
+<p class="lead">Ternline models microservice security using two operational boundaries: <strong>Workspaces</strong> (tenant-isolated organizations) and <strong>Applications</strong> (registered client services).</p>
+
+<h3 id="workspaces-overview">Multi-Tenant Workspace Partitioning</h3>
+<p>Each workspace is an autonomous security domain. All telemetry events, findings, investigations, declarative rules, threat indicators, and containment policies are strictly partitioned by <code>tenant_id</code>. Database queries enforce tenant filtering unconditionally, and Redis distributed correlation keys are namespaced per workspace.</p>
+<ul>
+  <li><strong>Tenant Switching:</strong> Operators managing multiple workspaces can switch contexts seamlessly via the Control Room dropdown, passing the <code>X-Tenant-ID</code> HTTP header, or calling <code>POST /api/v1/workspaces/switch</code> to issue an updated session JWT.</li>
+  <li><strong>Role-Based Access Control (RBAC):</strong> Workspace members can be assigned granular roles: <code>admin</code> (full workspace management, user provisioning, key rotation), <code>analyst</code> (rule authoring, incident triage, investigation triggers), and <code>viewer</code> (read-only telemetry and findings access).</li>
+</ul>
+
+<h3 id="apps-overview">Application Registry &amp; Scoped Ingest Keys</h3>
+<p>Within a workspace, multiple microservices and background workers register their identity (e.g. <code>payments-api</code>, <code>auth-gateway</code>, <code>order-processor</code>, <code>database-worker</code>). Every ingestion API key is scoped strictly to an <code>app_id</code>, ensuring compromised microservice credentials cannot emit telemetry under another service's identity.</p>
+
+<h4>Registering an Application via API</h4>
+<pre><code>curl -X POST http://localhost:8000/api/v1/apps \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "billing-service",
+    "name": "Billing &amp; Subscription Engine",
+    "environment": "production",
+    "description": "Handles recurring customer invoices and Stripe webhooks"
+  }'</code></pre>
+
+<p>The response automatically provisions a dedicated, cryptographically hashed API key with prefix <code>ce_live_</code> for that service:</p>
+<pre><code>{
+  "status": "created",
+  "app": {
+    "app_id": "billing-service",
+    "name": "Billing &amp; Subscription Engine",
+    "environment": "production",
+    "status": "active"
+  },
+  "api_key": {
+    "id": "key-98f21a",
+    "key": "ce_live_YOUR_APP_KEY_TOKEN",
+    "scopes": ["events:ingest", "diagnostics:read"]
+  }
+}</code></pre>
+</section>
+
+<!-- 6. Fast Track Detection -->
+<section id="rules">
+<h2>Fast Track Detection &amp; Declarative Rules</h2>
+<h3 id="fast-track-perf">Detection Pipeline &amp; Performance</h3>
+<p>The Fast Track pipeline processes incoming telemetry through the following deterministic phases:</p>
+<p><code>HTTP Ingest → Schema Validation → Tenant Rate Limiting → Active Defense Containment Filter → Sliding Window State → Declarative Rule Evaluation → PostgreSQL Event Storage → Security Finding Creation → Auto-Incident Correlation</code>.</p>
+<div class="callout info">
+<p><strong>Latency Profile:</strong> Rule evaluation operates purely in-memory and via atomic Redis Lua scripts without external network calls. Total end-to-end HTTP request latency is dominated by network roundtrip and PostgreSQL persistence (typically low double-digit milliseconds depending on database latency).</p>
+</div>
+<h3 id="rule-authoring">Declarative Rule Structure</h3>
+<p>Rules contain zero executable expressions (Python <code>eval</code>, shell scripts, or raw queries are rejected at schema validation). Rules target either native detector engines or generic declarative specifications:</p>
+<h4>Example: Generic Threshold Rule Proposal</h4>
+<pre><code>{
+  "target_detector": "detector.auth.failed_threshold",
+  "title": "Rapid Authentication Failure Spikes",
+  "description": "Flags accounts receiving &gt;= 5 failed logins within 60 seconds",
+  "parameters": {
+    "failure_threshold": 5,
+    "window_seconds": 60.0
+  }
+}</code></pre>
+<h4>Example: Cross-Service Exfiltration Rule</h4>
+<pre><code>{
+  "target_detector": "detector.cross_service.exfiltration",
+  "title": "Sensitive Table Bulk Extraction Sequence",
+  "description": "Correlates database read spikes followed by worker egress",
+  "parameters": {
+    "time_window_seconds": 300.0,
+    "bulk_row_threshold": 1000,
+    "sensitive_tables": ["users", "credit_cards", "tokens", "secrets"],
+    "internal_prefixes": ["/api/v1/internal/", "/internal/", "/admin/export"]
+  }
+}</code></pre>
+<h3 id="rule-operators">Supported Comparison Operators</h3>
+<p>Generic rule field conditions evaluate against an explicit operator allowlist:</p>
+<p><code>equals</code>, <code>not_equals</code>, <code>in</code>, <code>not_in</code>, <code>starts_with</code>, <code>starts_with_any</code>, <code>ends_with</code>, <code>contains</code>, <code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>, <code>exists</code>, <code>is_true</code>, <code>is_false</code>.</p>
+<h3 id="rule-lifecycle">Rule Validation, Approval &amp; Promotion Lifecycle</h3>
+<p>Rules progress through mandatory state transitions:</p>
+<ol>
+<li><strong>Proposed (<code>status: proposed</code>):</strong> Created via <code>POST /api/v1/rules</code> or synthesized by Deep Track AI.</li>
+<li><strong>Replay Validation (<code>POST /api/v1/rules/{id}/validate</code>):</strong> Replays historical attack scenarios through <code>ReplayValidationEngine</code>. Calculates true positives, false positives, precision, recall, and F1 score. Rules failing the validation threshold cannot be approved.</li>
+<li><strong>Approval (<code>POST /api/v1/rules/{id}/approve</code>):</strong> A human operator reviews validation metrics and authorizes the rule with an audit rationale.</li>
+<li><strong>Activation (<code>POST /api/v1/rules/{id}/activate</code>):</strong> Instantiates the rule in <code>runtime_rule_registry</code> for real-time evaluation.</li>
+<li><strong>Disable / Rollback (<code>POST /api/v1/rules/{id}/disable</code>, <code>POST /api/v1/rules/{id}/rollback</code>):</strong> Deactivates rule or reverts to previous approved version with audit recording.</li>
+</ol>
+<h3 id="redis-state">Distributed State &amp; Degradation Modes</h3>
+<ul>
+<li><strong>Redis Available:</strong> Correlation state and sliding windows are synchronized in Redis 7+ via atomic Lua scripts. Supports horizontally scaled multi-worker deployments.</li>
+<li><strong>Redis Unavailable (Degraded Mode):</strong> When Redis is unreachable and <code>REDIS_REQUIRED=false</code>, the engine falls back to process-local in-memory sliding windows. Telemetry ingestion continues, returning <code>correlation_status: "degraded"</code>. In production multi-worker clusters, <code>REDIS_REQUIRED=true</code> must be set to ensure cross-worker correlation.</li>
+</ul>
+</section>
+<!-- Threat Hunting and Entity Correlation -->
+<section id="threat-hunting">
+<h2>Threat Hunting &amp; Entity Correlation Explorer</h2>
+<p class="lead">Investigate distributed attack surfaces across microservices using graph-based entity correlation, multi-parameter telemetry queries, and statistical anomaly detection.</p>
+
+<h3 id="entity-correlation">Unified Entity Correlation Graph</h3>
+<p>Ternline automatically extracts, normalizes, and indexes critical entities from every incoming telemetry event. Incident responders can query <code>GET /api/v1/events/entities</code> to pivot across four key dimensions:</p>
+<div class="card-grid">
+  <div class="feature-card">
+    <h4><span>🌐</span> Network Entities (IP / CIDR)</h4>
+    <p>Track source IP addresses, external reverse proxies, egress destinations, and geographic origin across all reporting microservices.</p>
+  </div>
+  <div class="feature-card">
+    <h4><span>👤</span> Identity Entities (User / Token)</h4>
+    <p>Correlate user IDs, service account tokens, API keys, and session identities involved in credential misuse or permission elevation.</p>
+  </div>
+  <div class="feature-card">
+    <h4><span>⚙️</span> Service Entities (App / Host)</h4>
+    <p>Visualize the exact microservice hop where suspicious patterns first emerged and which downstream services were subsequently probed.</p>
+  </div>
+  <div class="feature-card">
+    <h4><span>🔗</span> Trace Entities (W3C / Request ID)</h4>
+    <p>Trace the entire lifecycle of a malicious HTTP request across gateway, worker, cache, and database layers using distributed trace IDs.</p>
+  </div>
+</div>
+
+<h3 id="threat-hunting-queries">Multi-Parameter Threat Hunting Engine</h3>
+<p>Perform guided, historical queries across millions of normalized security events via <code>GET /api/v1/events/hunt</code>:</p>
+<pre><code>curl -G http://localhost:8000/api/v1/events/hunt \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  --data-urlencode "query=event_type:db.* AND severity:high" \
+  --data-urlencode "service_id=database-worker" \
+  --data-urlencode "time_window=24h" \
+  --data-urlencode "limit=50"</code></pre>
+
+<h3 id="event-trends">Statistical Volume Trends &amp; Anomaly Deltas</h3>
+<p>Querying <code>GET /api/v1/events/trends</code> calculates comparative telemetry volume, error spikes, service traffic distribution, and anomalous deviation over configurable historical baselines (1h, 24h, 7d).</p>
+
+<h3 id="fast-track-recheck">Fast Track Historical Recheck</h3>
+<p>When a new detection rule is proposed or modified, operators can immediately recheck historical events against the updated rule logic using <code>POST /api/v1/events/{event_id}/recheck</code> without having to wait for live traffic.</p>
+</section>
+
+<!-- 7. Deep Track AI Investigator -->
+<section id="deep-track">
+<h2>Deep Track AI Investigation</h2>
+<p>Deep Track provides forensic root-cause analysis and hypothesis generation using configurable LLM providers (Meta Muse, OpenAI-compatible, or mock).</p>
+<h3 id="deep-track-triggers">Triggering Investigations</h3>
+<ul>
+<li><strong>Manual Finding Triage:</strong> <code>POST /api/v1/investigations/{finding_id}</code> runs investigation on an existing Fast Track finding.</li>
+<li><strong>Ad-Hoc Forensic Search:</strong> <code>POST /api/v1/investigations/query</code> runs an investigation prompt against stored telemetry.</li>
+<li><strong>Live Streaming:</strong> <code>POST /api/v1/investigations/query/stream</code> streams reasoning progress via Server-Sent Events (SSE).</li>
+</ul>
+<h3 id="citation-audit">Evidence Collection &amp; Citation Auditing</h3>
+<p>To eliminate hallucinated evidence, Deep Track enforces two architectural controls:</p>
+<ol>
+<li><strong>Database Grounding:</strong> The <code>EvidenceCollector</code> queries PostgreSQL for events matching the trace ID, actor, and affected microservices within the incident time window.</li>
+<li><strong>Mathematical Citation Auditing:</strong> The <code>InvestigationQualityAuditor</code> parses every event ID cited in the model's reasoning and verifies its existence in the database. Any citation referencing a non-existent or fabricated event ID is rejected.</li>
+</ol>
+<h3 id="investigation-stream">Server-Sent Events (SSE) Stream Protocol</h3>
+<p>Streaming investigation endpoints emit structured SSE messages:</p>
+<pre><code>event: stage
+data: {"stage": "context_gathering", "message": "Collecting telemetry events for trace..."}
+
+event: citation_audit
+data: {"event_id": "c1a4569e-...", "valid": true, "timestamp": "2026-11-02T18:42:00Z"}
+
+event: candidate_rule
+data: {"rule_id": "rule.auth.failed_threshold", "target_detector": "detector.auth.failed_threshold"}
+
+event: complete
+data: {"investigation_id": "inv-9921", "verdict": "malicious", "summary": "Coordinated brute force..."}</code></pre>
+<h3 id="ai-safety">AI Scope &amp; Trust Boundaries</h3>
+<div class="callout warn">
+<p><strong>Strict Advisory Boundary:</strong> Deep Track AI is strictly an advisory engine. It has <strong>read-only access</strong> to telemetry records. It cannot execute containment actions, modify database records, or activate detection rules. All candidate rules generated by AI require human operator review, replay testing, and explicit approval.</p>
+</div>
+<p>Queries submitted to <code>/api/v1/investigations/query</code> pass through an automated scope gatekeeper (<code>backend/investigation/scope.py</code>). Non-security, entertainment, or trivia queries return <code>verdict: "inconclusive"</code> without invoking model providers.</p>
+</section>
+<!-- AI Security Assistant Copilot -->
+<section id="assistant">
+<h2>AI Security Assistant Copilot</h2>
+<p class="lead">A context-aware SOC co-pilot embedded directly in the Control Room to answer security queries, analyze anomalies, explain detections, and synthesize declarative rules from plain English.</p>
+
+<h3 id="assistant-grounding">Live Telemetry Grounding &amp; Zero Hallucination</h3>
+<p>Unlike generic AI chat interfaces, the Ternline Assistant is grounded dynamically in your active workspace data at query time:</p>
+<ul>
+  <li><strong>Active Findings &amp; Incidents:</strong> Inspects open findings, severity levels, affected entities, and attack stages.</li>
+  <li><strong>Recent Telemetry Stream:</strong> Reviews the latest canonical telemetry events and service distribution.</li>
+  <li><strong>Active Defense Posture:</strong> Checks current protection mode (OBSERVE, ASSISTED, ENFORCED) and active quarantines.</li>
+  <li><strong>Rule Registry:</strong> Accesses the current active declarative rules and their threshold parameters.</li>
+</ul>
+
+<h3 id="assistant-chat-api">Interactive Copilot API (<code>POST /api/v1/assistant/chat</code>)</h3>
+<pre><code>curl -X POST http://localhost:8000/api/v1/assistant/chat \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What are the top security findings detected in the last 24 hours, and which IP addresses should be quarantined?",
+    "context_mode": "grounded_soc"
+  }'</code></pre>
+
+<h3 id="assistant-timeout-guard">18-Second Upstream Guard &amp; Resilient Fallback</h3>
+<p>To guarantee operational uptime and prevent <code>504 Gateway Timeout</code> errors when deployed behind reverse proxies (Vercel, Cloudflare, AWS ALB), the backend enforces a strict <strong>18-second upstream timeout</strong> on LLM provider requests. If an external model provider experiences latency spikes, the engine gracefully falls back to deterministic local database telemetry analysis.</p>
+
+<h3 id="assistant-rule-synthesis">Natural Language Rule Synthesis</h3>
+<p>Operators can synthesize candidate declarative detection rules using natural language via <code>POST /api/v1/rules/generate-from-prompt</code>:</p>
+<pre><code>curl -X POST http://localhost:8000/api/v1/rules/generate-from-prompt \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Alert when any user fails authentication more than 10 times in 2 minutes from the same IP address",
+    "target_severity": "high"
+  }'</code></pre>
+<p>The Assistant translates the prompt into a syntactically valid, schema-compliant <code>DeclarativeRule</code> specification with deterministic window parameters and comparison operators, immediately ready for automated replay validation.</p>
+</section>
+
+<!-- 8. Active Defense -->
+<section id="active-defense">
+<h2>Active Defense &amp; Containment (Phase 1)</h2>
+<p>Active Defense closes the loop between threat detection and operational remediation through deterministic containment adapters, dual-custody approval gates, out-of-band verification probes, and scheduled TTL recovery.</p>
+<h3 id="defense-scope">Protection Scope &amp; Boundaries</h3>
+<div class="callout info">
+<p><strong>Boundary Distinction:</strong></p>
+<p>1. <strong>Ternline Ingestion Protection:</strong> Built-in Redis IP blocking and rate limiting immediately reject malicious requests targeting Ternline's own <code>/v1/events</code> API.</p>
+<p>2. <strong>Customer Application Protection:</strong> Blocking traffic to your own customer microservices requires integrating with our HMAC-SHA256 signed webhooks or deploying gateway middleware that queries Ternline status.</p>
+</div>
+<h3 id="defense-modes">Protection Modes</h3>
+<ul>
+<li><strong>OBSERVE (Default):</strong> Containment actions are synthesized and recorded as dry-run audit entries. Zero infrastructure state changes occur.</li>
+<li><strong>ASSISTED (Human-in-the-Loop):</strong> Actions require explicit approval from an authenticated human operator via <code>POST /api/v1/defense/actions/{id}/approve</code>.</li>
+<li><strong>ENFORCED (Autonomous Bounded Containment):</strong> Pre-authorized low-risk actions (e.g. temporary IP blocks with TTL) execute autonomously. High-risk actions (API key revocation) always enforce mandatory dual-custody sign-off.</li>
+</ul>
+<h3 id="dual-custody">Dual-Custody Approvals &amp; Safeguards</h3>
+<div class="callout warn">
+<p><strong>Anti-Self-Approval Enforcement:</strong> An operator who proposed or planned a containment action can NEVER approve it. Approvals submitted by the requester or via automated service accounts return <code>HTTP 403 Forbidden</code>.</p>
+</div>
+<h3 id="containment-adapters">Execution Adapters</h3>
+<table>
+<thead>
+<tr><th>Adapter</th><th>Status</th><th>Target Entity</th><th>Operational Mechanism</th><th>Rollback Method</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>InternalApiKeyAdapter</code></td>
+<td><span class="tag tag-green">Implemented</span></td>
+<td>API Key ID</td>
+<td>Deactivates key in PostgreSQL (<code>is_active=False</code>) and flushes cache. Ingestion returns HTTP 401.</td>
+<td>Restores <code>is_active=True</code> in database and updates audit log.</td>
+</tr>
+<tr>
+<td><code>RedisIngestBlockAdapter</code></td>
+<td><span class="tag tag-green">Implemented</span></td>
+<td>IP Address</td>
+<td>Injects IP into Redis set <code>ternline:{tenant}:defense:blocked_ips</code> and in-memory filter. Ingestion returns HTTP 403.</td>
+<td>Removes IP from Redis set and in-memory blocklist.</td>
+</tr>
+<tr>
+<td><code>RedisRateLimitAdapter</code></td>
+<td><span class="tag tag-green">Implemented</span></td>
+<td>Client Entity ID</td>
+<td>Injects token-bucket quota with TTL into Redis. Excessive requests return HTTP 429.</td>
+<td>Removes Redis rate limit key and resets throttle.</td>
+</tr>
+<tr>
+<td><code>WebhookContainmentAdapter</code></td>
+<td><span class="tag tag-green">Implemented</span></td>
+<td>Customer Gateway</td>
+<td>Dispatches HMAC-SHA256 signed JSON payloads to upstream customer endpoints.</td>
+<td>Dispatches signed rollback event payload to webhook URL.</td>
+</tr>
+<tr>
+<td>Native Cloudflare / AWS WAF / Kong / Envoy / Okta</td>
+<td><span class="tag tag-blue">Webhook Compatible</span></td>
+<td>Upstream Proxies</td>
+<td>Supported via generic webhook adapter. Customers configure gateway endpoints to receive signed webhooks. Bespoke native plugins are planned.</td>
+<td>Handled via webhook rollback event.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="webhooks">Cryptographic Webhook Signatures</h3>
+<p>When dispatching containment payloads to customer endpoints, Ternline includes timestamped HMAC-SHA256 signatures to prevent replay attacks:</p>
+<pre><code>POST /customer/containment-webhook HTTP/1.1
+Host: gateway.customer.com
+Content-Type: application/json
+X-Ternline-Tenant: tenant-alpha
+X-Ternline-Signature: t=1730578490,v1=9f82c04...
+
+{
+  "event": "defense.containment.execute",
+  "action_id": "act-9912",
+  "tenant_id": "tenant-alpha",
+  "action_type": "quarantine_ip",
+  "target_entity_type": "ip_address",
+  "target_entity_id": "198.51.100.42",
+  "ttl_seconds": 3600,
+  "timestamp": "2026-11-02T19:00:00Z"
+}</code></pre>
+<p><strong>Signature Calculation:</strong> <code>signature = HMAC-SHA256(webhook_secret, "t=" + timestamp + "." + json_body)</code></p>
+<h3 id="rollback">State Verification &amp; Automated TTL Expiration</h3>
+<p>Before advancing an action to <code>VERIFIED_ACTIVE</code>, <code>VerificationManager</code> runs out-of-band state probes. Actions configured with a Time-to-Live (TTL) are scheduled in a Redis sorted set (ZSET). Expired actions are reverted either manually or automatically by invoking <code>POST /api/v1/defense/actions/reconcile-expirations</code> via a scheduled job or cron worker.</p>
+</section>
+<!-- 9. Threat Intel & Incidents -->
+<section id="threat-intel">
+<h2>Threat Intelligence &amp; Incidents (Phase 2)</h2>
+<p>Phase 2 aggregates security findings across microservices into unified incident cases and maintains tenant-scoped Indicators of Compromise (IOCs).</p>
+<h3 id="incident-correlation">Incident Correlator Engine</h3>
+<p>When findings are created by Fast Track or attack simulations, <code>IncidentCorrelator</code> groups them by:</p>
+<ul>
+<li><strong>Shared Distributed Trace:</strong> Groups multi-hop attack stages sharing a W3C trace ID (e.g. <code>api-service</code> → <code>worker-service</code> → <code>database-service</code>).</li>
+<li><strong>Shared Primary Entity:</strong> Attacker IP address or user identity across active incident windows.</li>
+<li><strong>Severity Escalation:</strong> Composite incident severity automatically escalates from <code>medium</code> to <code>critical</code> if subsequent higher-severity stages occur.</li>
+</ul>
+<h3 id="incident-lifecycle">Incident Lifecycle &amp; Forensic Timelines</h3>
+<p>Incidents progress through a managed lifecycle (<code>open</code> → <code>investigating</code> → <code>contained</code> → <code>resolved</code>). Querying an incident via <code>GET /api/v1/incidents/{incident_id}</code> retrieves linked findings, affected entities, and a multi-service event timeline reconstructed from distributed traces.</p>
+<h3 id="incident-containment">Coordinated Multi-Entity Containment</h3>
+<p>Operators can contain all attacker IPs and compromised credentials linked to an incident in a single request:</p>
+<pre><code>curl -X POST http://localhost:8000/api/v1/incidents/INC-20261102-4A82F1/contain \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rationale": "Active data exfiltration sequence across worker and database nodes",
+    "contain_ips": true,
+    "contain_credentials": true
+  }'</code></pre>
+<h3 id="mitre-coverage">MITRE ATT&amp;CK Matrix Coverage</h3>
+<p>Ternline maps specific detection families to MITRE ATT&amp;CK techniques:</p>
+<table>
+<thead>
+<tr><th>Technique</th><th>Technique Name</th><th>Tactic</th><th>Implementation Type</th><th>Detectors</th></tr>
+</thead>
+<tbody>
+<tr><td><code>T1078</code></td><td>Valid Accounts / Credential Abuse</td><td>Initial Access / Persistence</td><td><span class="tag tag-green">Implemented Detector</span></td><td><code>detector.auth.brute_force</code>, <code>rule.auth.credential_abuse</code></td></tr>
+<tr><td><code>T1048</code></td><td>Exfiltration Over Alternative Protocol</td><td>Exfiltration</td><td><span class="tag tag-green">Implemented Detector</span></td><td><code>detector.exfiltration.cross_service</code></td></tr>
+<tr><td><code>T1005</code></td><td>Data from Local System / DB Harvest</td><td>Collection</td><td><span class="tag tag-purple">Investigation Context</span></td><td><code>investigator.deep_search</code></td></tr>
+<tr><td><code>T1110</code></td><td>Brute Force &amp; Password Spraying</td><td>Credential Access</td><td><span class="tag tag-green">Implemented Detector</span></td><td><code>detector.auth.brute_force</code></td></tr>
+<tr><td><code>T1190</code></td><td>Exploit Public-Facing App / SQLi</td><td>Initial Access</td><td><span class="tag tag-green">Implemented Detector</span></td><td><code>detector.sql.injection</code></td></tr>
+</tbody>
+</table>
+<p class="tiny muted">Note: This table reflects specific detection detectors implemented in the repository, not exhaustive coverage of the entire MITRE ATT&amp;CK matrix.</p>
+</section>
+<!-- 10. MCP Server -->
+<section id="mcp">
+<h2>Model Context Protocol (MCP) Server for AI Coding Assistants</h2>
+<p>Ternline includes a native JSON-RPC 2.0 stdio <strong>Model Context Protocol (MCP)</strong> server compliant with the official <code>2024-11-05</code> specification. AI assistants (Cursor, Claude Desktop, Antigravity) can query findings, triage incidents, trigger deep investigations, and manage rules.</p>
+<h3 id="mcp-cursor">Cursor IDE Configuration (<code>.cursor/mcp.json</code>)</h3>
+<pre><code>{
+  "mcpServers": {
+    "ternline": {
+      "command": "python",
+      "args": ["-m", "mcp_server"],
+      "env": {
+        "TERNLINE_ENDPOINT": "http://localhost:8000",
+        "TERNLINE_API_KEY": "YOUR_TERNLINE_API_KEY"
+      }
+    }
+  }
+}</code></pre>
+<h3 id="mcp-claude">Claude Desktop Configuration (<code>claude_desktop_config.json</code>)</h3>
+<pre><code>{
+  "mcpServers": {
+    "ternline": {
+      "command": "python",
+      "args": ["-m", "mcp_server"],
+      "env": {
+        "TERNLINE_ENDPOINT": "http://localhost:8000",
+        "TERNLINE_API_KEY": "YOUR_TERNLINE_API_KEY"
+      }
+    }
+  }
+}</code></pre>
+<h3 id="mcp-tools">Catalog of 12 Exposed MCP Tools</h3>
+<table>
+<thead>
+<tr><th>Tool Name</th><th>Permission</th><th>Description</th><th>Arguments</th></tr>
+</thead>
+<tbody>
+<tr><td><code>ternline_get_sdk_instructions</code></td><td>Local / Read</td><td>Get integration guides for Python, Go, Node.js, Java, or Rust.</td><td><code>language</code></td></tr>
+<tr><td><code>ternline_generate_middleware</code></td><td>Local / Read</td><td>Generate drop-in telemetry middleware for FastAPI, Express, or Go Gin.</td><td><code>framework</code>, <code>app_id</code>, <code>service_id</code></td></tr>
+<tr><td><code>ternline_validate_event</code></td><td>Local / Read</td><td>Validate telemetry payloads offline against Canonical Schema Draft 7.</td><td><code>event</code></td></tr>
+<tr><td><code>ternline_probe_health</code></td><td>Network / Read</td><td>Probe engine reachability, roundtrip latency, and PostgreSQL connectivity.</td><td><code>endpoint</code></td></tr>
+<tr><td><code>ternline_emit_test_event</code></td><td>Network / Ingest</td><td>Emit test telemetry to verify end-to-end ingestion and Fast Track detection.</td><td><code>endpoint</code>, <code>api_key</code>, <code>event_type</code></td></tr>
+<tr><td><code>ternline_provision_api_key</code></td><td>Network / Write</td><td>Provision a new scoped, SHA-256 hashed API key.</td><td><code>app_id</code>, <code>name</code></td></tr>
+<tr><td><code>ternline_query_findings</code></td><td>Network / Read</td><td>Query real-time security findings detected across microservices.</td><td><code>severity</code>, <code>limit</code></td></tr>
+<tr><td><code>ternline_query_incidents</code></td><td>Network / Read</td><td>Query aggregated multi-service incident cases correlated by trace or entity.</td><td><code>status</code>, <code>severity</code>, <code>limit</code></td></tr>
+<tr><td><code>ternline_deep_search</code></td><td>Network / AI</td><td>Execute AI Deep Search threat investigation with citation auditing.</td><td><code>query</code></td></tr>
+<tr><td><code>ternline_match_threat_intel</code></td><td>Network / Read</td><td>Cross-reference IPs, queries, or keywords against IOCs and telemetry.</td><td><code>query</code>, <code>time_window_hours</code>, <code>limit</code></td></tr>
+<tr><td><code>ternline_contain_incident</code></td><td>Network / Defense</td><td>Trigger active defense containment across all entities in an incident.</td><td><code>incident_id</code>, <code>rationale</code>, <code>contain_ips</code></td></tr>
+<tr><td><code>ternline_list_rules</code></td><td>Network / Read</td><td>List active Fast Track declarative detection rules.</td><td><code>endpoint</code>, <code>api_key</code></td></tr>
+</tbody>
+</table>
+<h3 id="mcp-prompts">Resources &amp; Prompts</h3>
+<ul>
+<li><strong>Resources:</strong> <code>ternline://schema/event</code> (Canonical Draft 7 Schema), <code>ternline://catalog/event-types</code> (Standard event types), <code>ternline://mitre/coverage</code> (ATT&amp;CK coverage), <code>ternline://defense/policy</code> (Protection policy).</li>
+<li><strong>Prompts:</strong> <code>integrate_telemetry</code> (step-by-step instrumentation guide), <code>investigate_incident</code> (triage and root-cause analysis), <code>create_declarative_rule</code> (authoring and parameterizing rules).</li>
+</ul>
+</section>
+<!-- Built-in Attack Simulation -->
+<section id="simulation">
+<h2>Built-in Attack Simulation &amp; Security Chaos Engineering</h2>
+<p class="lead">Validate your end-to-end detection, alerting, and automated containment pipelines in seconds without needing external penetration testing tools.</p>
+
+<h3 id="simulation-overview">Deterministic Multi-Stage Scenarios</h3>
+<p>Ternline includes built-in attack scenarios designed to replicate modern microservice adversarial tactics:</p>
+<ul>
+  <li><strong><code>exfiltration</code> (Multi-Service Data Exfiltration):</strong> Emits a realistic 3-stage cross-service attack:
+    <ol>
+      <li><code>api-service</code> receives unauthorized perimeter probes against data export endpoints.</li>
+      <li><code>worker-service</code> executes asynchronous batch jobs to pull sensitive records.</li>
+      <li><code>database-service</code> reports bulk query execution on sensitive tables (<code>users</code>, <code>secrets</code>).</li>
+    </ol>
+  </li>
+  <li><strong><code>brute_force</code> (Credential Stuffing):</strong> Emits rapid authentication failure events across a sliding window from a single attacker IP.</li>
+  <li><strong><code>privilege_escalation</code> (Unauthorized Role Escalation):</strong> Simulates an unprivileged service account attempting admin role assignment.</li>
+</ul>
+
+<h3 id="running-simulation">Triggering an Attack Simulation via API</h3>
+<pre><code>curl -X POST http://localhost:8000/api/v1/simulation/run \
+  -H "Authorization: Bearer YOUR_OPERATOR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "scenario": "exfiltration",
+    "target_service": "payments-api"
+  }'</code></pre>
+
+<p>The simulation runs deterministically, emits canonical telemetry events, triggers Fast Track detectors, correlates an Incident case, and plans candidate containment actions for immediate review in the Control Room.</p>
+</section>
+
+<!-- 11. Deployment & Operations -->
+<section id="deployment">
+<h2>Cloud Deployment &amp; Operations</h2>
+<p>Ternline supports production deployment with the frontend hosted on <strong>Vercel</strong> and the backend containerized on <strong>AWS (ECS Fargate / EC2)</strong>.</p>
+<h3 id="deployment-arch">Architecture Overview</h3>
+<ul>
+<li><strong>Frontend (Vercel):</strong> Static HTML5 control room (<code>index.html</code>, <code>console.html</code>, <code>docs.html</code>). Routes and HSTS/CSP security headers managed via <code>vercel.json</code>.</li>
+<li><strong>Backend API (AWS):</strong> Python 3.12 FastAPI container running behind an Application Load Balancer (ALB). Multi-stage production <code>Dockerfile</code> executing as non-root <code>appuser</code>.</li>
+<li><strong>Database (AWS RDS):</strong> PostgreSQL 16 with SSL enforcement (<code>sslmode=require</code>). SQLite is strictly prohibited.</li>
+<li><strong>Distributed State (AWS ElastiCache):</strong> Redis 7+ with in-transit encryption (TLS) for multi-worker correlation and rate limits.</li>
+<li><strong>Email Delivery (AWS SES):</strong> Dispatches 256-bit cryptographic account verification tokens.</li>
+</ul>
+<h3 id="env-vars">Environment Variables Reference</h3>
+<table>
+<thead>
+<tr><th>Variable</th><th>Default</th><th>Required in Prod</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>ENVIRONMENT</code></td><td><code>development</code></td><td>Yes</td><td>Set to <code>production</code> or <code>staging</code> to enable fail-closed security invariants.</td></tr>
+<tr><td><code>DATABASE_URL</code></td><td><code>postgresql+psycopg2://...</code></td><td>Yes</td><td>PostgreSQL 16 connection string. SQLite is prohibited.</td></tr>
+<tr><td><code>SECRET_KEY</code></td><td>(dev placeholder)</td><td>Yes</td><td>Signing secret for operator JWT sessions (minimum 32 characters).</td></tr>
+<tr><td><code>REDIS_URL</code></td><td><code>None</code></td><td>Yes (multi-worker)</td><td>Redis 7+ connection URL (e.g. <code>rediss://...</code> for TLS).</td></tr>
+<tr><td><code>REDIS_REQUIRED</code></td><td><code>false</code></td><td>Yes</td><td>When true, fails startup if Redis is unreachable.</td></tr>
+<tr><td><code>WORKERS</code></td><td><code>1</code></td><td>No</td><td>Uvicorn worker count. Multiple workers require Redis for state correlation.</td></tr>
+<tr><td><code>ALLOWED_CORS_ORIGINS</code></td><td><code>http://localhost:8000</code></td><td>Yes</td><td>Comma-separated list of allowed web origins.</td></tr>
+<tr><td><code>CORS_ALLOW_VERCEL</code></td><td><code>true</code></td><td>No</td><td>Allows preview and production branches under <code>*.vercel.app</code>.</td></tr>
+<tr><td><code>FRONTEND_URL</code></td><td><code>http://localhost:8000</code></td><td>Yes</td><td>Base URL for verification email links (e.g. <code>https://ternline.vercel.app</code>).</td></tr>
+<tr><td><code>AWS_REGION</code></td><td><code>us-east-1</code></td><td>No</td><td>AWS region for SES and CloudWatch.</td></tr>
+<tr><td><code>AWS_SES_SOURCE</code></td><td><code>None</code></td><td>No</td><td>Verified sender email for AWS SES (e.g. <code>noreply@ternline.io</code>).</td></tr>
+<tr><td><code>INVESTIGATOR_PROVIDER</code></td><td><code>muse</code></td><td>Yes</td><td>AI provider: <code>muse</code>, <code>meta</code>, <code>openai_compatible</code>, or <code>mock</code>.</td></tr>
+<tr><td><code>INVESTIGATOR_API_KEY</code></td><td><code>""</code></td><td>Yes</td><td>API key for Deep Track investigator provider.</td></tr>
+</tbody>
+</table>
+<h3 id="migrations">Database Migrations &amp; Bootstrapping</h3>
+<p>Apply database migrations before launching the application:</p>
+<pre><code># Run Alembic migrations to latest head
+alembic upgrade head
+
+# Launch Uvicorn server
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1</code></pre>
+<p>In production, if the database is clean, the engine automatically boots without default dev keys. Provision your initial administrator key via <code>INITIAL_ADMIN_API_KEY</code> or via the user registration API (<code>POST /api/v1/auth/register</code>).</p>
+<h3 id="observability">Observability, Health &amp; Metrics</h3>
+<ul>
+<li><strong>Liveness &amp; Readiness Probe:</strong> <code>GET /api/v1/ops/health</code> returns HTTP 200 with database connectivity and Redis status.</li>
+<li><strong>Prometheus Metrics:</strong> <code>GET /metrics</code> scrapes standard Prometheus 0.0.4 metrics (ingestion counters, detection latencies, active rule counts).</li>
+<li><strong>Live Event Bus:</strong> <code>GET /api/v1/ops/events/stream</code> provides real-time Server-Sent Events (SSE) for SOC consoles.</li>
+</ul>
+<h3 id="troubleshooting">Operational Troubleshooting Matrix</h3>
+<table>
+<thead>
+<tr><th>Symptom / Error</th><th>Root Cause</th><th>Remediation Step</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PostgreSQL connection failed</code></td>
+<td>Database is unreachable, credentials invalid, or SSL required.</td>
+<td>Verify <code>DATABASE_URL</code>, ensure RDS security group allows inbound traffic on port 5432, and append <code>?sslmode=require</code>.</td>
+</tr>
+<tr>
+<td><code>correlation_status: degraded</code></td>
+<td>Redis connection failed while <code>REDIS_REQUIRED=false</code>.</td>
+<td>Verify <code>REDIS_URL</code>, check ElastiCache network peering, or ensure Redis container is healthy.</td>
+</tr>
+<tr>
+<td><code>HTTP 401 Unauthorized</code></td>
+<td>Invalid or expired API key / operator JWT token.</td>
+<td>Rotate API key via <code>POST /api/v1/keys/{key_id}/rotate</code> or re-authenticate via <code>POST /api/v1/auth/login</code>.</td>
+</tr>
+<tr>
+<td><code>HTTP 403 App ID Mismatch</code></td>
+<td>Event <code>app_id</code> differs from API key application scope.</td>
+<td>Ensure the telemetry payload's <code>app_id</code> matches the application identifier assigned to the API key.</td>
+</tr>
+<tr>
+<td><code>HTTP 403 Quarantined Source IP</code></td>
+<td>Source IP address blocked by Active Defense.</td>
+<td>Inspect active actions in Control Room or call <code>POST /api/v1/defense/actions/{id}/rollback</code> to release IP.</td>
+</tr>
+<tr>
+<td><code>HTTP 429 Rate Limit Exceeded</code></td>
+<td>Tenant exceeded ingestion budget (1,200 events/min).</td>
+<td>Increase <code>INGESTION_RATE_LIMIT_PER_MINUTE</code> in configuration or batch events via <code>/v1/events/batch</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<!-- 12. Security & Limitations -->
+<section id="tenant-isolation">
+<h2>Security Architecture &amp; Limitations</h2>
+<h3>Tenant Isolation Invariants</h3>
+<ul>
+<li>All SQL queries and database models strictly enforce <code>tenant_id</code> filters.</li>
+<li>Redis state keys and Lua script counters are namespaced by tenant (<code>ternline:{tenant_id}:...</code>).</li>
+<li>Cross-tenant telemetry leaks are prevented by server-side tenant derivation from authentication tokens; caller-supplied tenant headers are overwritten.</li>
+</ul>
+<h3 id="secret-handling">Secret &amp; Credential Handling</h3>
+<ul>
+<li>API keys are stored strictly as SHA-256 hashes (<code>key_hash</code>); plaintext keys are never persisted.</li>
+<li>User passwords are encrypted with salted PBKDF2-HMAC-SHA256 with 600,000 iterations.</li>
+<li>Email verification uses 256-bit cryptographically random tokens with 24-hour expiration.</li>
+<li>The Python SDK automatically redacts known secret patterns (passwords, tokens, keys, SSNs) client-side before transmission.</li>
+</ul>
+<h3 id="limitations">Application Protection Scope &amp; Limitations</h3>
+<div class="callout warn">
+<p><strong>Integration Requirement:</strong> Ternline is an evidence-led detection and containment orchestration platform. It is <strong>not an inline network proxy</strong> or inline WAF. Blocking traffic to customer applications requires the customer to configure gateway webhooks or consume Ternline containment status via middleware. Ternline's built-in blocklists protect Ternline's own ingestion perimeter.</p>
+</div>
+</section>
+<!-- 13. REST API Catalog -->
+<section id="api-reference">
+<h2>Comprehensive REST API Catalog</h2>
+<p>All endpoints enforce tenant isolation. Endpoints require either a Service API Key (<code>ce_live_...</code>), an Operator JWT (<code>Bearer eyJ...</code>), or are Public.</p>
+
+<h3>Authentication &amp; Account Management</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/register</code></td><td>Public</td><td>None</td><td>Register new operator account and workspace; sends verification email via AWS SES.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/verify-email</code></td><td>Public</td><td>None</td><td>Validate 256-bit token, verify email, and issue operator session JWT.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/resend-verification</code></td><td>Public</td><td>None</td><td>Resend verification email (anti-enumeration protected).</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/login</code></td><td>Public (Rate-limited)</td><td>None</td><td>Authenticate verified operator; returns session JWT.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/auth/me</code></td><td>Operator JWT</td><td>Authenticated</td><td>Retrieve current authenticated operator profile and permissions.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/change-password</code></td><td>Operator JWT</td><td>Authenticated</td><td>Update account password with current credentials check.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/forgot-password</code></td><td>Public (Rate-limited)</td><td>None</td><td>Request password reset link delivered via secure email.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/auth/reset-password</code></td><td>Public</td><td>None</td><td>Reset password using single-use 256-bit cryptographic token.</td></tr>
+</tbody>
+</table>
+
+<h3>Multi-Tenant Workspaces &amp; RBAC</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/workspaces</code></td><td>Operator JWT</td><td>Authenticated</td><td>List all workspaces accessible to the authenticated operator.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/workspaces</code></td><td>Operator JWT</td><td><code>workspaces:write</code></td><td>Create and bootstrap a new isolated tenant workspace.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/workspaces/switch</code></td><td>Operator JWT</td><td>Authenticated</td><td>Switch active workspace context; issues updated session JWT.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/workspaces/current</code></td><td>Operator JWT</td><td>Authenticated</td><td>Retrieve details and posture of currently active workspace.</td></tr>
+<tr><td><span class="method method-put">PUT</span></td><td><code>/api/v1/workspaces/current</code></td><td>Operator JWT</td><td><code>workspaces:write</code></td><td>Update workspace name and organization metadata.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/workspaces/members</code></td><td>Operator JWT</td><td><code>workspaces:read</code></td><td>List members and their assigned RBAC roles in current workspace.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/workspaces/members</code></td><td>Operator JWT</td><td><code>workspaces:write</code></td><td>Invite a new member with role (admin, analyst, viewer).</td></tr>
+<tr><td><span class="method method-patch">PATCH</span></td><td><code>/api/v1/workspaces/members/{user_id}</code></td><td>Operator JWT</td><td><code>workspaces:write</code></td><td>Update a workspace member's role or access status.</td></tr>
+<tr><td><span class="method method-del">DELETE</span></td><td><code>/api/v1/workspaces/members/{user_id}</code></td><td>Operator JWT</td><td><code>workspaces:write</code></td><td>Remove a member's access from current workspace.</td></tr>
+</tbody>
+</table>
+
+<h3>Applications Registry &amp; Microservices</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/apps</code></td><td>Operator JWT</td><td><code>apps:read</code></td><td>List all registered applications and microservices in workspace.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/apps</code></td><td>Operator JWT</td><td><code>apps:write</code></td><td>Register application and auto-provision scoped ingestion API key.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/apps/{app_id}</code></td><td>Operator JWT</td><td><code>apps:read</code></td><td>Retrieve application metadata, active keys, and telemetry metrics.</td></tr>
+<tr><td><span class="method method-del">DELETE</span></td><td><code>/api/v1/apps/{app_id}</code></td><td>Operator JWT</td><td><code>apps:write</code></td><td>Deactivate application and revoke associated ingestion credentials.</td></tr>
+</tbody>
+</table>
+
+<h3>Telemetry Ingestion &amp; Event Explorer</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-post">POST</span></td><td><code>/v1/events</code></td><td>Service Key</td><td><code>events:ingest</code></td><td>Ingest single canonical telemetry event.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/v1/events/batch</code></td><td>Service Key</td><td><code>events:ingest</code></td><td>Ingest batch of up to 100 canonical telemetry events.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>List and filter ingested events for authenticated tenant.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/search</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Time-bounded historical query with severity and period comparison.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/{event_id}</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Retrieve detailed canonical event record by ID.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/trends</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Statistical volume trends, error spikes, and baseline anomaly deltas.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/events/{event_id}/recheck</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Re-evaluate active Fast Track detection rules against historical event.</td></tr>
+</tbody>
+</table>
+
+<h3>Threat Hunting &amp; Entity Correlation</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/entities</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Traverse entity correlation graph across IP, User, Service, and Trace.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/events/hunt</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Multi-parameter guided search across distributed microservice logs.</td></tr>
+</tbody>
+</table>
+
+<h3>Security Findings &amp; Triage</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/findings</code></td><td>Operator JWT</td><td><code>findings:read</code></td><td>List detected security findings with status and severity filters.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/findings/{finding_id}</code></td><td>Operator JWT</td><td><code>findings:read</code></td><td>Retrieve detailed finding, evidence payload, and investigation links.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/findings/{finding_id}/feedback</code></td><td>Operator JWT</td><td><code>findings:read</code></td><td>Submit human analyst triage (resolve, false_positive) with reason.</td></tr>
+</tbody>
+</table>
+
+<h3>Deep Track AI &amp; Security Assistant Copilot</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/investigations/query</code></td><td>Operator JWT</td><td><code>investigations:write</code></td><td>Execute synchronous AI Deep Search investigation against telemetry.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/investigations/query/stream</code></td><td>Operator JWT</td><td><code>investigations:write</code></td><td>Stream AI investigation progression via Server-Sent Events (SSE).</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/investigations/{finding_id}</code></td><td>Operator JWT</td><td><code>investigations:write</code></td><td>Trigger Deep Track investigation for a specific security finding.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/investigations/{investigation_id}</code></td><td>Operator JWT</td><td><code>investigations:read</code></td><td>Retrieve full investigation report, audited citations, and candidate rules.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/assistant/chat</code></td><td>Operator JWT</td><td><code>assistant:chat</code></td><td>AI Copilot chat grounded in live findings, telemetry, and defense status.</td></tr>
+<tr><td><span class="method method-del">DELETE</span></td><td><code>/api/v1/assistant/chat/{conversation_id}</code></td><td>Operator JWT</td><td><code>assistant:chat</code></td><td>Clear conversation memory and reset assistant context.</td></tr>
+</tbody>
+</table>
+
+<h3>Declarative Rules Engine</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Propose a new candidate declarative detection rule.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/rules</code></td><td>Operator JWT</td><td><code>rules:read</code></td><td>List declarative detection rules for authenticated tenant.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/rules/{rule_id}</code></td><td>Operator JWT</td><td><code>rules:read</code></td><td>Retrieve rule details, validation metrics, and approval audit.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/rules/{rule_id}/history</code></td><td>Operator JWT</td><td><code>rules:read</code></td><td>Inspect version history and state transition audit trail for rule.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/generate-from-prompt</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Synthesize declarative rule proposal from plain English description.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/{rule_id}/validate</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Execute automated replay validation against scenario tests.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/{rule_id}/approve</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Approve or reject validated rule proposal with rationale.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/{rule_id}/activate</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Activate approved rule into runtime detection registry.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/{rule_id}/disable</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Disable active rule and record audit rationale.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/rules/{rule_id}/rollback</code></td><td>Operator JWT</td><td><code>rules:write</code></td><td>Rollback rule to a previous approved version.</td></tr>
+</tbody>
+</table>
+
+<h3>Active Defense &amp; Perimeter Protection</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/defense/actions</code></td><td>Operator JWT</td><td><code>defense:actions:read</code></td><td>List planned response actions with status and type filters.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/defense/actions/{action_id}</code></td><td>Operator JWT</td><td><code>defense:actions:read</code></td><td>Inspect detailed state and parameters of a containment action.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/defense/actions/plan/{finding_id}</code></td><td>Operator JWT</td><td><code>defense:actions:propose</code></td><td>Plan candidate containment actions for a security finding.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/defense/actions/{action_id}/approve</code></td><td>Human Operator JWT</td><td><code>defense:actions:approve</code></td><td>Dual-custody approval of pending containment action.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/defense/actions/{action_id}/reject</code></td><td>Human Operator JWT</td><td><code>defense:actions:reject</code></td><td>Reject pending containment action with audit rationale.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/defense/actions/{action_id}/execute</code></td><td>Operator JWT</td><td><code>defense:actions:execute</code></td><td>Physically execute approved action with out-of-band verification.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/defense/actions/{action_id}/rollback</code></td><td>Operator JWT</td><td><code>defense:actions:rollback</code></td><td>Revert containment action and restore normal operations.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/defense/actions/reconcile-expirations</code></td><td>Operator JWT</td><td><code>defense:actions:read</code></td><td>Revert verified actions whose TTL has expired.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/defense/policy</code></td><td>Operator JWT</td><td><code>defense:policy:read</code></td><td>Retrieve tenant protection mode and containment policy.</td></tr>
+<tr><td><span class="method method-put">PUT</span></td><td><code>/api/v1/defense/policy</code></td><td>Operator JWT</td><td><code>defense:policy:write</code></td><td>Update tenant defense policy (OBSERVE, ASSISTED, ENFORCED).</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/defense/audit</code></td><td>Operator JWT</td><td><code>defense:actions:read</code></td><td>Query immutable audit log of all defense actions and approvals.</td></tr>
+</tbody>
+</table>
+
+<h3>Incident Management &amp; Threat Intelligence</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/incidents</code></td><td>Operator JWT</td><td><code>incidents:read</code></td><td>List aggregated incident cases.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/incidents/{incident_id}</code></td><td>Operator JWT</td><td><code>incidents:read</code></td><td>View incident detail, findings list, and multi-service timeline.</td></tr>
+<tr><td><span class="method method-patch">PATCH</span></td><td><code>/api/v1/incidents/{incident_id}</code></td><td>Operator JWT</td><td><code>incidents:write</code></td><td>Update incident lifecycle status (open, investigating, resolved).</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/incidents/{incident_id}/contain</code></td><td>Operator JWT</td><td><code>incidents:contain</code></td><td>Execute coordinated containment for all incident entities.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/threat-intelligence</code></td><td>Operator JWT</td><td><code>threat_intel:read</code></td><td>List active Indicators of Compromise (IOCs).</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/threat-intelligence</code></td><td>Operator JWT</td><td><code>threat_intel:write</code></td><td>Register new threat intelligence indicator (IP, domain, hash).</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/threat-intelligence/match</code></td><td>Operator JWT</td><td><code>threat_intel:read</code></td><td>Cross-reference query against telemetry and calculate blast radius.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/threat-intelligence/mitre-coverage</code></td><td>Operator JWT</td><td><code>threat_intel:read</code></td><td>Get real-time MITRE ATT&amp;CK coverage matrix.</td></tr>
+<tr><td><span class="method method-del">DELETE</span></td><td><code>/api/v1/threat-intelligence/{ioc_id}</code></td><td>Operator JWT</td><td><code>threat_intel:write</code></td><td>Deactivate or remove threat intelligence indicator.</td></tr>
+</tbody>
+</table>
+
+<h3>Attack Simulation &amp; Chaos Engineering</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/simulation/run</code></td><td>Operator JWT</td><td><code>simulation:run</code></td><td>Trigger deterministic 3-stage cross-service attack simulation.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/simulation/scenarios</code></td><td>Operator JWT</td><td><code>simulation:read</code></td><td>List available attack simulation scenarios and target stages.</td></tr>
+</tbody>
+</table>
+
+<h3>API Keys, Operations &amp; Monitoring</h3>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Auth Type</th><th>Required Permission</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/keys</code></td><td>Operator JWT</td><td><code>keys:write</code></td><td>Provision scoped, SHA-256 hashed API key.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/keys</code></td><td>Operator JWT</td><td><code>keys:read</code></td><td>List provisioned API keys for tenant.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/keys/{key_id}/rotate</code></td><td>Operator JWT</td><td><code>keys:write</code></td><td>Rotate API key with graceful overlap window.</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/keys/{key_id}/revoke</code></td><td>Operator JWT</td><td><code>keys:write</code></td><td>Revoke and deactivate API key immediately.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/ops/health</code></td><td>Public</td><td>None</td><td>Comprehensive readiness probe (PostgreSQL, Redis).</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/ops/overview</code></td><td>Operator JWT</td><td><code>findings:read</code></td><td>Operational counts (events, findings, actions, incidents).</td></tr>
+<tr><td><span class="method method-post">POST</span></td><td><code>/api/v1/ops/stream-ticket</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Issue single-use authentication ticket for SSE stream.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/ops/events/stream</code></td><td>Ticket</td><td>Stream Ticket</td><td>Live Server-Sent Events (SSE) telemetry bus stream.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/api/v1/ops/events/recent</code></td><td>Operator JWT</td><td><code>events:read</code></td><td>Retrieve recent telemetry event buffer from memory/cache.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/metrics</code></td><td>Public / Scrape</td><td>None</td><td>Prometheus 0.0.4 metrics scrape endpoint.</td></tr>
+<tr><td><span class="method method-get">GET</span></td><td><code>/health</code></td><td>Public</td><td>None</td><td>Root health probe.</td></tr>
+</tbody>
+</table>
+</section>
+</article><footer class="page-footer">Ternline documentation · Follow the signal. Find the threat.</footer></div></main>
+<script>
+(()=>{
+ const sidebar=document.getElementById('sidebarNav'),menu=document.getElementById('mobileMenuBtn'),search=document.getElementById('docSearch');
+ menu?.addEventListener('click',()=>{const open=sidebar.classList.toggle('open');menu.setAttribute('aria-expanded',String(open));});
+ sidebar?.addEventListener('click',e=>{if(e.target.closest('a')&&innerWidth<=900){sidebar.classList.remove('open');menu?.setAttribute('aria-expanded','false');}});
+ search?.addEventListener('input',()=>{const q=search.value.trim().toLowerCase();sidebar.querySelectorAll('.nav-group').forEach(group=>{let shown=0;group.querySelectorAll('a').forEach(a=>{const ok=!q||a.textContent.toLowerCase().includes(q);a.hidden=!ok;if(ok)shown++;});group.hidden=shown===0;});});
+ document.querySelectorAll('pre').forEach(pre=>{const wrap=document.createElement('div');wrap.className='code-container';pre.parentNode.insertBefore(wrap,pre);wrap.appendChild(pre);const b=document.createElement('button');b.className='copy-btn';b.type='button';b.textContent='Copy';b.setAttribute('aria-label','Copy code');wrap.appendChild(b);b.addEventListener('click',async()=>{try{await navigator.clipboard.writeText((pre.querySelector('code')||pre).innerText);b.textContent='Copied';b.classList.add('copied');setTimeout(()=>{b.textContent='Copy';b.classList.remove('copied');},1600);}catch{b.textContent='Copy unavailable';setTimeout(()=>b.textContent='Copy',1600);}});});
+ const links=[...document.querySelectorAll('.sidebar-nav a')];const targets=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);if('IntersectionObserver'in window){const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));}}),{rootMargin:'-15% 0px -75% 0px'});targets.forEach(t=>io.observe(t));}
+
+ const themeButton=document.getElementById('themeToggle');
+ const applyTheme=theme=>{document.documentElement.dataset.theme=theme; if(themeButton){themeButton.textContent=theme==='dark'?'Light mode':'Dark mode';themeButton.setAttribute('aria-label',theme==='dark'?'Switch to light mode':'Switch to dark mode');} const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme==='dark'?'#101411':'#f7f8f6';};
+ let savedTheme=null;try{savedTheme=localStorage.getItem('ternline-docs-theme');}catch{}
+ applyTheme(savedTheme==='dark'?'dark':'light');
+ themeButton?.addEventListener('click',()=>{const next=document.documentElement.dataset.theme==='dark'?'light':'dark';applyTheme(next);try{localStorage.setItem('ternline-docs-theme',next);}catch{}});
+})();
+</script></body></html>

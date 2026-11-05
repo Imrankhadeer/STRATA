@@ -317,6 +317,31 @@ async def documentation():
             return FileResponse(abs_p, media_type="text/html")
     return JSONResponse({"error": "Documentation page not found"}, status_code=404)
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon_ico():
+    p = os.path.join(BASE_DIR, "favicon.ico")
+    if os.path.exists(p):
+        return FileResponse(p, media_type="image/x-icon")
+    return Response(status_code=204)
+
+
+@app.get("/favicon.svg", include_in_schema=False)
+async def favicon_svg():
+    p = os.path.join(BASE_DIR, "favicon.svg")
+    if os.path.exists(p):
+        return FileResponse(p, media_type="image/svg+xml")
+    return Response(status_code=204)
+
+
+@app.get("/favicon.png", include_in_schema=False)
+@app.get("/apple-touch-icon.png", include_in_schema=False)
+async def favicon_png():
+    p = os.path.join(BASE_DIR, "favicon.png")
+    if os.path.exists(p):
+        return FileResponse(p, media_type="image/png")
+    return Response(status_code=204)
+
+
 
 @app.get("/health", tags=["health"])
 @app.get("/api/v1/ops/health", tags=["health"])
