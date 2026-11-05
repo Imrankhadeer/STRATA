@@ -6043,10 +6043,6 @@ async function executeDeepSearch() {
     toast(`Deep search completed: ${rep.verdict || 'Report ready'}`);
     if (statusEl) statusEl.classList.add('hide');
 
-    const hypotheses = Array.isArray(rep.hypotheses) ? rep.hypotheses : [];
-    const candidateRules = Array.isArray(rep.candidate_rules) ? rep.candidate_rules : [];
-    const mitigations = Array.isArray(rep.recommended_mitigations) ? rep.recommended_mitigations : [];
-
     if (rep.investigation_id) {
       selectedDeepTrackId = rep.investigation_id;
     }
