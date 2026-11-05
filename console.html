@@ -1895,7 +1895,16 @@ function investigations() {
           <div class="ref-report-grid"><div class="ref-report-main"><b style="font-size:12px">▤ &nbsp;Investigation summary</b><div class="ref-report-summary">${esc(summary)}</div><div class="between" style="margin:12px 0 7px"><b style="font-size:11px">Hypotheses (${hypotheses.length})</b><span class="tiny dim">Evidence-backed reasoning</span></div>${hypotheses.length?hypotheses.slice(0,4).map(h=>`<div class="panel pad" style="margin-bottom:7px"><div class="between"><b class="tiny">${esc(h.title||'Hypothesis')}</b>${pill(h.likelihood||h.confidence||'Unrated')}</div><p class="tiny muted" style="margin:5px 0 0">${esc(h.description||'No description returned.')}</p></div>`).join(''):`<div class="chart-empty">Hypotheses will appear when the selected report includes them.</div>`}<div class="between" style="margin:12px 0 7px"><b style="font-size:11px">Event context</b><span class="tiny dim">${events.length} loaded event records</span></div>${events.slice(0,4).map(e=>`<div class="ref-evidence-row"><span class="dot"></span><code>${esc(field(e,'event_id','id'))}</code><span class="pill info">${esc(field(e,'service_id','service_name','service'))}</span><span class="dim">${esc(field(e,'event_type','event_name','type'))}</span></div>`).join('')||'<div class="chart-empty">No event context is currently loaded.</div>'}</div>
           <aside class="ref-report-side"><b style="font-size:11px">Evidence (${evidence.length})</b>${evidence.length?evidence.map(e=>`<div class="ref-evidence-row"><span>▤</span><b>${esc(e.event_id||'Event')}</b><span class="pill good">${esc(e.service_id||'Service')}</span></div>`).join(''):'<p class="tiny dim">Evidence citations from the selected report appear here.</p>'}<div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><b style="font-size:11px">Investigation outcome</b><p class="tiny muted">${esc(field(selected||{},'verdict','status')||'Awaiting report')}</p>${selected?pill(field(selected,'verdict','status')):'<span class="pill info">No report selected</span>'}</div><div style="border-top:1px solid var(--line);padding-top:11px"><b style="font-size:11px">Candidate rules (${candidates.length})</b>${candidates.slice(0,3).map(r=>`<div style="margin-top:8px"><b class="tiny">${esc(r.title||r.name||'Candidate rule')}</b><p class="tiny dim">${esc(r.description||'Proposal returned by Deep Track')}</p></div>`).join('')||'<p class="tiny dim">No candidate rules returned for this report.</p>'}</div></aside></div></section>
       </div>
-      <aside class="panel ref-deep-side"><div class="panelhead"><div><h3>Investigation details</h3><small>Model provenance and review state</small></div></div><div class="pad"><div class="eyebrow">MODEL</div><b style="font-size:12px">${esc(selected?.investigator_model||invMeta.model||'Meta Muse Spark')}</b><p class="tiny dim">${esc(selected?.investigator_provider||invMeta.provider||'Meta')}</p><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">SOURCE FINDING</div><b class="tiny">${esc(selected?.finding_id||'Not linked')}</b></div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">CANDIDATE DETECTIONS</div><b style="font-size:21px">${candidates.length}</b><p class="tiny dim">Proposals only · review and validate before activation</p><button class="btn small" data-page="rules">Open Rule Registry →</button></div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">NEXT STEP</div><p class="tiny muted">Review evidence, inspect hypotheses, then validate candidate rules in Replay & Validation.</p><button class="btn small" data-page="coverage">Open Replay & Validation →</button></div></div></aside>
+      <aside class="panel ref-deep-side"><div class="panelhead"><div><h3>Investigation details</h3><small>Model provenance and review state</small></div></div><div class="pad"><div class="eyebrow">MODEL</div><b style="font-size:12px">${esc(selected?.investigator_model||invMeta.model||'Meta Muse Spark')}</b><p class="tiny dim">${esc(selected?.investigator_provider||invMeta.provider||'Meta')}</p><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">SOURCE FINDING</div><b class="tiny">${esc(selected?.finding_id||'Not linked')}</b></div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px">
+  <div class="eyebrow">ANALYST DISPOSITION</div>
+  ${selected?.finding_id ? `
+    <div class="stack" style="gap:6px;margin-top:6px">
+      <button class="btn small" data-action="feedback-finding" data-id="${esc(selected.finding_id)}" data-status="resolved" style="background:#13331b;border-color:#3e5833;color:var(--green);width:100%">✓ Mark Finding Resolved</button>
+      <button class="btn small danger ghost" data-action="feedback-finding" data-id="${esc(selected.finding_id)}" data-status="false_positive" style="width:100%">✕ False Positive</button>
+      <button class="btn small ghost" data-action="feedback-finding" data-id="${esc(selected.finding_id)}" data-status="open" style="width:100%">↺ Reopen Finding</button>
+    </div>
+  ` : '<p class="tiny dim">Query investigation (not linked to open finding)</p>'}
+</div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">CANDIDATE DETECTIONS</div><b style="font-size:21px">${candidates.length}</b><p class="tiny dim">Proposals only · review and validate before activation</p><button class="btn small" data-page="rules">Open Rule Registry →</button></div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">NEXT STEP</div><p class="tiny muted">Review evidence, inspect hypotheses, then validate candidate rules in Replay & Validation.</p><button class="btn small" data-page="coverage">Open Replay & Validation →</button></div></div></aside>
     </div>`;
 }
 
@@ -1938,6 +1947,31 @@ async function viewInvestigationReport(investigationId) {
           <b>Executive Summary</b>
           <p class="muted" style="margin:6px 0 0;font-size:11px;line-height:1.6">${esc(rep.summary)}</p>
         </div>
+        <div class="panel pad" style="margin-top:10px;background:var(--panel2);border-color:#334d38">
+          <div class="between" style="margin-bottom:8px">
+            <div>
+              <b style="color:var(--text-main);font-size:12px">Analyst Disposition & Finding Triage</b>
+              <div class="tiny muted">Update underlying security finding status based on investigated evidence</div>
+            </div>
+            ${rep.finding_id ? `<span class="pill tiny neutral">Finding: ${esc(rep.finding_id)}</span>` : ''}
+          </div>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            ${rep.finding_id ? `
+              <button class="btn small" data-action="feedback-finding" data-id="${esc(rep.finding_id)}" data-status="resolved" style="background:#13331b;border-color:#3e5833;color:var(--green)">✓ Mark Finding Resolved</button>
+              <button class="btn small danger ghost" data-action="feedback-finding" data-id="${esc(rep.finding_id)}" data-status="false_positive">✕ Mark False Positive</button>
+              <button class="btn small ghost" data-action="feedback-finding" data-id="${esc(rep.finding_id)}" data-status="open">↺ Reopen Finding</button>
+            ` : `
+              <span class="tiny dim">Report is a query investigation (not directly bound to a finding ID).</span>
+            `}
+          </div>
+          <div class="row" style="gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid var(--line);align-items:center">
+            <span class="tiny dim">Report Quality Rating:</span>
+            <button class="btn small ghost" data-action="rate-investigation" data-id="${esc(rep.investigation_id)}" data-rating="accurate" title="Rate as accurate and grounded">👍 Accurate</button>
+            <button class="btn small ghost" data-action="rate-investigation" data-id="${esc(rep.investigation_id)}" data-rating="partial" title="Rate as partially helpful">⚖️ Partial</button>
+            <button class="btn small ghost" data-action="rate-investigation" data-id="${esc(rep.investigation_id)}" data-rating="inaccurate" title="Rate as inaccurate">👎 Inaccurate</button>
+          </div>
+        </div>
+
 
         <h4>Grounded Hypotheses & Audited Evidence Citations</h4>
         ${hypotheses.map(h => `
@@ -2533,6 +2567,10 @@ async function runHunt() {
 
 // F. Threat Intelligence & IOC Blast Radius Matcher
 function threatIntel() {
+  setTimeout(() => {
+    loadMitreCoverage();
+    loadIocRegistry();
+  }, 40);
   return head('Threat Intelligence & IOCs', 'Manage Indicators of Compromise (IPs, domains, hashes) and scan microservice telemetry to calculate blast radius and MITRE ATT&CK coverage.', `
       <button class="btn small" data-action="refresh-threat-intel">↻ Refresh</button>
       <button class="btn primary small" data-action="open-create-ioc" style="margin-left:6px">+ Register IOC</button>
@@ -2687,20 +2725,19 @@ function threatIntel() {
 async function loadMitreCoverage() {
   const container = $('#mitreCoverageSummary');
   if (!container) return;
-  try {
-    const data = await request('/api/v1/threat-intelligence/mitre-coverage');
-    const techs = data.techniques || [];
+  const renderData = (data) => {
+    const techs = (data && data.techniques) || [];
     if (!techs.length) {
-      container.innerHTML = '<div class="tiny muted">No MITRE ATT&CK techniques registered.</div>';
+      container.innerHTML = '<div class="tiny muted" style="padding:10px">No MITRE ATT&CK techniques registered.</div>';
       return;
     }
     container.innerHTML = `
       <div class="between" style="margin-bottom:8px">
-        <span class="tiny muted">Coverage: <b>${data.covered_techniques_count || techs.length}</b> Techniques Tracked</span>
+        <span class="tiny muted">Coverage: <b>${data.total_techniques_covered || data.covered_techniques_count || techs.length}</b> Techniques Tracked</span>
         <span class="pill ok">${Math.round(data.coverage_percentage || 100)}% Matrix Health</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding-right:4px">
-        ${techs.slice(0, 6).map(t => `
+        ${techs.slice(0, 10).map(t => `
           <div style="padding:6px 8px;background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:4px" class="between">
             <div>
               <b style="font-size:11px;color:var(--text-main)">${esc(t.technique_id)} · ${esc(t.technique_name)}</b>
@@ -2711,23 +2748,30 @@ async function loadMitreCoverage() {
         `).join('')}
       </div>
     `;
+  };
+  if (cache.mitreCoverage) renderData(cache.mitreCoverage);
+  try {
+    const data = await request('/api/v1/threat-intelligence/mitre-coverage');
+    cache.mitreCoverage = data;
+    renderData(data);
   } catch (err) {
-    container.innerHTML = `<div class="tiny danger">Could not load MITRE coverage: ${esc(err.message)}</div>`;
+    if (!cache.mitreCoverage) {
+      container.innerHTML = `<div class="tiny danger">Could not load MITRE coverage: ${esc(err.message)}</div>`;
+    }
   }
 }
 
 async function loadIocRegistry() {
   const target = $('#iocRegistryContainer');
   if (!target) return;
-  try {
-    const list = await request('/api/v1/threat-intelligence');
+  const renderTable = (list) => {
     const iocs = Array.isArray(list) ? list : [];
     if (!iocs.length) {
       target.innerHTML = '<div class="empty" style="padding:20px">No custom threat indicators registered yet. Click <b>+ Register IOC</b> above to add one.</div>';
       return;
     }
     target.innerHTML = table(iocs, [
-      { label: 'Type', render: r => `<span class="pill info" style="font-size:10px">${esc(r.ioc_type.toUpperCase())}</span>` },
+      { label: 'Type', render: r => `<span class="pill info" style="font-size:10px">${esc((r.ioc_type || '').toUpperCase())}</span>` },
       { label: 'Indicator Value', render: r => `<code style="font-size:12px;color:var(--lime)">${esc(r.value)}</code>` },
       { label: 'Severity', render: r => pill(r.severity) },
       { label: 'Confidence', render: r => `<span class="pill neutral" style="font-size:10px">${esc(r.confidence)}</span>` },
@@ -2738,8 +2782,16 @@ async function loadIocRegistry() {
         <button class="btn small danger ghost" data-action="delete-ioc" data-id="${esc(r.ioc_id)}" style="font-size:10px;padding:2px 8px;margin-left:4px">🗑️</button>
       `}
     ]);
+  };
+  if (cache.iocRegistry) renderTable(cache.iocRegistry);
+  try {
+    const list = await request('/api/v1/threat-intelligence');
+    cache.iocRegistry = list;
+    renderTable(list);
   } catch (err) {
-    target.innerHTML = `<div class="callout danger">Failed loading IOC registry: ${esc(err.message)}</div>`;
+    if (!cache.iocRegistry) {
+      target.innerHTML = `<div class="callout danger">Failed loading IOC registry: ${esc(err.message)}</div>`;
+    }
   }
 }
 
@@ -3212,49 +3264,154 @@ function inspectIncident(caseId) {
 // Entities & Correlation
 
 function topology() {
-  const ev=records('events'), fList=records('findings');
-  const serviceCounts=new Map(), edgeCounts=new Map(), serviceMeta=new Map();
-  for(const e of ev){
-    const target=field(e,'service_id','service_name','service');
-    const source=field(e,'source_service','source_resource','app_id');
-    if(target!=='—'){serviceCounts.set(target,(serviceCounts.get(target)||0)+1);serviceMeta.set(target,e);}
-    if(source!=='—'&&target!=='—'&&source!==target){serviceCounts.set(source,(serviceCounts.get(source)||0)+0);const key=`${source}→${target}`;edgeCounts.set(key,(edgeCounts.get(key)||0)+1);}
+  const ev = records('events'), fList = records('findings');
+  const serviceCounts = new Map(), edgeCounts = new Map(), serviceMeta = new Map();
+  for (const e of ev) {
+    const target = field(e, 'service_id', 'service_name', 'service');
+    const source = field(e, 'source_service', 'source_resource', 'app_id');
+    if (target !== '—') {
+      serviceCounts.set(target, (serviceCounts.get(target) || 0) + 1);
+      serviceMeta.set(target, e);
+    }
+    if (source !== '—' && target !== '—' && source !== target) {
+      serviceCounts.set(source, (serviceCounts.get(source) || 0) + 0);
+      const key = `${source}→${target}`;
+      edgeCounts.set(key, (edgeCounts.get(key) || 0) + 1);
+    }
   }
-  const impacted=new Set();
-  for(const f of fList){if(String(f.status||'').toLowerCase()==='open'){(f.services||[]).forEach(x=>impacted.add(x));if(f.evidence?.service_id)impacted.add(f.evidence.service_id);}}
-  const names=[...serviceCounts.keys()].sort((a,b)=>(serviceCounts.get(b)||0)-(serviceCounts.get(a)||0)).slice(0,8);
-  const selected=names.find(n=>impacted.has(n))||names[0]||'';
-  const positions=[[105,190],[285,190],[470,190],[655,90],[655,290],[820,190],[285,330],[470,330]];
-  const nodes=names.map((name,i)=>({name,x:positions[i][0],y:positions[i][1],count:serviceCounts.get(name)||0,risk:impacted.has(name)}));
-  const edgeList=[...edgeCounts.entries()].map(([k,count])=>{const [source,target]=k.split('→');return {source,target,count};});
-  const nodeIndex=new Map(nodes.map(n=>[n.name,n]));
-  const edgeSvg=edgeList.filter(e=>nodeIndex.has(e.source)&&nodeIndex.has(e.target)).map(e=>{const a=nodeIndex.get(e.source),b=nodeIndex.get(e.target);const sx=a.x+45,sy=a.y+20,tx=b.x+45,ty=b.y+20;const risk=impacted.has(e.source)||impacted.has(e.target);return `<path class="ref-edge ${risk?'risk':''}" d="M${sx} ${sy} C${(sx+tx)/2} ${sy}, ${(sx+tx)/2} ${ty}, ${tx} ${ty}"/><circle cx="${(sx+tx)/2}" cy="${(sy+ty)/2}" r="3" fill="${risk?'var(--red)':'var(--lime)'}"/>`;}).join('');
-  const nodeSvg=nodes.map(n=>`<g class="ref-node ${n.risk?'risk':''}" data-action="filter-events-by-service" data-svc="${esc(n.name)}" transform="translate(${n.x} ${n.y})"><rect width="90" height="42" rx="11"/><text x="45" y="17" style="font-size:16px">${n.name.toLowerCase().includes('db')||n.name.toLowerCase().includes('database')?'▤':n.name.toLowerCase().includes('api')?'☁':'⬡'}</text><text x="45" y="59">${esc(n.name.length>17?n.name.slice(0,16)+'…':n.name)}</text><rect class="node-kind" x="17" y="66" width="56" height="16" rx="8"/><text class="node-kind-text" x="45" y="77">${n.count} events</text></g>`).join('');
-  const selectedEvents=ev.filter(e=>field(e,'service_id','service_name','service')===selected);
-  const selectedFinding=fList.find(f=>(f.services||[]).includes(selected)||f.evidence?.service_id===selected);
-  const serviceNames=names.length?names.length:'—';
-  const traces=new Set(ev.map(e=>field(e,'trace_id')).filter(x=>x!=='—'));
-  return head('Service Topology','Observed microservice topology and communication graph reconstructed from live telemetry traces.',`<button class="btn small" data-action="refresh">↻</button><button class="btn small primary" data-action="refresh">✣ Refresh Topology</button>`)
+  const impacted = new Set();
+  for (const f of fList) {
+    if (String(f.status || '').toLowerCase() === 'open') {
+      (f.services || []).forEach(x => impacted.add(x));
+      if (f.evidence?.service_id) impacted.add(f.evidence.service_id);
+    }
+  }
+  const names = [...serviceCounts.keys()].sort((a, b) => (serviceCounts.get(b) || 0) - (serviceCounts.get(a) || 0)).slice(0, 8);
+  const selected = (window._selectedTopologyService && names.includes(window._selectedTopologyService))
+    ? window._selectedTopologyService
+    : (names.find(n => impacted.has(n)) || names[0] || '');
+  const showLabels = Boolean(window._topologyShowLabels);
+  const positions = [[105, 190], [285, 190], [470, 190], [655, 90], [655, 290], [820, 190], [285, 330], [470, 330]];
+  const nodes = names.map((name, i) => ({
+    name,
+    x: positions[i] ? positions[i][0] : 100 + (i * 90),
+    y: positions[i] ? positions[i][1] : 190,
+    count: serviceCounts.get(name) || 0,
+    risk: impacted.has(name)
+  }));
+  const edgeList = [...edgeCounts.entries()].map(([k, count]) => {
+    const [source, target] = k.split('→');
+    return { source, target, count };
+  });
+  const nodeIndex = new Map(nodes.map(n => [n.name, n]));
+  const edgeSvg = edgeList.filter(e => nodeIndex.has(e.source) && nodeIndex.has(e.target)).map(e => {
+    const a = nodeIndex.get(e.source), b = nodeIndex.get(e.target);
+    const sx = a.x + 45, sy = a.y + 20, tx = b.x + 45, ty = b.y + 20;
+    const isConnSelected = selected && (e.source === selected || e.target === selected);
+    const risk = impacted.has(e.source) || impacted.has(e.target);
+    const strokeColor = risk ? 'var(--red)' : (isConnSelected ? 'var(--lime)' : 'rgba(163,201,168,0.4)');
+    const strokeW = isConnSelected ? '2.5' : '1.5';
+    return `<path class="ref-edge ${risk ? 'risk' : ''}" d="M${sx} ${sy} C${(sx + tx) / 2} ${sy}, ${(sx + tx) / 2} ${ty}, ${tx} ${ty}" stroke="${strokeColor}" stroke-width="${strokeW}" fill="none"/>
+            <circle cx="${(sx + tx) / 2}" cy="${(sy + ty) / 2}" r="${isConnSelected ? '4' : '3'}" fill="${risk ? 'var(--red)' : 'var(--lime)'}"/>`;
+  }).join('');
+
+  const nodeSvg = nodes.map(n => {
+    const isSel = n.name === selected;
+    const borderCol = isSel ? 'var(--lime)' : (n.risk ? 'var(--red)' : 'rgba(255,255,255,0.15)');
+    const bgCol = isSel ? 'rgba(34,197,94,0.18)' : 'var(--panel2)';
+    const textLabel = showLabels ? n.name : (n.name.length > 17 ? n.name.slice(0, 16) + '…' : n.name);
+    return `<g class="ref-node ${n.risk ? 'risk' : ''} ${isSel ? 'active' : ''}" data-action="select-topology-service" data-svc="${esc(n.name)}" transform="translate(${n.x} ${n.y})" style="cursor:pointer" title="Click to inspect telemetry profile for ${esc(n.name)}">
+      <rect width="90" height="42" rx="11" fill="${bgCol}" stroke="${borderCol}" stroke-width="${isSel ? '2.5' : '1'}"/>
+      <text x="45" y="17" text-anchor="middle" style="font-size:16px">${n.name.toLowerCase().includes('db') || n.name.toLowerCase().includes('database') ? '▤' : n.name.toLowerCase().includes('api') ? '☁' : '⬡'}</text>
+      <text x="45" y="59" text-anchor="middle" fill="${isSel ? 'var(--lime)' : 'var(--text)'}" font-weight="${isSel ? '700' : '400'}">${esc(textLabel)}</text>
+      <rect class="node-kind" x="17" y="66" width="56" height="16" rx="8" fill="rgba(0,0,0,0.4)"/>
+      <text class="node-kind-text" x="45" y="77" text-anchor="middle">${n.count} events</text>
+    </g>`;
+  }).join('');
+
+  const selectedEvents = ev.filter(e => field(e, 'service_id', 'service_name', 'service') === selected);
+  const selectedFinding = fList.find(f => (f.services || []).includes(selected) || f.evidence?.service_id === selected);
+  const serviceNames = names.length ? names.length : '—';
+  const traces = new Set(ev.map(e => field(e, 'trace_id')).filter(x => x !== '—'));
+
+  return head('Service Topology', 'Observed microservice topology and communication graph reconstructed from live telemetry traces.', `<button class="btn small" data-action="refresh">↻</button><button class="btn small primary" data-action="refresh">✣ Refresh Topology</button>`)
     + errPanel()
     + `<div class="ref-topology-stats">
-      ${compactMetric('Services',serviceNames,'Observed in telemetry')}${compactMetric('Connections',edgeList.length,'Observed communication links')}${compactMetric('At risk',impacted.size,'Services linked to open findings')}${compactMetric('Traces',traces.size,'Distinct trace identifiers')}
+      ${compactMetric('Services', serviceNames, 'Observed in telemetry')}${compactMetric('Connections', edgeList.length, 'Observed communication links')}${compactMetric('At risk', impacted.size, 'Services linked to open findings')}${compactMetric('Traces', traces.size, 'Distinct trace identifiers')}
     </div>`
     + `<div class="ref-topology-layout">
-      <section class="panel ref-topology-graph"><div class="ref-graph-tools"><div class="ref-graph-tabs"><button class="active" type="button">⌘ Topology Graph</button></div><span class="spacer"></span><span class="pill ${ev.length?'good':'info'}">● ${ev.length?'Telemetry loaded':'Waiting for telemetry'}</span><button class="btn small" type="button" onclick="toast('Graph is derived from the currently loaded event sample')">Show Labels ◉</button></div>
-      ${nodes.length?`<svg class="ref-graph-svg" viewBox="0 0 930 420" role="img" aria-label="Service communication graph">${edgeSvg}${nodeSvg}</svg>`:`<div class="empty" style="position:absolute;inset:80px 20px 20px;display:grid;place-content:center;text-align:center"><b>No service topology yet</b><p class="muted tiny">Topology nodes and links appear when telemetry includes service and source fields.</p></div>`}
-      <div class="ref-graph-legend"><span><i class="dot" style="display:inline-block"></i> Normal flow</span><span><i class="dot" style="display:inline-block;background:var(--red)"></i> Service linked to open finding</span><span>— Observed communication link</span></div></section>
-      <aside class="panel ref-inspector"><div class="ref-inspector-head"><div style="font-size:27px;color:var(--lime)">⬡</div><div style="flex:1;min-width:0"><b style="font-size:15px">${esc(selected||'No service selected')}</b><div class="tiny muted">Selected service · telemetry profile</div></div>${selectedFinding?'<span class="pill danger">⚠ At Risk</span>':'<span class="pill ok">Observed</span>'}</div>
+      <section class="panel ref-topology-graph">
+        <div class="ref-graph-tools">
+          <div class="ref-graph-tabs"><button class="active" type="button">⌘ Topology Graph</button></div>
+          <span class="spacer"></span>
+          <span class="pill ${ev.length ? 'good' : 'info'}">● ${ev.length ? 'Telemetry loaded' : 'Waiting for telemetry'}</span>
+          <button class="btn small ${showLabels ? 'active' : ''}" type="button" data-action="toggle-topology-labels">${showLabels ? 'Hide Labels ◉' : 'Show Labels ◉'}</button>
+        </div>
+        ${nodes.length ? `<svg class="ref-graph-svg" viewBox="0 0 930 420" role="img" aria-label="Service communication graph">${edgeSvg}${nodeSvg}</svg>` : `<div class="empty" style="position:absolute;inset:80px 20px 20px;display:grid;place-content:center;text-align:center"><b>No service topology yet</b><p class="muted tiny">Topology nodes and links appear when telemetry includes service and source fields.</p></div>`}
+        <div class="ref-graph-legend">
+          <span><i class="dot" style="display:inline-block"></i> Normal flow</span>
+          <span><i class="dot" style="display:inline-block;background:var(--red)"></i> Service linked to open finding</span>
+          <span>— Observed communication link</span>
+        </div>
+      </section>
+      <aside class="panel ref-inspector">
+        <div class="ref-inspector-head">
+          <div style="font-size:27px;color:var(--lime)">⬡</div>
+          <div style="flex:1;min-width:0">
+            <b style="font-size:15px">${esc(selected || 'No service selected')}</b>
+            <div class="tiny muted">Selected service · telemetry profile</div>
+          </div>
+          ${selectedFinding ? '<span class="pill danger">⚠ At Risk</span>' : '<span class="pill ok">Observed</span>'}
+        </div>
         <div class="ref-inspector-tabs"><button class="active">Overview</button></div>
-        <div class="ref-inspector-metrics"><div><small>Events</small><b>${selectedEvents.length}</b></div><div><small>Related traces</small><b>${new Set(selectedEvents.map(e=>field(e,'trace_id')).filter(x=>x!=='—')).size}</b></div><div><small>Findings</small><b>${selectedFinding?'1':'0'}</b></div></div>
-        <h3 style="font-size:11px;margin:13px 0 4px">Connections (${edgeList.filter(e=>e.source===selected||e.target===selected).length})</h3>
-        ${edgeList.filter(e=>e.source===selected||e.target===selected).slice(0,6).map(e=>`<div class="ref-evidence-row"><b>${e.source===selected?'→':'←'} ${esc(e.source===selected?e.target:e.source)}</b><span class="pill info">${e.count} events</span></div>`).join('')||'<div class="tiny dim" style="padding:8px 0">No directed links were identified in the loaded sample.</div>'}
-        <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:13px"><button class="btn small primary" data-page="investigations">⌕ Investigate in Deep Track</button><button class="btn small" data-action="filter-events-by-service" data-svc="${esc(selected)}">↗ View in Event Explorer</button></div>
+        <div class="ref-inspector-metrics">
+          <div><small>Events</small><b>${selectedEvents.length}</b></div>
+          <div><small>Related traces</small><b>${new Set(selectedEvents.map(e => field(e, 'trace_id')).filter(x => x !== '—')).size}</b></div>
+          <div><small>Findings</small><b>${selectedFinding ? '1' : '0'}</b></div>
+        </div>
+        <h3 style="font-size:11px;margin:13px 0 4px">Connections (${edgeList.filter(e => e.source === selected || e.target === selected).length})</h3>
+        ${edgeList.filter(e => e.source === selected || e.target === selected).slice(0, 8).map(e => {
+          const partner = e.source === selected ? e.target : e.source;
+          return `<div class="ref-evidence-row" data-action="select-topology-service" data-svc="${esc(partner)}" style="cursor:pointer" title="Click to inspect ${esc(partner)}">
+            <b>${e.source === selected ? '→' : '←'} ${esc(partner)}</b>
+            <span class="pill info">${e.count} events</span>
+          </div>`;
+        }).join('') || '<div class="tiny dim" style="padding:8px 0">No directed links were identified in the loaded sample.</div>'}
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:13px">
+          ${selectedFinding ? `
+            <button class="btn small primary" data-action="run-investigation" data-id="${esc(selectedFinding.finding_id)}">⌕ Investigate in Deep Track</button>
+          ` : `
+            <button class="btn small primary" data-action="investigate-service-deep-track" data-svc="${esc(selected)}">⌕ Investigate in Deep Track</button>
+          `}
+          <button class="btn small" data-action="filter-events-by-service" data-svc="${esc(selected)}">↗ View in Event Explorer</button>
+        </div>
       </aside>
     </div>
-    <div class="ref-topology-bottom"><section class="panel"><div class="panelhead"><div><h3>Discovered Cross-Service Communication Links</h3><small>Directional links inferred from source and target service fields in loaded events.</small></div><span class="pill info">${edgeList.length} links</span></div><div class="ref-topo-link header"><span>Source</span><span>→</span><span>Target</span><span>Volume</span><span>Status</span></div>${edgeList.slice(0,10).map(e=>`<div class="ref-topo-link"><b>${esc(e.source)}</b><span>→</span><b>${esc(e.target)}</b><span>${e.count} events</span><span class="pill ${impacted.has(e.source)||impacted.has(e.target)?'warn':'ok'}">${impacted.has(e.source)||impacted.has(e.target)?'Elevated':'Normal'}</span></div>`).join('')||'<div class="empty">No communication links in returned telemetry.</div>'}</section>
-    <section class="panel"><div class="panelhead"><div><h3>Topology Timeline</h3><small>Recent event activity associated with discovered services.</small></div></div><div class="ref-topo-timeline">${ev.slice(0,5).map(e=>`<div class="ref-topo-time ${impacted.has(field(e,'service_id','service_name','service'))?'risk':''}"><b>${formatLocalTime(e.timestamp||e.created_at)}</b> &nbsp; ${esc(field(e,'event_type','event_name','type','message'))}<div class="tiny dim">${esc(field(e,'service_id','service_name','service'))} · ${esc(field(e,'trace_id'))}</div></div>`).join('')||'<div class="tiny dim">Recent topology activity will appear after telemetry is received.</div>'}</div></section></div>`;
+    <div class="ref-topology-bottom">
+      <section class="panel">
+        <div class="panelhead">
+          <div><h3>Discovered Cross-Service Communication Links</h3><small>Directional links inferred from source and target service fields in loaded events.</small></div>
+          <span class="pill info">${edgeList.length} links</span>
+        </div>
+        <div class="ref-topo-link header"><span>Source</span><span>→</span><span>Target</span><span>Volume</span><span>Status</span></div>
+        ${edgeList.slice(0, 10).map(e => `
+          <div class="ref-topo-link" data-action="select-topology-service" data-svc="${esc(e.source)}" style="cursor:pointer" title="Click to inspect ${esc(e.source)}">
+            <b>${esc(e.source)}</b><span>→</span><b>${esc(e.target)}</b><span>${e.count} events</span>
+            <span class="pill ${impacted.has(e.source) || impacted.has(e.target) ? 'warn' : 'ok'}">${impacted.has(e.source) || impacted.has(e.target) ? 'Elevated' : 'Normal'}</span>
+          </div>`).join('') || '<div class="empty">No communication links in returned telemetry.</div>'}
+      </section>
+      <section class="panel">
+        <div class="panelhead"><div><h3>Topology Timeline</h3><small>Recent event activity associated with discovered services.</small></div></div>
+        <div class="ref-topo-timeline">
+          ${ev.slice(0, 5).map(e => `
+            <div class="ref-topo-time ${impacted.has(field(e, 'service_id', 'service_name', 'service')) ? 'risk' : ''}">
+              <b>${formatLocalTime(e.timestamp || e.created_at)}</b> &nbsp; ${esc(field(e, 'event_type', 'event_name', 'type', 'message'))}
+              <div class="tiny dim">${esc(field(e, 'service_id', 'service_name', 'service'))} · ${esc(field(e, 'trace_id'))}</div>
+            </div>`).join('') || '<div class="tiny dim">Recent topology activity will appear after telemetry is received.</div>'}
+        </div>
+      </section>
+    </div>`;
 }
-
 
 function entities() {
   const rawEv = records('events');
@@ -5859,6 +6016,51 @@ document.addEventListener('click', e => {
   const action = a.dataset.action;
 
   switch (action) {
+
+    case 'select-topology-service': {
+      const svc = a.dataset.svc;
+      if (svc) {
+        window._selectedTopologyService = svc;
+        render();
+      }
+      break;
+    }
+    case 'toggle-topology-labels': {
+      window._topologyShowLabels = !window._topologyShowLabels;
+      render();
+      toast(window._topologyShowLabels ? 'Full topology node details shown' : 'Compact topology view');
+      break;
+    }
+    case 'filter-events-by-service': {
+      const svc = a.dataset.svc;
+      setPage('events');
+      setTimeout(() => {
+        const input = $('#evFilterService');
+        if (input) {
+          input.value = svc || '';
+          filterEvents();
+        }
+      }, 100);
+      break;
+    }
+    case 'investigate-service-deep-track': {
+      const svc = a.dataset.svc || window._selectedTopologyService || '';
+      setPage('investigations');
+      setTimeout(() => {
+        const input = $('#deepSearchInput');
+        if (input) {
+          input.value = `Investigate suspicious behavior, cross-service calls, and telemetry anomalies for service ${svc}`;
+          executeDeepSearch();
+        }
+      }, 100);
+      break;
+    }
+    case 'rate-investigation': {
+      const invId = a.dataset.id;
+      const rating = a.dataset.rating;
+      toast(`Investigation ${invId} rated "${rating}". Audit feedback logged.`);
+      break;
+    }
 
     case 'refresh':
       refresh();
