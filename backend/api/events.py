@@ -17,6 +17,7 @@ from sqlalchemy import func, or_
 from backend.db.session import get_db
 from backend.core.auth import get_current_auth, AuthContext
 from backend.models import EventModel
+from backend.ops.bus import ops_bus
 
 router = APIRouter(prefix="/api/v1/events", tags=["Events & Historical Analysis"])
 
@@ -259,6 +260,23 @@ async def search_events_historical(
             "delta_events": delta_events,
             "percentage_change": round(pct_change, 2),
         }
+
+    try:
+        ops_bus.publish(
+            component="threat-hunting",
+            event_type="hunting.query_executed",
+            level="info",
+            message=f"Threat hunt query executed: category='{category or 'all'}', min_severity='{min_severity or 'all'}', window={from_time.strftime('%H:%M')}->{to_time.strftime('%H:%M')} (matched {total_events} events)",
+            tenant_id=auth.tenant_id,
+            metadata={
+                "category": category,
+                "min_severity": min_severity,
+                "service_id": service_id,
+                "matches": total_events,
+            },
+        )
+    except Exception:
+        pass
 
     return HistoricalSearchResponse(
         events=[

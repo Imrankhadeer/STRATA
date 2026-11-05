@@ -182,6 +182,13 @@ class GenericDeclarativeRuleDefinition(BaseModel):
         default="high",
         description="Default severity rating for findings produced by this rule",
     )
+    evaluation_target_detector: Optional[Literal[
+        "detector.auth.failed_threshold",
+        "detector.cross_service.exfiltration",
+    ]] = Field(
+        default=None,
+        description="Optional benchmark family used to evaluate a promoted generic rule against matching attack scenarios",
+    )
 
     # Threshold-specific configuration
     conditions: Optional[List[FieldCondition]] = Field(

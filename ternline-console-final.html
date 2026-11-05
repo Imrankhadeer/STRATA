@@ -500,10 +500,10 @@ html, body {
 
 
 /* Ternline workspace assistant */
-.ternline-chat-launcher{position:fixed;right:24px;bottom:24px;z-index:1200;width:54px;height:54px;border:1px solid #a9dc5c;border-radius:50%;background:linear-gradient(145deg,#d2ff83,#9dcf49);color:#14200e;box-shadow:0 10px 34px #0009;display:grid;place-items:center;font-size:22px;font-weight:900;transition:transform .18s,box-shadow .18s}
+.ternline-chat-launcher{position:fixed;right:24px;bottom:24px;z-index:40;width:54px;height:54px;border:1px solid #a9dc5c;border-radius:50%;background:linear-gradient(145deg,#d2ff83,#9dcf49);color:#14200e;box-shadow:0 10px 34px #0009;display:grid;place-items:center;font-size:22px;font-weight:900;transition:transform .18s,box-shadow .18s}
 .ternline-chat-launcher:hover{transform:translateY(-3px);box-shadow:0 14px 38px #000b}
 .ternline-chat-launcher .chat-launcher-dot{position:absolute;right:1px;top:1px;width:11px;height:11px;border:2px solid #111a16;border-radius:50%;background:#75d6a3}
-.ternline-chat-panel{position:fixed;right:24px;bottom:90px;z-index:1200;width:min(390px,calc(100vw - 28px));height:min(590px,calc(100vh - 125px));min-height:380px;background:#101914;border:1px solid #34483a;border-radius:16px;box-shadow:0 24px 80px #000b;display:flex;flex-direction:column;overflow:hidden}
+.ternline-chat-panel{position:fixed;right:24px;bottom:90px;z-index:40;width:min(390px,calc(100vw - 28px));height:min(590px,calc(100vh - 125px));min-height:380px;background:#101914;border:1px solid #34483a;border-radius:16px;box-shadow:0 24px 80px #000b;display:flex;flex-direction:column;overflow:hidden}
 .ternline-chat-panel.hide{display:none}
 .ternline-chat-head{display:flex;align-items:center;justify-content:space-between;padding:14px 15px;background:#142019;border-bottom:1px solid #293a30}
 .ternline-chat-brand{display:flex;align-items:center;gap:10px;min-width:0}
@@ -891,9 +891,8 @@ td { font-size: 12px; padding: 11px 13px; }
 
    <!-- 4. Environment -->
    <div><div class="navgroup">Environment</div>
-     <button class="nav" data-page="topology"><span class="ico">⌖</span>Service Topology</button>
-     <button class="nav" data-page="entities"><span class="ico">◎</span>Entity Explorer</button>
-     <button class="nav" data-page="correlation"><span class="ico">⌁</span>Correlation Explorer</button>
+     <button class="nav" data-page="topology"><span class="ico">⬡</span>Service Topology</button>
+     <button class="nav" data-page="entities"><span class="ico">⬢</span>Entities & Correlation</button>
    </div>
 
    <!-- 5. Detection Engineering -->
@@ -1271,8 +1270,8 @@ const titles = {
   threatIntel: 'Detection & Investigation / IOC Search',
   investigations: 'Deep Track / Investigation Path',
   topology: 'Environment / Service Topology',
-  entities: 'Environment / Entity Explorer',
-  correlation: 'Environment / Correlation Explorer',
+  entities: 'Environment / Entities & Correlation',
+  correlation: 'Environment / Entities & Correlation',
   rules: 'Detection Engineering / Rule Registry',
   coverage: 'Detection Engineering / Replay & Validation',
   assets: 'Administration / Applications & API Keys',
@@ -1434,9 +1433,9 @@ function pill(v) {
   const s = String(v ?? 'unknown').toLowerCase();
   const cls = ['critical', 'high', 'open', 'active', 'failed', 'error', 'blocked', 'confirmed_threat'].includes(s)
     ? 'bad'
-    : ['medium', 'pending', 'proposed', 'investigating', 'degraded', 'warning', 'inconclusive'].includes(s)
+    : ['medium', 'pending', 'proposed', 'investigating', 'degraded', 'warning', 'inconclusive', 'fallback', 'unreachable', 'unavailable'].includes(s)
     ? 'warn'
-    : ['low', 'resolved', 'closed', 'healthy', 'verified', 'success', 'approved', 'likely_benign'].includes(s)
+    : ['low', 'resolved', 'closed', 'healthy', 'verified', 'success', 'approved', 'likely_benign', 'operational', 'connected', 'configured', 'in-memory'].includes(s)
     ? 'good'
     : 'info';
   return `<span class="pill ${cls}">${esc(v ?? 'unknown')}</span>`;
@@ -1463,10 +1462,10 @@ function chartEmpty(message = 'Not enough backend data to draw this chart yet.')
 function eventVolumeChart(rows, dateKey = 'timestamp', bins = 12) {
   const valid = (rows || []).map(r => new Date(r?.[dateKey] || r?.created_at)).filter(d => Number.isFinite(d.getTime()));
   if (!valid.length) return chartEmpty('Event activity will appear after telemetry is received.');
-  const end = Date.now();
+  const end = Math.max(...valid.map(d => d.getTime()));
   const start = end - 12 * 60 * 60 * 1000;
   const inWindow = valid.filter(d => d.getTime() >= start && d.getTime() <= end);
-  if (!inWindow.length) return chartEmpty('No events in the last 12 hours. The returned records are older than this window.');
+  if (!inWindow.length) return chartEmpty('No timestamped events in the latest 12 hour window of returned records.');
   const counts = Array(bins).fill(0);
   inWindow.forEach(d => { const t=d.getTime(); if(t>=start && t<=end){ const i=Math.min(bins-1,Math.floor((t-start)/(end-start)*bins)); counts[i]++; }});
   const max = Math.max(1, ...counts);
@@ -1475,7 +1474,7 @@ function eventVolumeChart(rows, dateKey = 'timestamp', bins = 12) {
   const line=pts.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+','+q[1].toFixed(1)).join(' ');
   const area=`${line} L ${pts.at(-1)[0]},${top+plotH} L ${pts[0][0]},${top+plotH} Z`;
   const bars=counts.map((v,i)=>{const bw=Math.max(5,plotW/bins-5),x=left+i*plotW/bins;const bh=v/max*plotH;return `<rect x="${x.toFixed(1)}" y="${(top+plotH-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="#8fbf61" opacity=".18"/>`;}).join('');
-  return `<div class="chart-wrap"><div class="chart-meta"><span>${inWindow.length} timestamped records in this window</span><span>Last 12 hours · local display</span></div><svg class="chart-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Event volume over the last 12 hours based on returned event records"><line x1="${left}" y1="${top+plotH}" x2="${w-right}" y2="${top+plotH}" stroke="var(--line)"/>${bars}<path d="${area}" fill="#8fbf61" opacity=".12"/><path d="${line}" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${pts.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="3" fill="var(--lime)"><title>${counts[i]} events</title></circle>`).join('')}<text x="${left}" y="${h-7}" fill="var(--muted)" font-size="10">12h ago</text><text x="${w-right}" y="${h-7}" fill="var(--muted)" font-size="10" text-anchor="end">Now</text><text x="${left-7}" y="${top+5}" fill="var(--muted)" font-size="9" text-anchor="end">${max}</text></svg></div>`;
+  return `<div class="chart-wrap"><div class="chart-meta"><span>${inWindow.length} timestamped records in this window</span><span>Last 12 hours · local display</span></div><svg class="chart-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Event volume over the last 12 hours based on returned event records"><line x1="${left}" y1="${top+plotH}" x2="${w-right}" y2="${top+plotH}" stroke="var(--line)"/>${bars}<path d="${area}" fill="#8fbf61" opacity=".12"/><path d="${line}" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${pts.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="3" fill="var(--lime)"><title>${counts[i]} events</title></circle>`).join('')}<text x="${left}" y="${h-7}" fill="var(--muted)" font-size="10">12h ago</text><text x="${w-right}" y="${h-7}" fill="var(--muted)" font-size="10" text-anchor="end">Latest</text><text x="${left-7}" y="${top+5}" fill="var(--muted)" font-size="9" text-anchor="end">${max}</text></svg></div>`;
 }
 
 function severityChart(source, totalHint) {
@@ -1904,7 +1903,7 @@ async function viewInvestigationReport(investigationId) {
             <div class="tiny dim">Rationale: ${esc(cr.rationale)}</div>
             <pre class="codebox" style="margin-top:6px">${esc(JSON.stringify(cr.proposed_thresholds, null, 2))}</pre>
             <div style="margin-top:8px">
-              <button class="btn small primary" data-action="promote-candidate-rule" data-title="${esc(cr.title)}" data-desc="${esc(cr.description)}" data-logic="${esc(cr.logic_type)}" data-rationale="${esc(cr.rationale)}">⚡ Promote to Fast Track Rule Registry</button>
+              <button class="btn small primary" data-action="promote-candidate-rule" data-title="${esc(cr.title)}" data-desc="${esc(cr.description)}" data-logic="${esc(cr.logic_type)}" data-rationale="${esc(cr.rationale)}" data-thresholds="${esc(JSON.stringify(cr.proposed_thresholds || {}))}">⚡ Promote to Fast Track Rule Registry</button>
             </div>
           </div>
         `).join('') || '<div class="dim tiny">Zero candidate rules proposed</div>'}
@@ -1980,6 +1979,7 @@ async function filterEvents() {
   const sev = $('#evFilterSeverity')?.value.trim();
   const tr = $('#evFilterTrace')?.value.trim();
   const params = new URLSearchParams({ limit: '50' });
+  if (currentAppFilter) params.set('app_id', currentAppFilter);
   if (svc) params.set('service_id', svc);
   if (sev) params.set('severity', sev);
   if (tr) params.set('trace_id', tr);
@@ -2750,9 +2750,9 @@ function openProposeRuleModal() {
       </div>
       <div class="field">
         <label>Target Detector Engine</label>
-        <select class="control" name="target_detector" required style="width:100%">
-          <option value="detector.auth.brute_force">detector.auth.brute_force (Brute Force / Password Spray)</option>
-          <option value="detector.exfiltration.cross_service">detector.exfiltration.cross_service (Multi-service Attack)</option>
+        <select class="control" name="target_detector" required style="width:100%" onchange="updateRuleParameters(this.value)">
+          <option value="detector.auth.failed_threshold">detector.auth.failed_threshold (Brute Force / Password Spray)</option>
+          <option value="detector.cross_service.exfiltration">detector.cross_service.exfiltration (Multi-service Attack)</option>
         </select>
       </div>
       <div class="field">
@@ -2765,10 +2765,9 @@ function openProposeRuleModal() {
       </div>
       <div class="field">
         <label>Rule Parameters (JSON)</label>
-        <textarea class="control mono" name="parameters" style="width:100%;min-height:90px" required>{
-  "threshold": 3,
-  "window_seconds": 300,
-  "severity": "high"
+        <textarea class="control mono" id="ruleParametersInput" name="parameters" style="width:100%;min-height:90px" required>{
+  "failure_threshold": 5,
+  "window_seconds": 60
 }</textarea>
         <small class="dim">Parameters are validated against strict schema. Dynamic code execution is rejected.</small>
       </div>
@@ -2779,6 +2778,20 @@ function openProposeRuleModal() {
     </form>
   `;
   openModal('Propose New Declarative Rule', inner);
+}
+
+function updateRuleParameters(targetDetector) {
+  const input = $('#ruleParametersInput');
+  if (!input) return;
+  const defaults = targetDetector === 'detector.cross_service.exfiltration'
+    ? {
+        time_window_seconds: 300,
+        bulk_row_threshold: 1000,
+        sensitive_tables: ['users', 'credit_cards', 'tokens', 'secrets'],
+        internal_prefixes: ['/api/v1/internal/', '/internal/', '/admin/export']
+      }
+    : { failure_threshold: 5, window_seconds: 60 };
+  input.value = JSON.stringify(defaults, null, 2);
 }
 
 async function submitProposeRule(e) {
@@ -2813,7 +2826,7 @@ async function validateRule(ruleId) {
   try {
     toast(`Running deterministic scenario replay for rule ${ruleId}…`);
     const metrics = await request(`/api/v1/rules/${encodeURIComponent(ruleId)}/validate`, { method: 'POST' });
-    toast(`Validation complete: Passed=${metrics.passed}, Precision=${metrics.precision}, Recall=${metrics.recall}.`);
+    toast(`Validation complete: Passed=${metrics.passed_validation}, Precision=${metrics.precision}, Recall=${metrics.recall}.`);
     refresh();
   } catch (err) {
     toast(`Validation failed: ${err.message}`);
@@ -3071,31 +3084,87 @@ function topology() {
 function entities() {
   const ev = records('events');
   if (!ev.length) {
-    return head('Entity Explorer', 'Pivot between services, identities, and traces observed in telemetry.', '')
-      + empty('No entity data loaded', 'Load telemetry events in Event Explorer to populate entity graph pivot.', true);
+    return head('Entities & Correlation', 'Observed services, network actors, and cross-service traces derived from live telemetry.', '')
+      + empty('No entity or trace data loaded', 'Load telemetry events in Event Explorer or run a simulation to populate entities and correlation traces.', true);
   }
   const svcs = new Map();
   const actors = new Map();
+  const traces = new Map();
   for (const e of ev) {
     if (e.service_id) svcs.set(e.service_id, (svcs.get(e.service_id) || 0) + 1);
     const actor = e.source_resource || e.app_id;
     if (actor) actors.set(actor, (actors.get(actor) || 0) + 1);
+    if (e.trace_id) {
+      if (!traces.has(e.trace_id)) traces.set(e.trace_id, []);
+      traces.get(e.trace_id).push(e);
+    }
   }
-  return head('Entity Explorer', 'Observed services and actors derived directly from live database telemetry.', '')
-    + `<div class="grid g2">
+
+  const traceList = [...traces.entries()].map(([id, list]) => ({
+    trace_id: id,
+    count: list.length,
+    services: [...new Set(list.map(x => x.service_id).filter(Boolean))],
+    first_time: list[0]?.timestamp || list[0]?.created_at,
+  }));
+
+  return head('Entities & Correlation', 'Unified view of observed microservices, client actors, and cross-service distributed traces.', '<button class="btn small primary" data-action="refresh">⟳ Refresh Telemetry</button>')
+    + errPanel()
+    + `<div class="ref-topology-stats" style="margin-bottom:14px">
+        ${compactMetric('Services', svcs.size, 'Active services in sample')}
+        ${compactMetric('Entities & Actors', actors.size, 'Network sources / clients')}
+        ${compactMetric('Correlated Traces', traces.size, 'Cross-service execution chains')}
+        ${compactMetric('Total Telemetry', ev.length, 'Loaded canonical events')}
+      </div>`
+    + `<div class="grid g2" style="margin-bottom:16px">
         <div class="panel pad">
-          <div class="panelhead"><h3>Observed Microservices</h3><small>${svcs.size} services</small></div>
-          <div class="stack" style="margin-top:10px">
-            ${[...svcs.entries()].map(([s, cnt]) => `<div class="between tiny pad" style="background:var(--panel2);border-radius:6px"><b>${esc(s)}</b><span class="pill info">${cnt} events</span></div>`).join('')}
+          <div class="between" style="margin-bottom:8px">
+            <div><h3 class="chart-panel-title">Observed Microservices</h3><div class="chart-subtitle">Services producing canonical telemetry</div></div>
+            <span class="pill info">${svcs.size} services</span>
+          </div>
+          <div class="stack" style="gap:6px">
+            ${[...svcs.entries()].map(([s, cnt]) => `
+              <div class="between tiny pad" style="background:var(--panel2);border-radius:6px">
+                <b>${esc(s)}</b>
+                <div class="row" style="gap:6px">
+                  <span class="pill info">${cnt} events</span>
+                  <button class="btn small ghost" data-action="filter-events-by-service" data-svc="${esc(s)}">Explore</button>
+                </div>
+              </div>`).join('')}
           </div>
         </div>
         <div class="panel pad">
-          <div class="panelhead"><h3>Observed Network / Actor Entities</h3><small>${actors.size} actors</small></div>
-          <div class="stack" style="margin-top:10px">
-            ${[...actors.entries()].map(([a, cnt]) => `<div class="between tiny pad" style="background:var(--panel2);border-radius:6px"><code>${esc(a)}</code><span class="pill">${cnt} events</span></div>`).join('')}
+          <div class="between" style="margin-bottom:8px">
+            <div><h3 class="chart-panel-title">Network & Identity Entities</h3><div class="chart-subtitle">Client IP addresses, endpoints and actors</div></div>
+            <span class="pill info">${actors.size} actors</span>
+          </div>
+          <div class="stack" style="gap:6px">
+            ${[...actors.entries()].map(([a, cnt]) => `
+              <div class="between tiny pad" style="background:var(--panel2);border-radius:6px">
+                <code class="dim">${esc(a)}</code>
+                <span class="pill">${cnt} events</span>
+              </div>`).join('')}
           </div>
         </div>
-      </div>`;
+      </div>`
+    + `<div class="panel pad">
+        <div class="between" style="margin-bottom:10px">
+          <div>
+            <h3 class="chart-panel-title">Cross-Service Trace Sequences</h3>
+            <div class="chart-subtitle">Distributed execution flows reconstructed across services</div>
+          </div>
+          <span class="pill good">${traces.size} execution flows</span>
+        </div>`
+    + (traceList.length
+        ? table(traceList, [
+            { label: 'Trace ID', render: r => `<code>${esc(r.trace_id)}</code>` },
+            { label: 'Span Count', keys: ['count'] },
+            { label: 'Execution Path', render: r => `<div class="row" style="gap:4px;flex-wrap:wrap">${r.services.map(s => `<span class="pill info">${esc(s)}</span>`).join(' <span class="dim">→</span> ')}</div>` },
+            { label: 'Started', render: r => formatLocalTime(r.first_time) },
+            { label: 'Investigation', render: r => `<button class="btn small primary" data-action="investigate-event-trace" data-trace="${esc(r.trace_id)}" data-service="${esc(r.services[0]||'')}">⚡ Deep Track</button>` }
+          ])
+        : empty('No correlated multi-service traces', 'No traces with matching distributed trace IDs found in current sample.')
+      )
+    + `</div>`;
 }
 
 function correlation() {
@@ -5798,7 +5867,7 @@ async function executeDeepSearch() {
             <div class="between"><b>${esc(cr.title || 'Candidate rule')}</b><span class="pill info">${esc(cr.logic_type || 'Proposed')}</span></div>
             <p class="muted tiny" style="margin:4px 0">${esc(cr.description || '')}</p>
             <div class="tiny dim">Rationale: ${esc(cr.rationale || 'Not provided')}</div>
-            <div style="margin-top:8px"><button class="btn small primary" data-action="promote-candidate-rule" data-title="${esc(cr.title || '')}" data-desc="${esc(cr.description || '')}" data-logic="${esc(cr.logic_type || '')}" data-rationale="${esc(cr.rationale || '')}">⎇ Promote to Fast Track Rule Registry</button></div>
+            <div style="margin-top:8px"><button class="btn small primary" data-action="promote-candidate-rule" data-title="${esc(cr.title || '')}" data-desc="${esc(cr.description || '')}" data-logic="${esc(cr.logic_type || '')}" data-rationale="${esc(cr.rationale || '')}" data-thresholds="${esc(JSON.stringify(cr.proposed_thresholds || {}))}">⎇ Promote to Fast Track Rule Registry</button></div>
           </div>`).join('') || '<div class="dim tiny">Zero candidate rules proposed</div>'}
         ${mitigations.length ? `<h4 style="margin:12px 0 6px">Recommended Active Defense Mitigations</h4><ul class="muted tiny" style="margin:0;padding-left:18px">${mitigations.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
       </div>`;
@@ -6106,6 +6175,62 @@ async function promoteCandidateRule(btn) {
   const description = btn.dataset.desc;
   const logicType = btn.dataset.logic || 'sequence';
   const rationale = btn.dataset.rationale || 'Promoted from Deep Track AI Investigation';
+  let proposed = {};
+  try { proposed = JSON.parse(btn.dataset.thresholds || '{}'); } catch (_) {}
+
+  const candidateText = `${title} ${description} ${rationale}`.toLowerCase();
+  const evaluationTarget = proposed.failure_count || /auth|login|credential|brute.force|password|spray/.test(candidateText)
+    ? 'detector.auth.failed_threshold'
+    : (proposed.table || proposed.row_threshold || proposed.max_rows || /exfil|database|bulk|export|sensitive/.test(candidateText)
+      ? 'detector.cross_service.exfiltration'
+      : null);
+  const windowSeconds = Number(proposed.window_seconds || proposed.time_window_seconds || 300);
+  let parameters;
+
+  if (Array.isArray(proposed.sequence_stages) && proposed.sequence_stages.length >= 2) {
+    parameters = {
+      rule_type: 'sequence', group_by: ['tenant_id', 'trace_id'], window_seconds,
+      severity: 'high', sequence_stages: proposed.sequence_stages,
+      require_distinct_services: true
+    };
+  } else if (logicType === 'sequence') {
+    const rowLimit = Number(proposed.row_threshold || proposed.max_rows || 1000);
+    parameters = {
+      rule_type: 'sequence', group_by: ['tenant_id', 'trace_id'], window_seconds,
+      severity: 'high', require_distinct_services: true,
+      sequence_stages: evaluationTarget === 'detector.cross_service.exfiltration'
+        ? [
+            { stage_id: 'api_export', service_id: 'api-service', conditions: [{ field: 'target_resource', operator: 'contains', value: '/internal/export' }] },
+            { stage_id: 'worker_anomaly', service_id: 'worker-service', conditions: [{ field: 'attributes.anomaly_flag', operator: 'is_true' }] },
+            { stage_id: 'database_bulk', service_id: 'database-service', conditions: [
+              { field: 'attributes.rows_affected', operator: 'gte', value: rowLimit },
+              { field: 'attributes.is_sensitive_table', operator: 'is_true' }
+            ] }
+          ]
+        : [
+            { stage_id: 'service_trigger', service_id: 'api-service' },
+            { stage_id: 'service_followup', service_id: 'worker-service' }
+          ]
+    };
+  } else if (evaluationTarget === 'detector.auth.failed_threshold') {
+    parameters = {
+      rule_type: 'threshold', group_by: ['tenant_id', 'source_resource'], window_seconds,
+      severity: 'high',
+      conditions: [{ field: 'event_type', operator: 'contains', value: 'auth.login_failed' }],
+      threshold: { metric: 'count', operator: 'gte', value: Number(proposed.failure_count || proposed.count || 5) }
+    };
+  } else {
+    const conditions = [];
+    if (proposed.table) conditions.push({ field: 'attributes.table', operator: 'equals', value: String(proposed.table) });
+    if (proposed.max_rows || proposed.row_threshold) conditions.push({ field: 'attributes.rows_affected', operator: 'gte', value: Number(proposed.max_rows || proposed.row_threshold) });
+    if (!conditions.length) conditions.push({ field: 'event_type', operator: 'contains', value: 'exfiltration' });
+    parameters = {
+      rule_type: 'threshold', group_by: ['tenant_id', 'trace_id'], window_seconds,
+      severity: 'high', conditions,
+      threshold: { metric: 'count', operator: 'gte', value: Number(proposed.count || 1) }
+    };
+  }
+  if (evaluationTarget) parameters.evaluation_target_detector = evaluationTarget;
 
   try {
     toast('Submitting candidate rule proposal to Rule Registry...');
@@ -6115,11 +6240,7 @@ async function promoteCandidateRule(btn) {
         target_detector: 'detector.deep_track.promoted',
         title: title,
         description: description,
-        parameters: {
-          logic_type: logicType,
-          rationale: rationale,
-          condition: { severity: 'high' }
-        }
+        parameters
       }
     });
     toast('Candidate rule submitted to Rule Registry! Opening rules...');

@@ -159,10 +159,15 @@ class ReplayValidationEngine:
 
         # Only evaluate scenarios relevant to this detector type
         # For detector-specific rules (even if parameterized declaratively), restrict to that detector
-        is_generic_unbound = rule.target_detector in ("detector.deep_track.promoted", "generic.declarative")
+        evaluation_target = (rule.parameters or {}).get("evaluation_target_detector")
+        is_generic_unbound = (
+            rule.target_detector in ("detector.deep_track.promoted", "generic.declarative")
+            and evaluation_target is None
+        )
+        scenario_target = evaluation_target or rule.target_detector
         relevant_scenarios = [
             s for s in self.scenarios.values()
-            if is_generic_unbound or s.expected_detector_id == rule.target_detector or not s.ground_truth_threat
+            if is_generic_unbound or s.expected_detector_id == scenario_target or not s.ground_truth_threat
         ]
 
         for sc in relevant_scenarios:
