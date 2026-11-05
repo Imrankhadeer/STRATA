@@ -710,6 +710,91 @@ td { font-size: 12px; padding: 11px 13px; }
   .pagehead h1 { font-size: 23px; }
 }
 
+
+/* Sleek, Cyber-Themed Table Action Buttons */
+.row-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  vertical-align: middle;
+}
+.row-actions .btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  height: 28px !important;
+  padding: 0 11px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2px !important;
+  border-radius: 6px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+  margin: 0 !important;
+  text-decoration: none !important;
+}
+.row-actions .btn:hover {
+  transform: translateY(-1px);
+}
+.row-actions .btn-inspect {
+  background: var(--lime) !important;
+  color: #0b140b !important;
+  border: 1px solid var(--lime) !important;
+  font-weight: 700 !important;
+}
+.row-actions .btn-inspect:hover {
+  background: #c3fa69 !important;
+  box-shadow: 0 0 12px rgba(197, 243, 107, 0.45) !important;
+}
+.row-actions .btn-track {
+  background: rgba(16, 28, 22, 0.85) !important;
+  color: #a7f3d0 !important;
+  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+}
+.row-actions .btn-track:hover {
+  background: rgba(52, 211, 153, 0.18) !important;
+  border-color: rgba(52, 211, 153, 0.7) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.35) !important;
+}
+.row-actions .btn-defend {
+  background: rgba(20, 32, 24, 0.85) !important;
+  color: #86efac !important;
+  border: 1px solid rgba(74, 222, 128, 0.35) !important;
+}
+.row-actions .btn-defend:hover {
+  background: rgba(34, 197, 94, 0.18) !important;
+  border-color: var(--lime) !important;
+  color: var(--lime) !important;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.35) !important;
+}
+.row-actions .btn-resolve {
+  background: rgba(19, 45, 25, 0.85) !important;
+  color: #4ade80 !important;
+  border: 1px solid rgba(74, 222, 128, 0.4) !important;
+}
+.row-actions .btn-resolve:hover {
+  background: #14532d !important;
+  border-color: #4ade80 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.35) !important;
+}
+.row-actions .btn-reopen {
+  background: rgba(30, 41, 59, 0.7) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+}
+.row-actions .btn-reopen:hover {
+  background: rgba(51, 65, 85, 0.85) !important;
+  border-color: #cbd5e1 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 0 8px rgba(148, 163, 184, 0.3) !important;
+}
 </style><body>
 <div id="sidebarTooltip" class="sidebar-tooltip hide"></div>
 
@@ -1701,13 +1786,13 @@ function findings() {
           { label: 'Status', render: r => pill(r.status) },
           { label: 'Detector', render: r => `<code>${esc(r.detector_id)}</code> <span class="tiny dim">v${esc(r.detector_version)}</span>` },
           { label: 'Detected', render: r => formatLocalTime(r.created_at) },
-          { label: 'Actions', render: r => `<div class="row" style="gap:4px">
-            <button class="btn small primary" data-action="inspect-finding" data-id="${esc(r.finding_id)}">Inspect</button>
-            <button class="btn small" data-action="run-investigation" data-id="${esc(r.finding_id)}">⌘ Deep Track</button>
-            <button class="btn small" data-action="plan-defense-finding" data-id="${esc(r.finding_id)}" style="border-color:var(--lime);color:var(--lime)">⛨ Defend</button>
+          { label: 'Actions', render: r => `<div class="row-actions">
+            <button class="btn btn-inspect" data-action="inspect-finding" data-id="${esc(r.finding_id)}">Inspect</button>
+            <button class="btn btn-track" data-action="run-investigation" data-id="${esc(r.finding_id)}"><span style="font-size:12px">⌘</span> Deep Track</button>
+            <button class="btn btn-defend" data-action="plan-defense-finding" data-id="${esc(r.finding_id)}"><span style="font-size:12px">⛨</span> Defend</button>
             ${r.status === 'open' 
-              ? `<button class="btn small" data-action="feedback-finding" data-id="${esc(r.finding_id)}" data-status="resolved" title="Mark Resolved" style="border-color:#3e5833;color:var(--green)">✓ Resolve</button>` 
-              : `<button class="btn small ghost" data-action="feedback-finding" data-id="${esc(r.finding_id)}" data-status="open" title="Reopen Finding">↺ Reopen</button>`}
+              ? `<button class="btn btn-resolve" data-action="feedback-finding" data-id="${esc(r.finding_id)}" data-status="resolved" title="Mark Resolved"><span style="font-size:11px">✓</span> Resolve</button>` 
+              : `<button class="btn btn-reopen" data-action="feedback-finding" data-id="${esc(r.finding_id)}" data-status="open" title="Reopen Finding"><span style="font-size:11px">↺</span> Reopen</button>`}
           </div>` }
         ])
       : empty('No findings returned', 'The backend has returned zero findings for this tenant.', !bearerToken)
@@ -2419,7 +2504,18 @@ async function runHistorical() {
 
 // Threat Hunting Workspace
 // E. Threat Hunting Workspace (Guided, Multi-Parameter Telemetry Search)
+const huntState = {
+  category: '',
+  severity: '',
+  hypothesis: '',
+  resultsHtml: null,
+};
+
 function hunting() {
+  const cat = huntState.category || '';
+  const sev = huntState.severity || '';
+  const hyp = huntState.hypothesis || '';
+
   return head('Threat Hunting', 'Proactively search telemetry across microservices to uncover suspicious activity, lateral movement, or policy anomalies before alerts trigger.', '')
     + `<div class="grid g2" style="margin-bottom:16px">
         <div class="panel pad" style="border-color:var(--border-subtle);background:radial-gradient(800px 300px at 0% 0%, rgba(30,58,138,0.18), var(--panel))">
@@ -2447,7 +2543,7 @@ function hunting() {
 
           <div class="field" style="margin-bottom:10px">
             <label style="font-size:11px;font-weight:600;color:var(--text-subtle)">Target Keyword / Service / Pattern</label>
-            <input class="control" id="huntCategory" placeholder="e.g. auth, api-service, worker-service, exfiltration, 198.51.100.24" style="width:100%;font-size:12px">
+            <input class="control" id="huntCategory" value="${esc(cat)}" placeholder="e.g. auth, api-service, worker-service, exfiltration, 198.51.100.24" style="width:100%;font-size:12px">
             <small class="muted" style="font-size:10px">Matches event_type, service_id, source/target resource, or attributes across your microservices.</small>
           </div>
 
@@ -2455,15 +2551,15 @@ function hunting() {
             <div class="field" style="flex:1">
               <label style="font-size:11px;font-weight:600;color:var(--text-subtle)">Minimum Severity</label>
               <select class="control" id="huntSeverity" style="width:100%;font-size:12px">
-                <option value="">Any Severity (All Events)</option>
-                <option value="medium">Medium & Higher</option>
-                <option value="high">High & Higher</option>
-                <option value="critical">Critical Only</option>
+                <option value="" ${sev === '' ? 'selected' : ''}>Any Severity (All Events)</option>
+                <option value="medium" ${sev === 'medium' ? 'selected' : ''}>Medium & Higher</option>
+                <option value="high" ${sev === 'high' ? 'selected' : ''}>High & Higher</option>
+                <option value="critical" ${sev === 'critical' ? 'selected' : ''}>Critical Only</option>
               </select>
             </div>
             <div class="field" style="flex:1">
               <label style="font-size:11px;font-weight:600;color:var(--text-subtle)">Analyst Hypothesis (Context Note)</label>
-              <input class="control" id="huntHypothesis" placeholder="e.g. Suspicious egress from database service" style="width:100%;font-size:12px">
+              <input class="control" id="huntHypothesis" value="${esc(hyp)}" placeholder="e.g. Suspicious egress from database service" style="width:100%;font-size:12px">
             </div>
           </div>
 
@@ -2503,18 +2599,24 @@ function hunting() {
       </div>
 
       <div id="huntResults">
-        <div class="panel empty" style="padding:32px 16px;text-align:center">
-          <div style="font-size:24px;margin-bottom:8px">🔭</div>
-          <b style="font-size:13px">Ready to Hunt</b>
-          <p class="tiny muted" style="margin:4px 0 12px">Choose a preset above or enter a keyword/service name, then click <b>Execute Hunt Query</b>.</p>
-        </div>
+        ${huntState.resultsHtml || `
+          <div class="panel empty" style="padding:32px 16px;text-align:center">
+            <div style="font-size:24px;margin-bottom:8px">🔭</div>
+            <b style="font-size:13px">Ready to Hunt</b>
+            <p class="tiny muted" style="margin:4px 0 12px">Choose a preset above or enter a keyword/service name, then click <b>Execute Hunt Query</b>.</p>
+          </div>
+        `}
       </div>`;
 }
 
 async function runHunt() {
-  const hyp = $('#huntHypothesis')?.value.trim();
-  const cat = $('#huntCategory')?.value.trim();
-  const sev = $('#huntSeverity')?.value;
+  const hyp = $('#huntHypothesis')?.value.trim() ?? huntState.hypothesis;
+  const cat = $('#huntCategory')?.value.trim() ?? huntState.category;
+  const sev = $('#huntSeverity')?.value ?? huntState.severity;
+
+  huntState.hypothesis = hyp;
+  huntState.category = cat;
+  huntState.severity = sev;
 
   const params = new URLSearchParams({ limit: '200' });
   if (cat) params.set('category', cat);
@@ -2529,43 +2631,44 @@ async function runHunt() {
     const summary = res.summary || {};
     const total = summary.total_events !== undefined ? summary.total_events : evs.length;
 
-    if (target) {
-      target.innerHTML = `
-        <div class="panel pad" style="border-color:var(--border-subtle)">
-          <div class="between" style="margin-bottom:12px">
-            <div>
-              <b style="font-size:14px">Hunt Telemetry Results</b>
-              <div class="tiny muted" style="margin-top:3px">
-                Keyword/Category: <code>${esc(cat || 'ALL EVENTS')}</code>
-                ${sev ? ` · Minimum Severity: <span class="pill ${sev === 'critical' ? 'danger' : (sev === 'high' ? 'warn' : 'info')}">${esc(sev)}</span>` : ''}
-                ${hyp ? ` · Hypothesis: <i>${esc(hyp)}</i>` : ''}
-              </div>
-            </div>
-            <div class="row" style="gap:8px;align-items:center">
-              <span class="pill info">${total} Total Matched</span>
-              <span class="pill ok">Showing ${evs.length} Records</span>
+    const html = `
+      <div class="panel pad" style="border-color:var(--border-subtle)">
+        <div class="between" style="margin-bottom:12px">
+          <div>
+            <b style="font-size:14px">Hunt Telemetry Results</b>
+            <div class="tiny muted" style="margin-top:3px">
+              Keyword/Category: <code>${esc(cat || 'ALL EVENTS')}</code>
+              ${sev ? ` · Minimum Severity: <span class="pill ${sev === 'critical' ? 'danger' : (sev === 'high' ? 'warn' : 'info')}">${esc(sev)}</span>` : ''}
+              ${hyp ? ` · Hypothesis: <i>${esc(hyp)}</i>` : ''}
             </div>
           </div>
-
-          ${evs.length ? table(evs, [
-              { label: 'Timestamp (Local)', render: r => formatLocalTime(r.timestamp) },
-              { label: 'Event Type', render: r => `<b style="color:var(--text-main)">${esc(r.event_type)}</b>` },
-              { label: 'Service', render: r => `<span class="pill neutral" style="font-family:monospace">${esc(r.service_id)}</span>` },
-              { label: 'Severity', render: r => pill(r.severity) },
-              { label: 'Source Resource', render: r => `<code>${esc(r.source_resource || r.app_id || '—')}</code>` },
-              { label: 'Target Resource', render: r => `<code>${esc(r.target_resource || '—')}</code>` },
-              { label: 'Trace ID', render: r => `<code class="tiny dim">${esc((r.trace_id || '—').substring(0, 16))}...</code>` },
-              { label: 'Action', render: r => r.trace_id ? `<button class="btn small ghost" data-action="investigate-trace-hunt" data-trace="${esc(r.trace_id)}" data-type="${esc(r.event_type)}" style="font-size:10px;padding:2px 8px">🔎 Investigate</button>` : '—' }
-            ]) : '<div class="empty" style="padding:24px">No telemetry records matched the query. Try broadening your keyword filter or lowering the severity threshold.</div>'}
+          <div class="row" style="gap:8px;align-items:center">
+            <span class="pill info">${total} Total Matched</span>
+            <span class="pill ok">Showing ${evs.length} Records</span>
+          </div>
         </div>
-      `;
-    }
+
+        ${evs.length ? table(evs, [
+            { label: 'Timestamp (Local)', render: r => formatLocalTime(r.timestamp) },
+            { label: 'Event Type', render: r => `<b style="color:var(--text-main)">${esc(r.event_type)}</b>` },
+            { label: 'Service', render: r => `<span class="pill neutral" style="font-family:monospace">${esc(r.service_id)}</span>` },
+            { label: 'Severity', render: r => pill(r.severity) },
+            { label: 'Source Resource', render: r => `<code>${esc(r.source_resource || r.app_id || '—')}</code>` },
+            { label: 'Target Resource', render: r => `<code>${esc(r.target_resource || '—')}</code>` },
+            { label: 'Trace ID', render: r => `<code class="tiny dim">${esc((r.trace_id || '—').substring(0, 16))}...</code>` },
+            { label: 'Action', render: r => r.trace_id ? `<button class="btn small ghost" data-action="investigate-trace-hunt" data-trace="${esc(r.trace_id)}" data-type="${esc(r.event_type)}" style="font-size:10px;padding:2px 8px">🔎 Investigate</button>` : '—' }
+          ]) : '<div class="empty" style="padding:24px">No telemetry records matched the query. Try broadening your keyword filter or lowering the severity threshold.</div>'}
+      </div>
+    `;
+    huntState.resultsHtml = html;
+    if (target) target.innerHTML = html;
   } catch (err) {
-    if (target) target.innerHTML = `<div class="callout danger">Hunt query failed: ${esc(err.message)}</div>`;
+    const errHtml = `<div class="callout danger">Hunt query failed: ${esc(err.message)}</div>`;
+    huntState.resultsHtml = errHtml;
+    if (target) target.innerHTML = errHtml;
   }
 }
 
-// F. Threat Intelligence & IOC Blast Radius Matcher
 function threatIntel() {
   setTimeout(() => {
     loadMitreCoverage();
@@ -3192,10 +3295,10 @@ function incidents() {
           { label: 'Status', render: r => pill(r.status) },
           { label: 'Attack Chain / Flow', render: r => Array.from(r.services).length ? Array.from(r.services).map(s => `<span class="pill info tiny">${esc(s)}</span>`).join(' → ') : '<span class="dim tiny">Single service</span>' },
           { label: 'Detected At', render: r => formatLocalTime(r.firstSeen) },
-          { label: 'Actions', render: r => `<div class="row" style="gap:4px">
-              <button class="btn small primary" data-action="deep-track-incident" data-case-id="${esc(r.id)}" data-title="${esc(r.title)}" data-trace="${esc(r.trace_id || '')}" data-services="${esc(Array.from(r.services).join(','))}">⌘ Deep Track AI</button>
-              <button class="btn small" data-action="inspect-incident" data-case-id="${esc(r.id)}">Inspect</button>
-              <button class="btn small" data-action="plan-defense-incident" data-finding-id="${esc(r.findings[0]?.finding_id || '')}" style="border-color:var(--lime);color:var(--lime)">⛨ Defend</button>
+          { label: 'Actions', render: r => `<div class="row-actions">
+              <button class="btn btn-inspect" data-action="inspect-incident" data-case-id="${esc(r.id)}">Inspect</button>
+              <button class="btn btn-track" data-action="deep-track-incident" data-case-id="${esc(r.id)}" data-title="${esc(r.title)}" data-trace="${esc(r.trace_id || '')}" data-services="${esc(Array.from(r.services).join(','))}"><span style="font-size:12px">⌘</span> Deep Track</button>
+              <button class="btn btn-defend" data-action="plan-defense-incident" data-finding-id="${esc(r.findings[0]?.finding_id || '')}"><span style="font-size:12px">⛨</span> Defend</button>
             </div>` }
         ])
       : `<div class="panel pad" style="text-align:center;padding:36px 20px">
@@ -5202,7 +5305,8 @@ function startAutoSync() {
       updateSidebarBadges();
       const activeEl = document.activeElement;
       const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
-      if (!isTyping) {
+      const livePages = ['overview', 'events', 'findings'];
+      if (!isTyping && livePages.includes(page)) {
         render();
       }
     } catch (_) {}
@@ -6079,12 +6183,19 @@ document.addEventListener('click', e => {
       runHunt();
       break;
     case 'fill-hunt-preset':
-      if ($('#huntCategory')) $('#huntCategory').value = a.dataset.cat || '';
-      if ($('#huntSeverity')) $('#huntSeverity').value = a.dataset.sev || '';
-      if ($('#huntHypothesis')) $('#huntHypothesis').value = a.dataset.desc || '';
+      huntState.category = a.dataset.cat || '';
+      huntState.severity = a.dataset.sev || '';
+      huntState.hypothesis = a.dataset.desc || '';
+      if ($('#huntCategory')) $('#huntCategory').value = huntState.category;
+      if ($('#huntSeverity')) $('#huntSeverity').value = huntState.severity;
+      if ($('#huntHypothesis')) $('#huntHypothesis').value = huntState.hypothesis;
       runHunt();
       break;
     case 'reset-hunt':
+      huntState.category = '';
+      huntState.severity = '';
+      huntState.hypothesis = '';
+      huntState.resultsHtml = null;
       if ($('#huntCategory')) $('#huntCategory').value = '';
       if ($('#huntSeverity')) $('#huntSeverity').value = '';
       if ($('#huntHypothesis')) $('#huntHypothesis').value = '';
