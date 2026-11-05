@@ -100,10 +100,24 @@ class ReplayValidationEngine:
 
             if "sequence_stages" in norm_params and isinstance(norm_params["sequence_stages"], list):
                 raw_stages = norm_params["sequence_stages"]
-                norm_params["sequence_stages"] = [
-                    {"stage_index": idx, "service_id": st} if isinstance(st, str) else st
-                    for idx, st in enumerate(raw_stages)
-                ]
+                normalized_stages = []
+                for idx, st in enumerate(raw_stages):
+                    if isinstance(st, str):
+                        clean_svc = st.replace("-", "_").replace(".", "_")
+                        normalized_stages.append({
+                            "stage_id": f"stage_{idx}_{clean_svc}",
+                            "service_id": st,
+                        })
+                    elif isinstance(st, dict):
+                        st_copy = dict(st)
+                        if "stage_id" not in st_copy:
+                            svc = st_copy.get("service_id", f"stage_{idx}")
+                            clean_svc = str(svc).replace("-", "_").replace(".", "_")
+                            st_copy["stage_id"] = f"stage_{idx}_{clean_svc}"
+                        normalized_stages.append(st_copy)
+                    else:
+                        normalized_stages.append(st)
+                norm_params["sequence_stages"] = normalized_stages
 
             spec = GenericDeclarativeRuleDefinition(**norm_params)
             return GenericDeclarativeEvaluator(
@@ -144,9 +158,11 @@ class ReplayValidationEngine:
         failure_reasons: List[str] = []
 
         # Only evaluate scenarios relevant to this detector type
+        # For detector-specific rules (even if parameterized declaratively), restrict to that detector
+        is_generic_unbound = rule.target_detector in ("detector.deep_track.promoted", "generic.declarative")
         relevant_scenarios = [
             s for s in self.scenarios.values()
-            if s.expected_detector_id == rule.target_detector or not s.ground_truth_threat
+            if is_generic_unbound or s.expected_detector_id == rule.target_detector or not s.ground_truth_threat
         ]
 
         for sc in relevant_scenarios:

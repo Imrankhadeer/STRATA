@@ -248,7 +248,7 @@ html, body {
 .authTabs button.active{color:var(--lime);box-shadow:inset 0 -2px 0 var(--lime)}
 .userchip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:4px 10px 4px 4px;font-size:11px}
 .avatar{width:24px;height:24px;border-radius:50%;background:var(--lime);color:#15200e;display:grid;place-items:center;font-weight:800;font-size:11px}
-.toast{position:fixed;right:16px;bottom:16px;background:#101a14;border:1px solid var(--line);padding:10px 13px;border-radius:10px;z-index:60;box-shadow:var(--shadow)}
+.toast{position:fixed;right:90px;bottom:24px;background:#14231a;border:1px solid #456140;padding:10px 14px;border-radius:10px;z-index:1300;box-shadow:0 8px 30px rgba(0,0,0,0.6);font-size:11.5px;max-width:380px}
 .toast.hide{display:none}
 .drawer{position:fixed;top:0;right:0;width:min(560px,94vw);height:100vh;background:var(--side);border-left:1px solid var(--line);z-index:50;overflow:auto;padding:18px}
 .modalBack{position:fixed;inset:0;background:#000a;z-index:50;display:grid;place-items:center;padding:16px}
@@ -394,21 +394,41 @@ html, body {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
-  padding: 5px 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
+  padding: 4px 8px;
+  border: 1px solid #2f4035;
+  border-radius: 6px;
+  background: #0f1913;
+  transition: border-color .15s ease;
+}
+.topbar-select-wrap:hover {
+  border-color: #4a6b52;
 }
 .topbar-select {
   min-width: 0;
-  max-width: 190px;
+  max-width: 125px;
   border: 0;
   background: transparent;
-  color: var(--text);
+  color: #d8e5dc;
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 14px;
+}
+.topbar-select-wrap::after {
+  content: '▾';
+  position: absolute;
+  right: 7px;
+  pointer-events: none;
+  font-size: 9px;
+  color: #7a8f81;
 }
 .profile-menu {
   position: relative;
@@ -866,7 +886,7 @@ td { font-size: 12px; padding: 11px 13px; }
 
    <!-- 3. Dedicated Deep Track Investigation Workspace -->
    <div><div class="navgroup">Deep Track</div>
-     <button class="nav" data-page="investigations" ><span class="ico" style="color:var(--lime)">⌘</span>Investigation Workspace<span class="nav-badge hide" id="badge-investigations">0</span></button>
+     <button class="nav" data-page="investigations"><span class="ico" style="color:var(--lime)">✣</span>Deep Track Path<span class="nav-badge hide" id="badge-investigations">0</span></button>
    </div>
 
    <!-- 4. Environment -->
@@ -1232,6 +1252,7 @@ window.showGateMessage = showGateMessage;
 let bearerToken = '';
 let currentTenant = 'Unauthenticated';
 let page = 'overview';
+let selectedDeepTrackId = null;
 let toastTimer = null;
 let cache = {};
 let loading = false;
@@ -1248,7 +1269,7 @@ const titles = {
   hunting: 'Detection & Investigation / Threat Hunting',
   historical: 'Detection Engineering / Event Trends & Reports',
   threatIntel: 'Detection & Investigation / IOC Search',
-  investigations: 'Deep Track / Investigation Workspace',
+  investigations: 'Deep Track / Investigation Path',
   topology: 'Environment / Service Topology',
   entities: 'Environment / Entity Explorer',
   correlation: 'Environment / Correlation Explorer',
@@ -1601,7 +1622,7 @@ function overview() {
       <section class="panel ref-overview-panel"><div class="eyebrow">ENGINE STATUS</div><h3>Pipeline health</h3><div class="ref-sub">Reported platform components and detection pipeline</div>${healthRows.map(([ico,name,desc,status,latency])=>`<div class="ref-health-row"><b>${ico}</b><b>${esc(name)}</b><span class="tiny dim">${esc(desc)}</span><span>${status?pill(status):'<span class="dim">Not reported</span>'}</span></div>`).join('')}</section>
     </div>`
     + `<div class="ref-overview-bottom">
-      <section class="panel"><div class="panelhead"><div><h3>Recent investigations</h3><small>Latest reports and investigation outcomes</small></div><button class="btn small" data-page="investigations">View all →</button></div>${investigationInsightCards(investigationsRows)}</section>
+      <section class="panel"><div class="panelhead"><div><h3>Recent investigations</h3><small>Latest reports and investigation outcomes</small></div><button class="btn small" data-page="investigations">View all →</button></div>${investigationInsightCards(investigationsRows.filter(r => !['resolved', 'closed', 'likely_benign'].includes(String(r.status || r.verdict || '').toLowerCase())))}</section>
       <section class="panel"><div class="panelhead"><div><h3>Recent findings</h3><small>${recent.length} returned by the overview endpoint</small></div><button class="btn small" data-page="findings">View all →</button></div>${recent.length?table(recent.slice(0,5),[
         {label:'Finding',render:r=>`<b>${esc(r.title||r.finding_id)}</b><div class="tiny dim">${esc(r.finding_id)}</div>`},
         {label:'Severity',render:r=>pill(r.severity)},

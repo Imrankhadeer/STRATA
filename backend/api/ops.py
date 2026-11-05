@@ -62,6 +62,8 @@ class InvestigationPosture(BaseModel):
     provider: str
     model: str
     provider_status: str
+    status: str = "operational"
+    average_duration_ms: Optional[float] = None
 
 
 class RulesPosture(BaseModel):
@@ -81,6 +83,8 @@ class PipelineHealth(BaseModel):
     fast_track_engine_status: str
     fast_track_detection_latency: str
     live_subscribers_connected: int
+    redis_status: str = "operational"
+    redis_latency_ms: Optional[float] = None
 
 
 class RecentFindingSummary(BaseModel):
@@ -208,6 +212,24 @@ async def get_operations_overview(
     now = datetime.datetime.now(datetime.timezone.utc)
     t_1h_ago = now - datetime.timedelta(hours=1)
 
+    # 0. Redis Health Check & Latency
+    redis_status = "operational"
+    redis_latency_ms = None
+    if settings.REDIS_URL:
+        t_red_start = time.time()
+        try:
+            import redis
+            r_client = redis.from_url(settings.REDIS_URL, socket_timeout=0.5)
+            if r_client.ping():
+                redis_status = "connected"
+                redis_latency_ms = round((time.time() - t_red_start) * 1000, 2)
+            else:
+                redis_status = "degraded"
+        except Exception:
+            redis_status = "in-memory (fallback)" if settings.ENVIRONMENT == "development" else "unreachable"
+    else:
+        redis_status = "in-memory"
+
     # 1. Database Health Check & Latency
     db_status = "connected"
     db_latency_ms = None
@@ -235,10 +257,11 @@ async def get_operations_overview(
     )
     by_severity = {"critical": 0, "high": 0, "medium": 0, "low": 0}
     for s, count in sev_rows:
-        if s in by_severity:
-            by_severity[s] = count
+        normalized_severity = str(s or "").strip().lower()
+        if normalized_severity in by_severity:
+            by_severity[normalized_severity] += count
         else:
-            by_severity[s] = count
+            by_severity[normalized_severity] = count
 
     # Status distribution
     status_rows = (
@@ -249,10 +272,11 @@ async def get_operations_overview(
     )
     by_status = {"open": 0, "resolved": 0, "false_positive": 0}
     for st, count in status_rows:
-        if st in by_status:
-            by_status[st] = count
+        normalized_status = str(st or "").strip().lower()
+        if normalized_status in by_status:
+            by_status[normalized_status] += count
         else:
-            by_status[st] = count
+            by_status[normalized_status] = count
 
     open_findings = by_status.get("open", 0)
 
@@ -358,7 +382,8 @@ async def get_operations_overview(
             by_verdict=by_verdict,
             provider=settings.INVESTIGATOR_PROVIDER,
             model=settings.INVESTIGATOR_MODEL,
-            provider_status="active",
+            provider_status="configured" if settings.INVESTIGATOR_API_KEY else "fallback",
+            status="operational" if settings.INVESTIGATOR_API_KEY else "fallback",
         ),
         rules=RulesPosture(
             total_rules=total_rules,
@@ -373,9 +398,17 @@ async def get_operations_overview(
             database_version=db_version,
             total_events_ingested=total_events,
             recent_events_1h=recent_events_1h,
-            fast_track_engine_status="operational",
+            fast_track_engine_status=(
+                "degraded"
+                if db_status != "connected"
+                or ((settings.REDIS_REQUIRED or settings.WORKERS > 1 or settings.ENVIRONMENT.lower() in ("production", "staging"))
+                    and redis_status != "connected")
+                else "operational"
+            ),
             fast_track_detection_latency="< 10ms (deterministic)",
             live_subscribers_connected=ops_bus.subscriber_count(auth.tenant_id),
+            redis_status=redis_status,
+            redis_latency_ms=redis_latency_ms,
         ),
         recent_findings=recent_findings,
     )

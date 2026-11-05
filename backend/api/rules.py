@@ -13,6 +13,8 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
+from pydantic import ValidationError
+import logging
 import datetime
 
 from backend.db.session import get_db
@@ -30,6 +32,7 @@ from backend.detection.registry import runtime_rule_registry
 from backend.ops.bus import ops_bus
 
 router = APIRouter(prefix="/api/v1/rules", tags=["Rules Registry & Validation"])
+logger = logging.getLogger(__name__)
 
 
 class CreateRuleRequest(BaseModel):
@@ -140,7 +143,36 @@ async def validate_candidate_rule(
     )
 
     engine = ReplayValidationEngine()
-    metrics = engine.validate_rule(rule_schema)
+    try:
+        metrics = engine.validate_rule(rule_schema)
+    except ValidationError as err:
+        logger.info("Replay rejected invalid rule configuration for %s: %s", rule_id, err)
+        issues = [
+            f"{'.'.join(str(part) for part in issue.get('loc', ())) or 'rule'}: {issue.get('msg', 'invalid value')}"
+            for issue in err.errors(include_input=False)
+        ]
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Replay configuration is invalid: " + "; ".join(issues),
+        ) from err
+    except ValueError as err:
+        logger.info("Replay rejected unsupported rule configuration for %s: %s", rule_id, err)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Replay configuration is invalid: {err}",
+        ) from err
+    except RuntimeError as err:
+        logger.exception("Replay dependencies unavailable for rule %s", rule_id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Replay dependencies unavailable: {err}",
+        ) from err
+    except Exception as err:
+        logger.exception("Unexpected replay validation failure for rule %s", rule_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Replay validation failed for rule '{rule_id}'. Check backend logs for details.",
+        ) from err
 
     db_rule.status = rule_schema.status
     db_rule.validation_metrics = metrics.model_dump(mode="json")
