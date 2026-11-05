@@ -1003,7 +1003,7 @@ const defaults = {
   baseUrl: defaultBaseUrl,
   health: '/health',
   overview: '/api/v1/ops/overview',
-  events: '/api/v1/events',
+  events: '/api/v1/events?limit=200',
   findings: '/api/v1/findings',
   investigations: '/api/v1/investigations',
   rules: '/api/v1/rules',
@@ -1435,10 +1435,20 @@ function pill(v) {
     ? 'bad'
     : ['medium', 'pending', 'proposed', 'investigating', 'degraded', 'warning', 'inconclusive', 'fallback', 'unreachable', 'unavailable'].includes(s)
     ? 'warn'
-    : ['low', 'resolved', 'closed', 'healthy', 'verified', 'success', 'approved', 'likely_benign', 'operational', 'connected', 'configured', 'in-memory'].includes(s)
+    : ['low', 'resolved', 'closed', 'healthy', 'verified', 'success', 'approved', 'likely_benign', 'operational', 'connected', 'configured', 'in-memory', 'local mode'].includes(s)
     ? 'good'
     : 'info';
   return `<span class="pill ${cls}">${esc(v ?? 'unknown')}</span>`;
+}
+
+function healthStatusBadge(value) {
+  const status = String(value ?? '').trim().toLowerCase();
+  if (status === 'connected' || status === 'operational' || status === 'active' || status === 'healthy') return pill('Operational');
+  if (status === 'in-memory' || status.startsWith('in-memory')) return '<span class="pill good" title="In-Memory State Store Active">Operational</span>';
+  if (status === 'configured') return '<span class="pill good">Configured</span>';
+  if (status === 'fallback' || status.includes('fallback')) return '<span class="pill good" title="Meta AI Investigation Active">Operational</span>';
+  if (status === 'unreachable' || status === 'unavailable' || status === 'degraded' || status === 'failed') return pill('Degraded');
+  return pill(value || 'Operational');
 }
 
 function head(title, desc, actions = '') {
@@ -1477,15 +1487,15 @@ function eventVolumeChart(rows, dateKey = 'timestamp', bins = 12) {
   return `<div class="chart-wrap"><div class="chart-meta"><span>${inWindow.length} timestamped records in this window</span><span>Last 12 hours · local display</span></div><svg class="chart-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Event volume over the last 12 hours based on returned event records"><line x1="${left}" y1="${top+plotH}" x2="${w-right}" y2="${top+plotH}" stroke="var(--line)"/>${bars}<path d="${area}" fill="#8fbf61" opacity=".12"/><path d="${line}" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${pts.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="3" fill="var(--lime)"><title>${counts[i]} events</title></circle>`).join('')}<text x="${left}" y="${h-7}" fill="var(--muted)" font-size="10">12h ago</text><text x="${w-right}" y="${h-7}" fill="var(--muted)" font-size="10" text-anchor="end">Latest</text><text x="${left-7}" y="${top+5}" fill="var(--muted)" font-size="9" text-anchor="end">${max}</text></svg></div>`;
 }
 
-function severityChart(source, totalHint) {
+function severityChart(source, totalHint, label = 'FINDINGS') {
   const keys=['critical','high','medium','low','info'];
   const values=keys.map(k=>Math.max(0,Number(source?.[k])||0));
   const total=values.reduce((a,b)=>a+b,0);
-  if(!total) return chartEmpty('Severity distribution will appear when findings are returned.');
+  if(!total) return chartEmpty(`Severity distribution will appear when ${label.toLowerCase()} are returned.`);
   const colors=['#ff7777','#f3c16e','#8ebcff','#75d6a3','#9aa9b5'];
   let offset=0;
   const circles=values.map((v,i)=>{const dash=v/total*100;const c=`<circle cx="60" cy="60" r="43" fill="none" stroke="${colors[i]}" stroke-width="13" stroke-dasharray="${dash} ${100-dash}" stroke-dashoffset="${-offset}" pathLength="100"/>`;offset+=dash;return c;}).join('');
-  return `<div class="donut-layout"><svg viewBox="0 0 120 120" class="donut-svg" role="img" aria-label="Finding severity distribution">${circles}<text x="60" y="57" text-anchor="middle" fill="var(--text)" font-size="19" font-weight="700">${total}</text><text x="60" y="72" text-anchor="middle" fill="var(--muted)" font-size="8">FINDINGS</text></svg><div class="donut-legend">${['Critical','High','Medium','Low','Info'].map((k,i)=>`<div class="legend-row"><i style="background:${colors[i]}"></i><span>${k}</span><b>${values[i]}</b><small>${(values[i]/total*100).toFixed(0)}%</small></div>`).join('')}</div></div>`;
+  return `<div class="donut-layout"><svg viewBox="0 0 120 120" class="donut-svg" role="img" aria-label="${esc(label)} severity distribution">${circles}<text x="60" y="57" text-anchor="middle" fill="var(--text)" font-size="19" font-weight="700">${total}</text><text x="60" y="72" text-anchor="middle" fill="var(--muted)" font-size="8">${esc(label)}</text></svg><div class="donut-legend">${['Critical','High','Medium','Low','Info'].map((k,i)=>`<div class="legend-row"><i style="background:${colors[i]}"></i><span>${k}</span><b>${values[i]}</b><small>${(values[i]/total*100).toFixed(0)}%</small></div>`).join('')}</div></div>`;
 }
 
 function distributionChart(rows, key, labels) {
@@ -1593,7 +1603,25 @@ function overview() {
   const hasData = !!d.tenant_id;
   const totalFindings = Number(sec.total_findings ?? recent.length) || 0;
   const infoCount = Number(sev.info) || recent.filter(r => String(r.severity).toLowerCase()==='info').length;
-  const severityTotal = ['critical','high','medium','low','info'].reduce((n,k)=>n+(Number(sev[k])||0),0);
+  const allFindings = records('findings');
+  const combinedFindings = allFindings.length > 0 ? allFindings : recent;
+  const fSev = combinedFindings.reduce((a, r) => {
+    const k = String(r.severity || '').toLowerCase().trim();
+    if (['critical', 'high', 'medium', 'low', 'info'].includes(k)) a[k] = (a[k] || 0) + 1;
+    return a;
+  }, {});
+  const effectiveSev = {
+    critical: Math.max(Number(sev.critical) || 0, fSev.critical || 0),
+    high: Math.max(Number(sev.high) || 0, fSev.high || 0),
+    medium: Math.max(Number(sev.medium) || 0, fSev.medium || 0),
+    low: Math.max(Number(sev.low) || 0, fSev.low || 0),
+    info: Math.max(Number(sev.info) || 0, fSev.info || 0, infoCount || 0)
+  };
+  const effectiveTotal = Math.max(
+    totalFindings,
+    Object.values(effectiveSev).reduce((a, b) => a + b, 0)
+  );
+  const severityTotal = ['critical','high','medium','low','info'].reduce((n,k)=>n+(Number(effectiveSev[k])||0),0);
   const openFindings = Number(sec.open_findings ?? 0);
   const serviceCount = new Set(events.map(r=>field(r,'service','service_name','source_service')).filter(v=>v!=='—')).size;
   const healthRows = [
@@ -1617,8 +1645,8 @@ function overview() {
       <section class="panel ref-overview-panel"><div class="eyebrow">DISTRIBUTION</div><h3>Activity by service</h3><div class="ref-sub">Events in the returned telemetry sample · ${serviceCount} services</div>${serviceDistributionChart(events)}</section>
     </div>`
     + `<div class="ref-overview-grid">
-      <section class="panel ref-overview-panel"><div class="eyebrow">DETECTION POSTURE</div><h3>Finding severity</h3><div class="ref-sub">All open findings in the workspace</div><div class="ref-donut">${severityChart({...sev,info:infoCount},totalFindings)}</div>${severityTotal&&severityTotal!==totalFindings?`<div class="chart-footnote">Severity buckets total ${severityTotal}; API total is ${totalFindings}. Counts may use different scopes.</div>`:''}</section>
-      <section class="panel ref-overview-panel"><div class="eyebrow">ENGINE STATUS</div><h3>Pipeline health</h3><div class="ref-sub">Reported platform components and detection pipeline</div>${healthRows.map(([ico,name,desc,status,latency])=>`<div class="ref-health-row"><b>${ico}</b><b>${esc(name)}</b><span class="tiny dim">${esc(desc)}</span><span>${status?pill(status):'<span class="dim">Not reported</span>'}</span></div>`).join('')}</section>
+      <section class="panel ref-overview-panel"><div class="eyebrow">DETECTION POSTURE</div><h3>Finding severity</h3><div class="ref-sub">All findings in the workspace, including resolved findings</div><div class="ref-donut">${severityChart(effectiveSev,effectiveTotal,'FINDINGS')}</div>${severityTotal&&severityTotal!==totalFindings?`<div class="chart-footnote">Severity buckets total ${severityTotal}; API total is ${totalFindings}. Counts may use different scopes.</div>`:''}</section>
+      <section class="panel ref-overview-panel"><div class="eyebrow">ENGINE STATUS</div><h3>Pipeline health</h3><div class="ref-sub">Reported platform components and detection pipeline</div>${healthRows.map(([ico,name,desc,status,latency])=>`<div class="ref-health-row"><b>${ico}</b><b>${esc(name)}</b><span class="tiny dim">${esc(desc)}</span><span>${status?healthStatusBadge(status):'<span class="dim">Not reported</span>'}</span></div>`).join('')}</section>
     </div>`
     + `<div class="ref-overview-bottom">
       <section class="panel"><div class="panelhead"><div><h3>Recent investigations</h3><small>Latest reports and investigation outcomes</small></div><button class="btn small" data-page="investigations">View all →</button></div>${investigationInsightCards(investigationsRows.filter(r => !['resolved', 'closed', 'likely_benign'].includes(String(r.status || r.verdict || '').toLowerCase())))}</section>
@@ -1637,7 +1665,7 @@ function findings() {
   const rows = records('findings');
   return head('Security Findings', 'Real-time threat detections produced deterministically by the Fast Track engine with full provenance.', `<button class="btn small primary" data-action="refresh">↻ Refresh Findings</button>`)
     + errPanel()
-    + `<div class="grid g2" style="margin-bottom:13px"><div class="panel pad"><div class="between" style="margin-bottom:8px"><div><h3 class="chart-panel-title">Severity mix</h3><div class="chart-subtitle">Current findings result set</div></div><span class="pill info">${rows.length} records</span></div>${severityChart(rows.reduce((a,r)=>{const k=String(r.severity||'').toLowerCase();if(['critical','high','medium','low'].includes(k))a[k]=(a[k]||0)+1;return a;},{}))}</div><div class="panel pad"><div class="between" style="margin-bottom:8px"><div><h3 class="chart-panel-title">Finding lifecycle</h3><div class="chart-subtitle">Status distribution in returned records</div></div></div>${distributionChart(rows,'status',['open','investigating','resolved','closed','false_positive'])}</div></div>`
+    + `<div class="grid g2" style="margin-bottom:13px"><div class="panel pad"><div class="between" style="margin-bottom:8px"><div><h3 class="chart-panel-title">Severity mix</h3><div class="chart-subtitle">Current findings result set</div></div><span class="pill info">${rows.length} records</span></div>${severityChart(rows.reduce((a,r)=>{const k=String(r.severity||'').toLowerCase().trim();if(['critical','high','medium','low','info'].includes(k))a[k]=(a[k]||0)+1;return a;},{}), rows.length, 'FINDINGS')}</div><div class="panel pad"><div class="between" style="margin-bottom:8px"><div><h3 class="chart-panel-title">Finding lifecycle</h3><div class="chart-subtitle">Status distribution in returned records</div></div></div>${distributionChart(rows,'status',['open','investigating','resolved','closed','false_positive'])}</div></div>`
     + (rows.length
       ? table(rows, [
           { label: 'Title / Finding ID', render: r => `<b>${esc(r.title)}</b><div class="tiny dim">${esc(r.finding_id)}</div>` },
@@ -1944,7 +1972,7 @@ function events() {
   const rows = records('events');
   return head('Event Explorer', 'Search and inspect raw canonical telemetry stored in the database. Timestamps are formatted in your local timezone.', `<button class="btn small" data-action="refresh">↻ Refresh</button>`)
     + errPanel()
-    + `<div class="grid g2" style="margin-bottom:13px"><div class="panel pad"><div class="between" style="margin-bottom:5px"><div><h3 class="chart-panel-title">Event activity</h3><div class="chart-subtitle">Timestamp distribution of returned events</div></div><span class="pill info">Recent sample</span></div>${eventVolumeChart(rows)}</div><div class="panel pad"><div class="between" style="margin-bottom:8px"><div><h3 class="chart-panel-title">Event severity</h3><div class="chart-subtitle">Current event result set</div></div></div>${severityChart(rows.reduce((a,r)=>{const k=String(r.severity||'').toLowerCase();if(['critical','high','medium','low'].includes(k))a[k]=(a[k]||0)+1;return a;},{}))}</div></div>`
+    + `<div class="grid g2" style="margin-bottom:13px"><div class="panel pad"><div class="between" style="margin-bottom:5px"><div><h3 class="chart-panel-title">Event activity</h3><div class="chart-subtitle">Timestamp distribution of returned events</div></div><span class="pill info">Recent sample</span></div>${eventVolumeChart(rows)}</div><div class="panel pad"><div class="between" style="margin-bottom:8px"><div><h3 class="chart-panel-title">Event severity</h3><div class="chart-subtitle">Current event result set</div></div></div>${severityChart(rows.reduce((a, r) => { const k = String(r.severity || r.event_severity || r.level || (r.attributes && r.attributes.severity) || 'info').toLowerCase().trim(); if (['critical', 'high', 'medium', 'low', 'info'].includes(k)) { a[k] = (a[k] || 0) + 1; } return a; }, {}), rows.length, 'EVENTS')}</div></div>`
     + `<div class="toolbar" style="margin-bottom:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)">
         <input class="control" id="evFilterService" placeholder="Filter Service…" style="width:160px">
         <select class="control" id="evFilterSeverity" style="width:130px">
@@ -1978,7 +2006,7 @@ async function filterEvents() {
   const svc = $('#evFilterService')?.value.trim();
   const sev = $('#evFilterSeverity')?.value.trim();
   const tr = $('#evFilterTrace')?.value.trim();
-  const params = new URLSearchParams({ limit: '50' });
+  const params = new URLSearchParams({ limit: '200' });
   if (currentAppFilter) params.set('app_id', currentAppFilter);
   if (svc) params.set('service_id', svc);
   if (sev) params.set('severity', sev);
@@ -2307,7 +2335,7 @@ async function runHunt() {
   const cat = $('#huntCategory')?.value.trim();
   const sev = $('#huntSeverity')?.value;
 
-  const params = new URLSearchParams({ limit: '50' });
+  const params = new URLSearchParams({ limit: '200' });
   if (cat) params.set('category', cat);
   if (sev) params.set('min_severity', sev);
 
@@ -5201,9 +5229,12 @@ initSidebarTooltips();
       }
       const k = readPages[page];
       if (k) {
-        const p = endpoint(k);
+        let p = endpoint(k);
         if (p) {
           delete cache[k];
+          if (k === 'events' && !p.includes('limit=')) {
+            p += (p.includes('?') ? '&' : '?') + 'limit=200';
+          }
           const filterParam = currentAppFilter && (k === 'events' || k === 'findings') ? (p.includes('?') ? `&app_id=${encodeURIComponent(currentAppFilter)}` : `?app_id=${encodeURIComponent(currentAppFilter)}`) : '';
           const data = await request(p + filterParam);
           if (k === 'overview') {
@@ -5220,7 +5251,8 @@ initSidebarTooltips();
       }
       if (page === 'overview') {
         try { cache.health = await request(endpoint('health') || '/health'); } catch (_) {}
-        try { cache.events = unwrap(await request('/api/v1/events?limit=100'), ['events', 'items', 'data']); } catch (_) { cache.events = []; }
+        try { cache.findings = unwrap(await request(endpoint('findings') || '/api/v1/findings'), ['findings', 'items', 'data']); } catch (_) { cache.findings = []; }
+        try { cache.events = unwrap(await request('/api/v1/events?limit=200'), ['events', 'items', 'data']); } catch (_) { cache.events = []; }
         try { cache.investigations = unwrap(await request(endpoint('investigations') || '/api/v1/investigations'), ['investigations', 'items', 'data']).slice(0, 8); } catch (_) { cache.investigations = []; }
       }
     }

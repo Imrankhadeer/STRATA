@@ -29,7 +29,15 @@
       "destination": "/console.html"
     },
     {
+      "source": "/docs.html",
+      "destination": "/docs.html"
+    },
+    {
       "source": "/docs",
+      "destination": "/docs.html"
+    },
+    {
+      "source": "/docs/:path*",
       "destination": "/docs.html"
     },
     {
@@ -37,7 +45,15 @@
       "destination": "/docs.html"
     },
     {
+      "source": "/documentation/:path*",
+      "destination": "/docs.html"
+    },
+    {
       "source": "/guide",
+      "destination": "/docs.html"
+    },
+    {
+      "source": "/guide/:path*",
       "destination": "/docs.html"
     },
     {

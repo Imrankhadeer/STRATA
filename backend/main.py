@@ -46,7 +46,7 @@ app = FastAPI(
     title="CYBER ENGINE Security Platform",
     description="Developer-friendly security layer and continuous telemetry protection",
     version="0.1.0",
-    docs_url=None if _is_prod else "/docs",
+    docs_url=None if _is_prod else "/swagger",
     redoc_url=None if _is_prod else "/redoc",
     openapi_url=None if _is_prod else "/openapi.json",
 )
@@ -115,6 +115,12 @@ app.include_router(auth_router)
 app.include_router(workspaces_router)
 app.include_router(apps_router)
 app.include_router(assistant_router)
+
+if not _is_prod:
+    @app.get("/api/docs", include_in_schema=False)
+    async def swagger_docs_alias():
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/swagger")
 
 
 @app.on_event("startup")
@@ -252,6 +258,7 @@ def startup_db_init():
 
 
 @app.get("/", include_in_schema=False)
+@app.get("/index.html", include_in_schema=False)
 async def root():
     """
     Serves the Ternline web console and landing page, or returns API navigation metadata.
@@ -268,6 +275,8 @@ async def root():
 
 
 @app.get("/console", include_in_schema=False)
+@app.get("/console/", include_in_schema=False)
+@app.get("/console.html", include_in_schema=False)
 @app.get("/control-room", include_in_schema=False)
 @app.get("/ui", include_in_schema=False)
 @app.get("/app", include_in_schema=False)
@@ -285,17 +294,27 @@ async def control_room():
 
 
 @app.get("/docs", include_in_schema=False)
+@app.get("/docs/", include_in_schema=False)
+@app.get("/docs.html", include_in_schema=False)
 @app.get("/documentation", include_in_schema=False)
+@app.get("/documentation/", include_in_schema=False)
 @app.get("/guide", include_in_schema=False)
+@app.get("/guide/", include_in_schema=False)
 @app.get("/docs/guide", include_in_schema=False)
+@app.get("/docs/guide/", include_in_schema=False)
 async def documentation():
     """
-    Serves the Ternline Developer Onboarding & SDK Guide.
+    Serves the Ternline Developer Onboarding and SDK Guide (docs.html).
     """
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    doc_path = os.path.join(base_dir, "docs.html")
-    if os.path.exists(doc_path):
-        return FileResponse(doc_path)
+    candidate_paths = [
+        os.path.join(BASE_DIR, "docs.html"),
+        os.path.join(os.getcwd(), "docs.html"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs.html"),
+    ]
+    for p in candidate_paths:
+        abs_p = os.path.abspath(p)
+        if os.path.exists(abs_p):
+            return FileResponse(abs_p, media_type="text/html")
     return JSONResponse({"error": "Documentation page not found"}, status_code=404)
 
 
