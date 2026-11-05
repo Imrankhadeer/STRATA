@@ -650,6 +650,7 @@ class GenerateRuleFromPromptResponse(BaseModel):
     rule: DeclarativeRule
     explanation: str
     suggested_test_event: Dict[str, Any]
+    mitre_techniques: Optional[List[Dict[str, str]]] = None
 
 
 @router.post("/generate-from-prompt", response_model=GenerateRuleFromPromptResponse, status_code=status.HTTP_201_CREATED)
@@ -747,6 +748,36 @@ async def generate_rule_from_prompt(
             "severity": payload.severity
         }
 
+    mitre_techs = []
+    if any(k in prompt_lower for k in ["auth", "login", "password", "spray", "credential", "failed"]):
+        mitre_techs = [
+            {"id": "T1078", "name": "Valid Accounts / Credential Abuse", "tactic": "Initial Access & Persistence"},
+            {"id": "T1110", "name": "Brute Force / Password Guessing", "tactic": "Credential Access"}
+        ]
+    elif any(k in prompt_lower for k in ["exfiltration", "egress", "database", "db", "bulk", "export", "download"]):
+        mitre_techs = [
+            {"id": "T1048", "name": "Exfiltration Over Alternative Protocol", "tactic": "Exfiltration"},
+            {"id": "T1567", "name": "Exfiltration Over Web Service", "tactic": "Exfiltration"}
+        ]
+    elif any(k in prompt_lower for k in ["sql", "injection", "command", "rce", "exec"]):
+        mitre_techs = [
+            {"id": "T1059", "name": "Command and Scripting Interpreter", "tactic": "Execution"},
+            {"id": "T1190", "name": "Exploit Public-Facing Application", "tactic": "Initial Access"}
+        ]
+    else:
+        mitre_techs = [
+            {"id": "T1499", "name": "Endpoint Denial of Service", "tactic": "Impact"},
+            {"id": "T1005", "name": "Data from Local System", "tactic": "Collection"}
+        ]
+
+    rule_params["ai_synthesis"] = {
+        "summary": explanation,
+        "rationale": f"Synthesized detection for attack vector: '{payload.prompt}'",
+        "mitre_techniques": mitre_techs,
+        "model": "meta-muse-spark-1.3",
+        "suggested_test_event": test_event
+    }
+
     # Validate against declarative rule schema
     try:
         rule_schema = DeclarativeRule(
@@ -784,4 +815,5 @@ async def generate_rule_from_prompt(
         rule=rule_schema,
         explanation=explanation,
         suggested_test_event=test_event,
+        mitre_techniques=mitre_techs,
     )
