@@ -4143,6 +4143,10 @@ function signOutOperator() {
     eventSource = null;
     sseConnected = false;
   }
+  if (autoSyncInterval) {
+    clearInterval(autoSyncInterval);
+    autoSyncInterval = null;
+  }
   toast('Signed out successfully.');
   showLoginGate();
 }
@@ -4202,6 +4206,11 @@ async function toggleLiveStream(forceConnect = false) {
       }
       sseConnected = false;
       updateStreamUI(false);
+      if (bearerToken) {
+        setTimeout(() => {
+          if (!sseConnected && bearerToken) toggleLiveStream(true);
+        }, 2000);
+      }
     };
   } catch (err) {
     toast('SSE stream connection failed: ' + err.message);
@@ -4223,9 +4232,55 @@ function handleLiveEvent(ev) {
     line.style.padding = '2px 0';
     line.innerHTML = `<span class="dim">[${formatLocalTime(ev.timestamp)}]</span> <b style="color:var(--lime)">${esc(ev.component)}</b> · <span>${esc(ev.message || ev.event_type)}</span>`;
     feed.prepend(line);
-    while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+    while (feed.children.length > 25) feed.removeChild(feed.lastChild);
   }
+
+  // Prepend event directly to cache in memory for zero-latency metric updates
+  if (!Array.isArray(cache.events)) cache.events = [];
+  const eventObj = ev.event_data || {
+    event_id: ev.event_id || `ev-live-${Date.now()}`,
+    timestamp: ev.timestamp || new Date().toISOString(),
+    event_type: ev.event_type || 'telemetry.signal',
+    service_id: ev.service_id || ev.component || 'platform',
+    severity: ev.metadata?.severity || (ev.level === 'error' ? 'critical' : ev.level === 'warn' ? 'high' : 'medium'),
+    app_id: ev.app_id || 'system',
+    trace_id: ev.trace_id || '—'
+  };
+  cache.events.unshift(eventObj);
+  if (cache.events.length > 200) cache.events.pop();
+
+  // If a finding or threat is reported, record it immediately
+  if (ev.finding_id || ev.event_type?.includes('rule_triggered') || ev.event_type?.includes('threat_detected')) {
+    if (!Array.isArray(cache.findings)) cache.findings = [];
+    const findingObj = {
+      finding_id: ev.finding_id || `fnd-live-${Date.now()}`,
+      title: ev.message || 'Real-Time Threat Detection',
+      severity: ev.metadata?.severity || 'critical',
+      confidence: 'high',
+      status: 'open',
+      detector_id: ev.rule_id || ev.component || 'fast-track',
+      detector_version: '1.0',
+      created_at: ev.timestamp || new Date().toISOString()
+    };
+    cache.findings.unshift(findingObj);
+  }
+
+  // Increment live counters in overview
+  if (cache.overview?.pipeline_health) {
+    cache.overview.pipeline_health.total_events_ingested = (Number(cache.overview.pipeline_health.total_events_ingested) || 0) + 1;
+    cache.overview.pipeline_health.recent_events_1h = (Number(cache.overview.pipeline_health.recent_events_1h) || 0) + 1;
+  }
+  if (ev.finding_id && cache.overview?.security_posture) {
+    cache.overview.security_posture.total_findings = (Number(cache.overview.security_posture.total_findings) || 0) + 1;
+    cache.overview.security_posture.open_findings = (Number(cache.overview.security_posture.open_findings) || 0) + 1;
+  }
+
   updateSidebarBadges();
+  const activeEl = document.activeElement;
+  const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+  if (!isTyping && (page === 'overview' || page === 'events' || page === 'entities' || page === 'findings')) {
+    render();
+  }
 }
 
 function updateSidebarBadges() {
@@ -4779,6 +4834,70 @@ function copyToClipboard(text, successMsg) {
 window.copyToClipboard = copyToClipboard;
 
 
+
+let autoSyncInterval = null;
+
+async function preloadAllTabs() {
+  if (!bearerToken) return;
+  try {
+    const filterParam = currentAppFilter ? `?app_id=${encodeURIComponent(currentAppFilter)}` : '';
+    await Promise.allSettled([
+      request('/api/v1/ops/overview').then(d => { cache.overview = d; }),
+      request('/health').then(d => { cache.health = d; }),
+      request(`/api/v1/events?limit=200${filterParam ? '&' + filterParam.slice(1) : ''}`).then(d => { cache.events = unwrap(d, ['events', 'items', 'data']); }),
+      request(`/api/v1/findings${filterParam}`).then(d => { cache.findings = unwrap(d, ['findings', 'items', 'data']); }),
+      request('/api/v1/investigations').then(d => { cache.investigations = unwrap(d, ['investigations', 'items', 'data']); }),
+      request('/api/v1/rules').then(d => { cache.rules = unwrap(d, ['rules', 'items', 'data']); }),
+      request('/api/v1/keys').then(d => { cache.apiKeys = unwrap(d, ['keys', 'items', 'data']); cache.assets = cache.apiKeys; }),
+      request('/api/v1/defense/actions').then(d => { cache.activeDefense = unwrap(d, ['actions', 'items', 'data']); }),
+      request('/api/v1/apps').then(d => { cache.apps = d; })
+    ]);
+    updateSidebarBadges();
+    if (page === 'overview') {
+      render();
+    }
+  } catch (_) {}
+}
+
+function startAutoSync() {
+  if (autoSyncInterval) clearInterval(autoSyncInterval);
+  autoSyncInterval = setInterval(async () => {
+    if (!bearerToken || document.hidden || loading) return;
+    try {
+      const ov = await request('/api/v1/ops/overview');
+      if (ov && ov.tenant_id) {
+        cache.overview = ov;
+      }
+      if (page === 'overview') {
+        const [evs, fnds] = await Promise.allSettled([
+          request('/api/v1/events?limit=200'),
+          request('/api/v1/findings')
+        ]);
+        if (evs.status === 'fulfilled') cache.events = unwrap(evs.value, ['events', 'items', 'data']);
+        if (fnds.status === 'fulfilled') cache.findings = unwrap(fnds.value, ['findings', 'items', 'data']);
+      } else if (page === 'events' || page === 'entities') {
+        const evs = await request(`/api/v1/events?limit=200${currentAppFilter ? '&app_id=' + encodeURIComponent(currentAppFilter) : ''}`);
+        cache.events = unwrap(evs, ['events', 'items', 'data']);
+      } else if (page === 'findings') {
+        const fnds = await request(`/api/v1/findings${currentAppFilter ? '?app_id=' + encodeURIComponent(currentAppFilter) : ''}`);
+        cache.findings = unwrap(fnds, ['findings', 'items', 'data']);
+      } else if (page === 'investigations') {
+        const invs = await request('/api/v1/investigations');
+        cache.investigations = unwrap(invs, ['investigations', 'items', 'data']);
+      } else if (page === 'rules') {
+        const rls = await request('/api/v1/rules');
+        cache.rules = unwrap(rls, ['rules', 'items', 'data']);
+      }
+      updateSidebarBadges();
+      const activeEl = document.activeElement;
+      const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+      if (!isTyping) {
+        render();
+      }
+    } catch (_) {}
+  }, 2000);
+}
+
 function enterControlRoom() {
   const gate = $('#loginGateView');
   const app = $('#appShell');
@@ -4791,8 +4910,10 @@ function enterControlRoom() {
 
   setConnection(true);
   toggleLiveStream(true);
+  startAutoSync();
   loadWorkspacesAndApps().then(() => {
     refresh();
+    preloadAllTabs();
   });
 }
 
@@ -5200,13 +5321,16 @@ async function bootstrapSession() {
 }
 
 
-async function refresh() {
+async function refresh(silent = false) {
   if (loading) return;
   loading = true;
   lastError = '';
 
+  const pageKey = readPages[page];
+  const hasData = (pageKey && cache[pageKey]) || (page === 'overview' && cache.overview) || (page === 'health' && cache.health) || (page === 'entities' && cache.events);
+
   const viewEl = $('#view');
-  if (viewEl) {
+  if (!silent && !hasData && viewEl) {
     viewEl.innerHTML = `${head(titles[page] || 'Loading', 'Requesting live data from Ternline API…')}<div class="skelrow"><div class="skel" style="height:74px"></div><div class="skel" style="height:180px"></div></div>`;
   }
 
@@ -5324,9 +5448,9 @@ function setPage(p) {
   closeProfileMenu();
   page = p;
   $('#sidebar')?.classList.remove('open');
-    if (p === 'historical') {
+  if (p === 'historical') {
     render();
-initSidebarTooltips();
+    initSidebarTooltips();
     setHistoryRange('24h');
     return;
   }
@@ -5339,7 +5463,17 @@ initSidebarTooltips();
     }, 50);
     return;
   }
-  refresh();
+
+  // Preloaded data check: if page data already exists in cache, render immediately (0ms tab switch)!
+  const pageKey = readPages[p];
+  const hasData = (pageKey && cache[pageKey]) || (p === 'overview' && cache.overview) || (p === 'health' && cache.health) || (p === 'entities' && cache.events);
+  if (hasData) {
+    render();
+    initSidebarTooltips();
+    refresh(true); // Silent background sync without layout flicker
+  } else {
+    refresh(false); // Initial load with skeleton
+  }
 }
 
 function saveSettings(e) {
